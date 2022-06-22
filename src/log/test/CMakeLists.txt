@@ -1,0 +1,2 @@
+add_executable(Logger_test Logger_test.cc)
+target_link_libraries(Logger_test baize_log)
