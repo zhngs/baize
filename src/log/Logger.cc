@@ -1,18 +1,30 @@
 #include "log/Logger.h"
 
-#include <stdio.h>
-
 using namespace baize;
 
-log::Logger::Logger(const char* filename, int line, const char* func)
+log::Logger::LogLevel log::Logger::logLevel_ = []{
+    return log::Logger::LogLevel::TRACE;
+}();
+
+const char* logLevelName[log::Logger::LogLevel::NUM_LOG_LEVELS] = {
+    "TRACE ",
+    "DEBUG ",
+    "INFO ",
+    "WARN ",
+    "ERROR ",
+    "FATAL ",
+};
+
+log::Logger::Logger(const char* filename, int line, const char* func, LogLevel level)
   : filename_(filename),
     line_(line),
-    func_(func)
+    func_(func),
+    logStream_(std::cout)
 {
-
+    logStream_ << logLevelName[level];
 }
 
 log::Logger::~Logger()
 {
-    printf("%s %d %s", filename_, line_, func_);
+    logStream_ << " - " << filename_ << " : " << func_ << " : " << line_ << "\n";
 }

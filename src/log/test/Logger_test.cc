@@ -1,7 +1,10 @@
 #include "log/Logger.h"
 
+#include <assert.h>
+#include <stdio.h>
+
 using namespace baize;
 
 int main() {
-    log::LOG_INFO;
+    LOG_TRACE << "logger test" << 3;
 }
