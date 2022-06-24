@@ -1,4 +1,5 @@
 #include "log/Logger.h"
+#include "time/Timestamp.h"
 
 using namespace baize;
 
@@ -22,9 +23,10 @@ log::Logger::Logger(const char* filename, int line, const char* func, LogLevel l
     logStream_(std::cout)
 {
     logStream_ << logLevelName[level];
+    logStream_ << time::Timestamp::now().toFormatString() << " [ ";
 }
 
 log::Logger::~Logger()
 {
-    logStream_ << " - " << filename_ << " : " << func_ << " : " << line_ << "\n";
+    logStream_ << " ] " << filename_ << " : " << func_ << " : " << line_ << "\n";
 }

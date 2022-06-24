@@ -1,0 +1,2 @@
+add_executable(Timestamp_test Timestamp_test.cc)
+target_link_libraries(Timestamp_test baize_time baize_log)
