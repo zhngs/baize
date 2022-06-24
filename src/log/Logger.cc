@@ -16,17 +16,27 @@ const char* logLevelName[log::Logger::LogLevel::NUM_LOG_LEVELS] = {
     "FATAL ",
 };
 
-log::Logger::Logger(const char* filename, int line, const char* func, LogLevel level)
+log::Logger::Logger(const char* filename, int line, const char* func, LogLevel level, int savedErrno)
   : filename_(filename),
     line_(line),
     func_(func),
+    level_(level),
     logStream_(std::cout)
 {
-    logStream_ << logLevelName[level];
-    logStream_ << time::Timestamp::now().toFormatString() << " [ ";
+    logStream_ << logLevelName[level_];
+    logStream_ << time::Timestamp::now().toFormatString();
+
+    // todo::use thread local
+    char errnobuf[512] = {0};
+    char* perr = strerror_r(savedErrno, errnobuf, sizeof(errnobuf));
+    if (savedErrno != 0) {
+        logStream_ << " " << perr << " (errno=" << savedErrno << ")";
+    }
+    logStream_ << " [ ";
 }
 
 log::Logger::~Logger()
 {
     logStream_ << " ] " << filename_ << " : " << func_ << " : " << line_ << "\n";
+    if (level_ == LogLevel::FATAL) abort();
 }
