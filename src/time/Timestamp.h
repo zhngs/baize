@@ -11,7 +11,7 @@ namespace baize
 namespace time
 {
 
-class Timestamp: util::copyable
+class Timestamp: public util::copyable
 {
 public:
     Timestamp(): us_(0) {}
