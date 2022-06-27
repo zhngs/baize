@@ -1,5 +1,6 @@
 #ifndef BAIZE_TIMESTAMP_H
 #define BAIZE_TIMESTAMP_H
+// copy from muduo and make some small changes
 
 #include "util/noncopyable.h"
 #include "util/types.h"
@@ -11,7 +12,7 @@ namespace baize
 namespace time
 {
 
-class Timestamp: public util::copyable
+class Timestamp: public copyable
 {
 public:
     Timestamp(): us_(0) {}

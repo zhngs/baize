@@ -20,7 +20,7 @@ add_compile_options(
 -Wshadow
 -Wwrite-strings
 
--std=c++11
+-std=c++14
 )
 
 add_subdirectory(src)

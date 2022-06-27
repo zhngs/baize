@@ -1,5 +1,6 @@
 #ifndef BAIZE_SOCKET_H
 #define BAIZE_SOCKET_H
+// copy from muduo and make some small changes
 
 #include "util/noncopyable.h"
 
@@ -11,7 +12,7 @@ namespace net
 
 class InetAddress;
 
-class Socket: util::noncopyable
+class Socket: noncopyable
 {
 public:
     explicit Socket(int fd): sockfd_(fd) { }

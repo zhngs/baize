@@ -1,10 +1,8 @@
 #ifndef BAIZE_NONCOPYABLE_H
 #define BAIZE_NONCOPYABLE_H
+// copy from muduo and make some small changes
 
 namespace baize
-{
-
-namespace util
 {
 
 class noncopyable
@@ -24,8 +22,6 @@ protected:
     copyable() = default;
     ~copyable() = default;
 };
-
-} //namespace util
 
 } //namespace baize
 

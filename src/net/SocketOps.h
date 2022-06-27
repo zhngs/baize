@@ -1,5 +1,6 @@
 #ifndef BAIZE_SOCKETOPS_H
 #define BAIZE_SOCKETOPS_H
+// copy from muduo and make some small changes
 
 #include <arpa/inet.h>
 
@@ -14,6 +15,9 @@ namespace sockets
 
 int creatTcpSocket(sa_family_t family);
 int creatUdpSocket(sa_family_t family);
+
+void setNonBlock(int sockfd, bool on);
+void setCloseOnExec(int sockfd, bool on);
 
 int  connect(int sockfd, const struct sockaddr* addr);
 void bindOrDie(int sockfd, const struct sockaddr* addr);

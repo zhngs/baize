@@ -3,6 +3,7 @@
 #include "log/Logger.h"
 #include "util/types.h"
 
+#include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
@@ -25,6 +26,21 @@ int sockets::creatUdpSocket(sa_family_t family)
         LOG_SYSFATAL << "sockets::creatUdpSocket failed";
     }
     return sockfd;
+}
+
+void sockets::setNonBlock(int sockfd, bool on)
+{
+    int flags = ::fcntl(sockfd, F_GETFL, 0);
+    assert(flags != -1);
+    if (on) {
+        flags |= O_NONBLOCK;
+    } else {
+        flags &= (~O_NONBLOCK);
+    }
+    int ret = ::fcntl(sockfd, F_SETFL, flags);
+    if (ret != 0) {
+        LOG_SYSERR << "sockets::setNonBlock";
+    }
 }
 
 void sockets::bindOrDie(int sockfd, const struct sockaddr* addr)

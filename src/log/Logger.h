@@ -1,5 +1,6 @@
 #ifndef BAIZE_LOGGER_H
 #define BAIZE_LOGGER_H
+// copy from muduo and make some small changes
 
 #include "util/noncopyable.h"
 
@@ -11,7 +12,7 @@ namespace baize
 namespace log
 {
 
-class Logger: util::noncopyable
+class Logger: noncopyable
 {
 public:
     enum LogLevel

@@ -1,5 +1,6 @@
 #ifndef BAIZE_TYPES_H 
 #define BAIZE_TYPES_H 
+// copy from muduo and make some small changes
 
 #include <string>
 #include <stdint.h>
@@ -17,6 +18,12 @@ using std::string;
 inline void memZero(void *p, size_t n)
 {
     memset(p, 0, n);
+}
+
+template<typename To, typename From>
+inline To implicit_cast(From const &f)
+{
+    return f;
 }
 
 } // namespace baize

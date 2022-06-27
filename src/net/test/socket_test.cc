@@ -1,47 +1,47 @@
 #include "log/Logger.h"
+#include "net/Buffer.h"
 #include "net/Socket.h"
 #include "net/InetAddress.h"
 #include "net/SocketOps.h"
+#include "net/TcpListener.h"
 
-#include <stdio.h>
 
 using namespace baize;
 using namespace baize::net;
 
 void echo_server()
 {
-    InetAddress listen_addr(6060);
-    Socket listen_socket(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
-    listen_socket.bindAddress(listen_addr);
-    listen_socket.listen();
-
+    TcpListener listener(6060);
     while (1) {
-        char buf[4096];    
+        Buffer buf;
         InetAddress peer_addr;
-        int connfd = listen_socket.accept(&peer_addr);
+        int connfd = listener.accept(&peer_addr);
         if (connfd < 0) {
             LOG_SYSERR << "accept failed";
             continue;
         }
+        Socket conn_socket(connfd);
+        sockets::setNonBlock(connfd, false);
         LOG_INFO << "accept connection " << peer_addr.getIpPort();
+
         while (1) {
-            ssize_t rn = sockets::read(connfd, buf, sizeof(buf));
+            int err = 0;
+            ssize_t rn = buf.readFd(connfd, &err);
             if (rn == 0) break;
             if (rn < 0) {
                 LOG_SYSERR << "read failed";
                 continue;
             }
-            ssize_t wn = sockets::write(connfd, buf, rn);
+            assert(rn == implicit_cast<ssize_t>(buf.readableBytes()));
+            ssize_t wn = sockets::write(connfd, buf.peek(), buf.readableBytes());
             assert(rn == wn);
+            buf.retrieve(wn);
         }
     }
 }
 
 void echo_client()
 {
-    InetAddress server_addr("127.0.0.1", 6060);
-    Socket conn_socket(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
-    conn_socket.connect(server_addr);
 }
 
 int main(int argc, char* argv[])

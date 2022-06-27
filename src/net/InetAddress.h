@@ -1,5 +1,6 @@
 #ifndef BAIZE_INETADDRESS_H
 #define BAIZE_INETADDRESS_H
+// copy from muduo and make some small changes
 
 #include "util/noncopyable.h"
 #include "util/types.h"
@@ -12,7 +13,7 @@ namespace baize
 namespace net
 {
 
-class InetAddress: public util::copyable
+class InetAddress: public copyable
 {
 public:
     InetAddress() { memZero(&addr6_, sizeof(addr6_)); }
