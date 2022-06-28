@@ -14,6 +14,7 @@ namespace net
 class Socket;
 class TcpStream;
 class InetAddress;
+using TcpStreamSptr = std::shared_ptr<TcpStream>;
 
 class TcpListener: noncopyable
 {
@@ -21,7 +22,7 @@ public:
     explicit TcpListener(uint16_t port);
     ~TcpListener();
 
-    int accept(InetAddress* peeraddr);
+    TcpStreamSptr accept();
 private:
     class Impl;
     std::unique_ptr<Impl> impl_;

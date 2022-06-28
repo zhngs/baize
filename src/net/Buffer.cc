@@ -1,7 +1,5 @@
 #include "net/Buffer.h"
 
-#include "net/SocketOps.h"
-
 #include <sys/uio.h>
 
 using namespace baize;
@@ -22,10 +20,10 @@ ssize_t net::Buffer::readFd(int fd, int* savedErrno)
     // when there is enough space in this buffer, don't read into extrabuf.
     // when extrabuf is used, we read 128k-1 bytes at most.
     const int iovcnt = (writable < sizeof extrabuf) ? 2 : 1;
-    const ssize_t n = sockets::readv(fd, vec, iovcnt);
+    const ssize_t n = ::readv(fd, vec, iovcnt);
     if (n < 0) {
         *savedErrno = errno;
-    } else if (implicit_cast<size_t>(n) <= writable) {
+    } else if (static_cast<size_t>(n) <= writable) {
         writerIndex_ += n;
     } else {
         writerIndex_ = buffer_.size();

@@ -3,6 +3,9 @@
 // copy from muduo and make some small changes
 
 #include "util/noncopyable.h"
+#include "util/types.h"
+
+#include <netinet/in.h>
 
 namespace baize
 {
@@ -25,13 +28,27 @@ public:
     int accept(InetAddress* peeraddr);
     void shutdownWrite();
 
+    ssize_t read(void* buf, size_t count);
+    ssize_t write(const void* buf, size_t count);
+
     void setTcpNoDelay(bool on);
     void setReuseAddr(bool on);
     void setReusePort(bool on);
     void setKeepAlive(bool on);
+
+    InetAddress getLocalAddr();
+    InetAddress getPeerAddr();
+    bool isSelfConnect();
+
+    int getSocketError();
+    int getSockfd() const { return sockfd_; }
+
 private:
     const int sockfd_;
 };
+
+int creatTcpSocket(sa_family_t family);
+int creatUdpSocket(sa_family_t family);
     
 } // namespace net
     

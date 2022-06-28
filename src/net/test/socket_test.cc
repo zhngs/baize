@@ -1,9 +1,7 @@
 #include "log/Logger.h"
 #include "net/Buffer.h"
-#include "net/Socket.h"
-#include "net/InetAddress.h"
-#include "net/SocketOps.h"
 #include "net/TcpListener.h"
+#include "net/TcpStream.h"
 
 
 using namespace baize;
@@ -14,26 +12,22 @@ void echo_server()
     TcpListener listener(6060);
     while (1) {
         Buffer buf;
-        InetAddress peer_addr;
-        int connfd = listener.accept(&peer_addr);
-        if (connfd < 0) {
-            LOG_SYSERR << "accept failed";
+        TcpStreamSptr stream = listener.accept();
+        if (!stream) {
             continue;
         }
-        Socket conn_socket(connfd);
-        sockets::setNonBlock(connfd, false);
-        LOG_INFO << "accept connection " << peer_addr.getIpPort();
+        LOG_INFO << "accept connection " << stream->getPeerIpPort();
 
         while (1) {
             int err = 0;
-            ssize_t rn = buf.readFd(connfd, &err);
+            ssize_t rn = buf.readFd(stream->getSockfd(), &err);
             if (rn == 0) break;
             if (rn < 0) {
                 LOG_SYSERR << "read failed";
                 continue;
             }
-            assert(rn == implicit_cast<ssize_t>(buf.readableBytes()));
-            ssize_t wn = sockets::write(connfd, buf.peek(), buf.readableBytes());
+            assert(rn == static_cast<ssize_t>(buf.readableBytes()));
+            ssize_t wn = stream->write(buf.peek(), buf.readableBytes());
             assert(rn == wn);
             buf.retrieve(wn);
         }

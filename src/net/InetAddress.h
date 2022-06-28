@@ -25,7 +25,7 @@ public:
     sa_family_t getFamily() const { return addr_.sin_family; }
     string getIp() const;
     string getIpPort() const;
-    uint16_t getPort() const;
+    uint16_t getPort() const { return networkToHost16(addr_.sin_port); };
     uint16_t getPortNetEndian() const { return addr_.sin_port; }
     const struct sockaddr* getSockAddr() const { return reinterpret_cast<const struct sockaddr*>(&addr6_); }
     void setSockAddrIn6(const struct sockaddr_in6& addr) { addr6_ = addr; }
@@ -36,7 +36,10 @@ private:
         struct sockaddr_in6 addr6_;
     };
 };
-    
+
+struct sockaddr_in6 getLocalAddr(int sockfd);
+struct sockaddr_in6 getPeerAddr(int sockfd);
+
 } // namespace net
 
 } // namespace baize

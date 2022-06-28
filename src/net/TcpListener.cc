@@ -2,7 +2,7 @@
 
 #include "net/InetAddress.h"
 #include "net/Socket.h"
-#include "net/SocketOps.h"
+#include "net/TcpStream.h"
 
 using namespace baize;
 
@@ -11,15 +11,21 @@ class net::TcpListener::Impl
 public:
     Impl(uint16_t port)
       : addr_(port),
-        sock_(sockets::creatTcpSocket(addr_.getFamily()))
+        sock_(creatTcpSocket(addr_.getFamily()))
     {
         sock_.bindAddress(addr_);
         sock_.listen();
     }
 
-    int accept(InetAddress* peeraddr)
+    TcpStreamSptr accept()
     {
-        return sock_.accept(peeraddr);
+        InetAddress peeraddr;
+        int connfd = sock_.accept(&peeraddr);
+        if (connfd < 0) {
+            return TcpStreamSptr();
+        } else {
+            return std::make_shared<TcpStream>(connfd, peeraddr);
+        }
     }
 
 public:
@@ -36,7 +42,7 @@ net::TcpListener::~TcpListener()
 {
 }
 
-int net::TcpListener::accept(InetAddress* peeraddr)
+net::TcpStreamSptr net::TcpListener::accept()
 {
-    return impl_->accept(peeraddr);
+    return impl_->accept();
 }
