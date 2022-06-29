@@ -2,7 +2,6 @@
 #define BAIZE_TIMESTAMP_H
 // copy from muduo and make some small changes
 
-#include "util/noncopyable.h"
 #include "util/types.h"
 
 
@@ -12,7 +11,7 @@ namespace baize
 namespace time
 {
 
-class Timestamp: public copyable
+class Timestamp //copyable
 {
 public:
     Timestamp(): us_(0) {}

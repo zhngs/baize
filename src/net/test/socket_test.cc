@@ -3,7 +3,6 @@
 #include "net/TcpListener.h"
 #include "net/TcpStream.h"
 
-
 using namespace baize;
 using namespace baize::net;
 
@@ -19,8 +18,7 @@ void echo_server()
         LOG_INFO << "accept connection " << stream->getPeerIpPort();
 
         while (1) {
-            int err = 0;
-            ssize_t rn = buf.readFd(stream->getSockfd(), &err);
+            ssize_t rn = buf.readFd(stream->getSockfd());
             if (rn == 0) break;
             if (rn < 0) {
                 LOG_SYSERR << "read failed";

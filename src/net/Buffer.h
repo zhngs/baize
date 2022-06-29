@@ -2,7 +2,6 @@
 #define BAIZE_BUFFER_H
 // copy from muduo and make some small changes
 
-#include "util/noncopyable.h"
 #include "util/StringPiece.h"
 #include "util/types.h"
 
@@ -21,7 +20,7 @@ namespace net
 /// +-------------------+------------------+------------------+
 /// |                   |                  |                  |
 /// 0      <=      readerIndex   <=   writerIndex    <=     size
-class Buffer: public copyable
+class Buffer //copyable
 {
 public:
     static const size_t kCheapPrepend = 8;
@@ -91,7 +90,7 @@ public:
         writerIndex_ += len;
     }
 
-    ssize_t readFd(int fd, int* savedErrno);
+    ssize_t readFd(int fd);
 
 private:
     char *begin() { return &*buffer_.begin(); }

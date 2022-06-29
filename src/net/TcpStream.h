@@ -1,7 +1,6 @@
 #ifndef BAIZE_TCPSTREAM_H
 #define BAIZE_TCPSTREAM_H
 
-#include "util/noncopyable.h"
 #include "util/types.h"
 
 #include <memory>
@@ -14,11 +13,14 @@ namespace net
 
 class InetAddress;
 
-class TcpStream: noncopyable
+class TcpStream //noncopyable
 {
 public:
     TcpStream(int fd, InetAddress peeraddr);
     ~TcpStream();
+
+    TcpStream(const TcpStream&) = delete;
+    TcpStream& operator=(const TcpStream&) = delete;
 
     ssize_t read(void* buf, size_t count);
     ssize_t write(const void* buf, size_t count);

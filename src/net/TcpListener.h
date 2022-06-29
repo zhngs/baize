@@ -1,8 +1,6 @@
 #ifndef BAIZE_TCPLISTENER_H
 #define BAIZE_TCPLISTENER_H
 
-#include "util/noncopyable.h"
-
 #include <memory>
 
 namespace baize
@@ -16,11 +14,14 @@ class TcpStream;
 class InetAddress;
 using TcpStreamSptr = std::shared_ptr<TcpStream>;
 
-class TcpListener: noncopyable
+class TcpListener //noncopyable
 {
 public:
     explicit TcpListener(uint16_t port);
     ~TcpListener();
+
+    TcpListener(const TcpListener&) = delete;
+    TcpListener& operator=(const TcpListener&) = delete;
 
     TcpStreamSptr accept();
 private:

@@ -2,7 +2,6 @@
 #define BAIZE_SOCKET_H
 // copy from muduo and make some small changes
 
-#include "util/noncopyable.h"
 #include "util/types.h"
 
 #include <netinet/in.h>
@@ -15,11 +14,14 @@ namespace net
 
 class InetAddress;
 
-class Socket: noncopyable
+class Socket //noncopyable
 {
 public:
     explicit Socket(int fd): sockfd_(fd) { }
     ~Socket();
+
+    Socket(const Socket&) = delete;
+    Socket& operator=(const Socket&) = delete;
 
     int getSockfd() { return sockfd_; }
     int connect(const InetAddress& peeraddr);

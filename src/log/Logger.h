@@ -2,8 +2,6 @@
 #define BAIZE_LOGGER_H
 // copy from muduo and make some small changes
 
-#include "util/noncopyable.h"
-
 #include <iostream>
 
 namespace baize
@@ -12,7 +10,7 @@ namespace baize
 namespace log
 {
 
-class Logger: noncopyable
+class Logger //noncopyable
 {
 public:
     enum LogLevel
@@ -28,6 +26,9 @@ public:
 
     Logger(const char* filename, int line, const char* func, LogLevel level, int savedErrno);
     ~Logger();
+
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
 
     std::ostream& stream() { return logStream_; }
 

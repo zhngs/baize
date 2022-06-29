@@ -2,7 +2,6 @@
 #define BAIZE_INETADDRESS_H
 // copy from muduo and make some small changes
 
-#include "util/noncopyable.h"
 #include "util/types.h"
 
 #include <netinet/in.h>
@@ -13,7 +12,7 @@ namespace baize
 namespace net
 {
 
-class InetAddress: public copyable
+class InetAddress //copyable
 {
 public:
     InetAddress() { memZero(&addr6_, sizeof(addr6_)); }
