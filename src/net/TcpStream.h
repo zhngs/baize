@@ -1,6 +1,7 @@
 #ifndef BAIZE_TCPSTREAM_H
 #define BAIZE_TCPSTREAM_H
 
+#include "net/InetAddress.h"
 #include "util/types.h"
 
 #include <memory>
@@ -11,13 +12,12 @@ namespace baize
 namespace net
 {
 
-class InetAddress;
+class Socket;
 
 class TcpStream //noncopyable
 {
 public:
     TcpStream(int fd, InetAddress peeraddr);
-    ~TcpStream();
 
     TcpStream(const TcpStream&) = delete;
     TcpStream& operator=(const TcpStream&) = delete;
@@ -29,8 +29,8 @@ public:
     string getPeerIp();
     string getPeerIpPort();
 private:
-    class Impl;
-    std::unique_ptr<Impl> impl_;
+    std::unique_ptr<Socket> conn_;
+    InetAddress peeraddr_;
 };
 
     

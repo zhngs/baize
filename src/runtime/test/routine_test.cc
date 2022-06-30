@@ -1,8 +1,13 @@
 #include "log/Logger.h"
-#include "net/Routine.h"
+#include "runtime/Routine.h"
 
 using namespace baize;
-using namespace baize::net;
+using namespace baize::runtime;
+
+void test()
+{
+    LOG_DEBUG << "test";
+}
 
 int main()
 {
@@ -21,4 +26,7 @@ int main()
         routine1.call();
         LOG_DEBUG << "a = " << a;
     }
+
+    Routine routine2(test);
+    routine2.call();
 }

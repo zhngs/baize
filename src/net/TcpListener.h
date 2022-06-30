@@ -1,6 +1,8 @@
 #ifndef BAIZE_TCPLISTENER_H
 #define BAIZE_TCPLISTENER_H
 
+#include "net/InetAddress.h"
+
 #include <memory>
 
 namespace baize
@@ -11,7 +13,6 @@ namespace net
 
 class Socket;
 class TcpStream;
-class InetAddress;
 using TcpStreamSptr = std::shared_ptr<TcpStream>;
 
 class TcpListener //noncopyable
@@ -23,10 +24,12 @@ public:
     TcpListener(const TcpListener&) = delete;
     TcpListener& operator=(const TcpListener&) = delete;
 
+    void start();
     TcpStreamSptr accept();
+    int getSockfd();
 private:
-    class Impl;
-    std::unique_ptr<Impl> impl_;
+    InetAddress listenaddr_;
+    std::unique_ptr<Socket> sock_;
 };
     
 } // namespace net

@@ -1,40 +1,13 @@
 #include "net/TcpListener.h"
 
-#include "net/InetAddress.h"
 #include "net/Socket.h"
 #include "net/TcpStream.h"
 
 using namespace baize;
 
-class net::TcpListener::Impl
-{
-public:
-    Impl(uint16_t port)
-      : addr_(port),
-        sock_(creatTcpSocket(addr_.getFamily()))
-    {
-        sock_.bindAddress(addr_);
-        sock_.listen();
-    }
-
-    TcpStreamSptr accept()
-    {
-        InetAddress peeraddr;
-        int connfd = sock_.accept(&peeraddr);
-        if (connfd < 0) {
-            return TcpStreamSptr();
-        } else {
-            return std::make_shared<TcpStream>(connfd, peeraddr);
-        }
-    }
-
-public:
-    InetAddress addr_;
-    Socket sock_;
-};
-
 net::TcpListener::TcpListener(uint16_t port)
-  : impl_(std::make_unique<Impl>(port))
+  : listenaddr_(port),
+    sock_(std::make_unique<Socket>(creatTcpSocket((listenaddr_.getFamily()))))
 {
 }
 
@@ -42,7 +15,24 @@ net::TcpListener::~TcpListener()
 {
 }
 
+void net::TcpListener::start()
+{
+    sock_->bindAddress(listenaddr_);
+    sock_->listen();
+}
+
 net::TcpStreamSptr net::TcpListener::accept()
 {
-    return impl_->accept();
+    InetAddress peeraddr;
+    int connfd = sock_->accept(&peeraddr);
+    if (connfd < 0) {
+        return TcpStreamSptr();
+    } else {
+        return std::make_shared<TcpStream>(connfd, peeraddr);
+    }
+}
+
+int net::TcpListener::getSockfd()
+{
+    return sock_->getSockfd();
 }

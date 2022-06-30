@@ -9,6 +9,7 @@ using namespace baize::net;
 void echo_server()
 {
     TcpListener listener(6060);
+    listener.start();
     while (1) {
         Buffer buf;
         TcpStreamSptr stream = listener.accept();

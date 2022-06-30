@@ -3,6 +3,7 @@
 // copy from muduo and make some small changes
 
 #include <endian.h>
+#include <functional>
 #include <string>
 #include <stdint.h>
 #include <string.h>
