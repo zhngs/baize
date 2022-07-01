@@ -37,6 +37,6 @@ log::Logger::Logger(const char* filename, int line, const char* func, LogLevel l
 
 log::Logger::~Logger()
 {
-    logStream_ << " ] " << filename_ << " : " << func_ << " : " << line_ << "\n";
+    logStream_ << " ] " << filename_ << ":" << line_ << " -> " << func_ << "\n";
     if (level_ == LogLevel::FATAL) abort();
 }

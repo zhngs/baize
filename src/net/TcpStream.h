@@ -9,6 +9,12 @@
 namespace baize
 {
 
+namespace runtime
+{
+class EventLoop; 
+} // namespace runtime
+
+
 namespace net
 {
 
@@ -18,6 +24,7 @@ class TcpStream //noncopyable
 {
 public:
     TcpStream(int fd, InetAddress peeraddr);
+    ~TcpStream();
 
     TcpStream(const TcpStream&) = delete;
     TcpStream& operator=(const TcpStream&) = delete;
@@ -25,10 +32,18 @@ public:
     ssize_t read(void* buf, size_t count);
     ssize_t write(const void* buf, size_t count);
 
+    int asyncRead(void* buf, size_t count);
+    int asyncWrite(const void* buf, size_t count);
+
+    int asyncReadOrDie(void *buf, size_t count);
+    int asyncWriteOrDie(const void *buf, size_t count);
+
     int getSockfd();
     string getPeerIp();
     string getPeerIpPort();
 private:
+    runtime::EventLoop* loop_;
+
     std::unique_ptr<Socket> conn_;
     InetAddress peeraddr_;
 };

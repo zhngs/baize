@@ -1,5 +1,4 @@
 #include "runtime/EventLoop.h"
-#include "runtime/Routine.h"
 
 #include "log/Logger.h"
 #include "net/TcpListener.h"
@@ -9,48 +8,27 @@ using namespace baize;
 using namespace baize::net;
 using namespace baize::runtime;
 
+void echo_connection(TcpStreamSptr conn)
+{
+    char buf[1024];
+    while (1) {
+        int rn = conn->asyncReadOrDie(buf, sizeof(buf));
+        if (rn == 0) break;
+        LOG_INFO << "read " << rn << " bytes, conten=" << string(buf, rn);
+        int wn = conn->asyncWriteOrDie(buf, rn);
+        LOG_INFO << "write " << wn << " bytes, conten=" << string(buf, wn);
+        assert(rn == wn);
+    }
+}
+
 void echo_server()
 {
     TcpListener listener(6060);
     listener.start();
-    int listenfd = listener.getSockfd();
-
-    int efd = EventLoop::getCurrentLoop()->getEpollfd();
-    epoll_event ev;
-    ev.events = (EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR);
-    ev.data.fd = listenfd;
-    ::epoll_ctl(efd, EPOLL_CTL_ADD, listenfd, &ev);
 
     while (1) {
-        TcpStreamSptr stream = listener.accept();
-        if (!stream) {
-            EventLoop::getCurrentLoop()->addWaitRequest(listenfd, WAIT_READ_REQUEST, Routine::getCurrentRoutineId());
-            Routine::hangup();
-            continue;
-        }
-        LOG_INFO << "accept connection " << stream->getPeerIpPort();
-    }
-}
-
-void echo_server2()
-{
-    TcpListener listener(6061);
-    listener.start();
-    int listenfd = listener.getSockfd();
-
-    int efd = EventLoop::getCurrentLoop()->getEpollfd();
-    epoll_event ev;
-    ev.events = (EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR);
-    ev.data.fd = listenfd;
-    ::epoll_ctl(efd, EPOLL_CTL_ADD, listenfd, &ev);
-
-    while (1) {
-        TcpStreamSptr stream = listener.accept();
-        if (!stream) {
-            EventLoop::getCurrentLoop()->addWaitRequest(listenfd, WAIT_READ_REQUEST, Routine::getCurrentRoutineId());
-            Routine::hangup();
-            continue;
-        }
+        TcpStreamSptr stream = listener.asyncAccept();
+        EventLoop::getCurrentLoop()->addRoutine([stream]{ echo_connection(stream); });
         LOG_INFO << "accept connection " << stream->getPeerIpPort();
     }
 }
@@ -58,7 +36,6 @@ void echo_server2()
 int main()
 {
     EventLoop loop;
-    loop.addRoutine(echo_server);
-    loop.addRoutine(echo_server2);
+    loop.addAndExecRoutine(echo_server);
     loop.start();
 }

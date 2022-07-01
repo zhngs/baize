@@ -8,6 +8,11 @@
 namespace baize
 {
 
+namespace runtime
+{
+class EventLoop;
+} // namespace runtime
+
 namespace net
 {
 
@@ -26,8 +31,12 @@ public:
 
     void start();
     TcpStreamSptr accept();
+    TcpStreamSptr asyncAccept();
     int getSockfd();
 private:
+    bool started_;
+    runtime::EventLoop* loop_;
+
     InetAddress listenaddr_;
     std::unique_ptr<Socket> sock_;
 };

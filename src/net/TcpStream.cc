@@ -1,14 +1,23 @@
 #include "net/TcpStream.h"
 
+#include "log/Logger.h"
 #include "net/InetAddress.h"
 #include "net/Socket.h"
+#include "runtime/EventLoop.h"
 
 using namespace baize;
 
 net::TcpStream::TcpStream(int fd, InetAddress peeraddr)
-  : conn_(std::make_unique<Socket>(fd)),
+  : loop_(runtime::EventLoop::getCurrentLoop()),
+    conn_(std::make_unique<Socket>(fd)),
     peeraddr_(peeraddr)
 {
+    loop_->registerPollEvent(conn_->getSockfd());
+}
+
+net::TcpStream::~TcpStream()
+{
+    loop_->unregisterPollEvent(conn_->getSockfd());
 }
 
 ssize_t net::TcpStream::read(void* buf, size_t count)
@@ -19,6 +28,58 @@ ssize_t net::TcpStream::read(void* buf, size_t count)
 ssize_t net::TcpStream::write(const void* buf, size_t count)
 {
     return conn_->write(buf, count);
+}
+
+int net::TcpStream::asyncRead(void* buf, size_t count)
+{
+    while (1) {
+        ssize_t rn = conn_->read(buf, count);
+        if (rn < 0) {
+            int saveErrno = errno;
+            if (errno == EAGAIN) {
+                loop_->addWaitRequest(conn_->getSockfd(), WAIT_READ_REQUEST, loop_->getCurrentRoutineId());
+                loop_->backToMainRoutine();
+                continue;
+            } else {
+                LOG_SYSERR << "async read failed";
+            }
+            errno = saveErrno;
+        }
+        return static_cast<int>(rn);
+    }
+}
+
+int net::TcpStream::asyncWrite(const void* buf, size_t count)
+{
+    while (1) {
+        ssize_t rn = conn_->write(buf, count);
+        if (rn <= 0) {
+            int saveErrno = errno;
+            if (errno == EAGAIN) {
+                loop_->addWaitRequest(conn_->getSockfd(), WAIT_WRITE_REQUEST, loop_->getCurrentRoutineId());
+                loop_->backToMainRoutine();
+                continue;
+            } else {
+                LOG_SYSERR << "async write failed";
+            }
+            errno = saveErrno;
+        }
+        return static_cast<int>(rn);
+    }
+}
+
+int net::TcpStream::asyncReadOrDie(void* buf, size_t count)
+{
+    int rn = asyncRead(buf, count);
+    assert(rn >= 0);
+    return rn;
+}
+
+int net::TcpStream::asyncWriteOrDie(const void* buf, size_t count)
+{
+    int wn = asyncWrite(buf, count);
+    assert(wn > 0);
+    return wn;
 }
 
 int net::TcpStream::getSockfd()

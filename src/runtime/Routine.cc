@@ -1,6 +1,7 @@
 #include "runtime/Routine.h"
 
 #include "log/Logger.h"
+#include "runtime/EventLoop.h"
 
 #include <boost/context/all.hpp>
 
@@ -21,14 +22,25 @@ public:
         LOG_TRACE << "routine " << routineid_ << " creat";
         routine_ = boost::context::callcc([this](boost::context::continuation&& routine){
             mainRoutine = std::move(routine);
+            LOG_TRACE << "enter routine " << routineid_;
             g_currentRoutineId = routineid_;
             hangup();
+
             cb_();
+
+            EventLoop::getCurrentLoop()->runInMainRoutine([=]{
+                EventLoop::getCurrentLoop()->removeRoutine(routineid_);
+            });
             isfinished_ = true;
             g_currentRoutineId = kmainRoutineId;
-            LOG_TRACE << "routine " << routineid_ << " finish";
+            LOG_TRACE << "routine " << routineid_ << " finish and exit";
             return std::move(mainRoutine);
         });
+    }
+
+    ~Impl()
+    {
+        LOG_TRACE << "routine" << routineid_ << " destory";
     }
 
     void call()
@@ -37,6 +49,7 @@ public:
         if (isfinished_) {
             LOG_FATAL << "Routine has finished";    
         }
+        LOG_TRACE << "call routine " << routineid_;
         routine_ = routine_.resume();
     }
 
@@ -86,6 +99,7 @@ void runtime::Routine::hangup()
     if (isInMainRoutine()) {
         LOG_FATAL << "Routine::hangup can't be called by main routine";
     }
+    LOG_TRACE << "routine " << g_currentRoutineId << " hangup to main routine";
     g_currentRoutineId = kmainRoutineId;
     mainRoutine = mainRoutine.resume();
 }
