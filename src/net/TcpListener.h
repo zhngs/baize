@@ -2,6 +2,7 @@
 #define BAIZE_TCPLISTENER_H
 
 #include "net/InetAddress.h"
+#include "net/NetType.h"
 
 #include <memory>
 
@@ -17,8 +18,6 @@ namespace net
 {
 
 class Socket;
-class TcpStream;
-using TcpStreamSptr = std::shared_ptr<TcpStream>;
 
 class TcpListener //noncopyable
 {

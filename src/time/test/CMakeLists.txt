@@ -1,2 +1,5 @@
 add_executable(Timestamp_test Timestamp_test.cc)
 target_link_libraries(Timestamp_test baize_time baize_log)
+
+add_executable(Timer_test Timer_test.cc)
+target_link_libraries(Timer_test baize_runtime baize_log baize_time boost_context)

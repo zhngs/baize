@@ -30,6 +30,11 @@ ssize_t net::TcpStream::write(const void* buf, size_t count)
     return conn_->write(buf, count);
 }
 
+void net::TcpStream::shutdownWrite()
+{
+    return conn_->shutdownWrite();
+}
+
 int net::TcpStream::asyncRead(void* buf, size_t count)
 {
     while (1) {
@@ -90,4 +95,33 @@ int net::TcpStream::getSockfd()
 string net::TcpStream::getPeerIpPort()
 {
     return peeraddr_.getIpPort();
+}
+
+net::TcpStreamSptr net::TcpStream::asyncConnect(const char* ip, uint16_t port)
+{
+    runtime::EventLoop* loop = runtime::EventLoop::getCurrentLoop();
+    InetAddress serveraddr(ip, port);
+    int fd = creatTcpSocket(serveraddr.getFamily());
+    TcpStreamSptr stream(std::make_shared<TcpStream>(fd, serveraddr));
+    int ret = stream->conn_->connect(serveraddr);
+    if (ret < 0) {
+        if (errno == EINPROGRESS) {
+            loop->addWaitRequest(fd, WAIT_WRITE_REQUEST, loop->getCurrentRoutineId());
+            loop->backToMainRoutine();
+
+            int err = stream->conn_->getSocketError();
+            if (err) {
+                LOG_ERROR << "asyncConnect SO_ERROR = " << err << " " << log::strerror_tl(err);
+                return TcpStreamSptr();
+            } else if (stream->conn_->isSelfConnect()) {
+                LOG_ERROR << "async Connect self connect";
+                return TcpStreamSptr();
+            } else {
+                return stream;
+            }
+        } else {
+            return TcpStreamSptr();
+        }
+    }
+    return stream;
 }

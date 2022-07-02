@@ -2,6 +2,7 @@
 #define BAIZE_EVENTLOOP_H
 
 #include "runtime/RuntimeType.h"
+#include "time/TimeType.h"
 #include "util/types.h"
 
 #include <map>
@@ -11,6 +12,11 @@
 
 namespace baize
 {
+
+namespace time
+{
+class TimerQueue;
+}
 
 namespace runtime
 {
@@ -49,6 +55,11 @@ public:
     void unregisterPollEvent(int fd);
     void epollControl(int op, int fd, epoll_event* ev);
 
+    time::TimerId runAt(time::Timestamp time, time::TimerCallback cb);
+    time::TimerId runAfter(double delay, time::TimerCallback cb);
+    time::TimerId runEvery(double interval, time::TimerCallback cb);
+    void cancelTimer(time::TimerId timerId);
+
     static EventLoop* getCurrentLoop();
     RoutineId getCurrentRoutineId();
     int getEpollfd() { return epollfd_; }
@@ -62,6 +73,8 @@ private:
 
     int epollfd_;
     std::vector<epoll_event> events_;
+
+    std::unique_ptr<time::TimerQueue> timerqueue_;
 };
 
     

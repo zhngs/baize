@@ -2,6 +2,7 @@
 #define BAIZE_TCPSTREAM_H
 
 #include "net/InetAddress.h"
+#include "net/NetType.h"
 #include "util/types.h"
 
 #include <memory>
@@ -31,6 +32,10 @@ public:
 
     ssize_t read(void* buf, size_t count);
     ssize_t write(const void* buf, size_t count);
+
+    void shutdownWrite();
+
+    static TcpStreamSptr asyncConnect(const char* ip, uint16_t port);
 
     int asyncRead(void* buf, size_t count);
     int asyncWrite(const void* buf, size_t count);

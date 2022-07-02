@@ -10,6 +10,8 @@ namespace baize
 namespace log
 {
 
+const char* strerror_tl(int savedErrno);
+
 class Logger //noncopyable
 {
 public:

@@ -2,6 +2,7 @@
 
 #include "log/Logger.h"
 #include "runtime/Routine.h"
+#include "time/TimerQueue.h"
 
 
 using namespace baize;
@@ -12,7 +13,8 @@ const int kepollEventSize = 16;
 
 runtime::EventLoop::EventLoop()
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
-    events_(kepollEventSize)
+    events_(kepollEventSize),
+    timerqueue_(std::make_unique<time::TimerQueue>(this))
 {
     if (loopInThisThread) {
         LOG_FATAL << "another loop exists";
@@ -32,6 +34,7 @@ runtime::EventLoop* runtime::EventLoop::getCurrentLoop()
 
 void runtime::EventLoop::start()
 {
+    timerqueue_->start();
     while (1) {
         for (auto& item : functions_) {
             item();
@@ -165,6 +168,28 @@ void runtime::EventLoop::epollControl(int op, int fd, epoll_event* ev)
             LOG_SYSFATAL << "epoll_ctl op=" << op << " fd=" << fd;
         }
     }
+}
+
+time::TimerId runtime::EventLoop::runAt(time::Timestamp time, time::TimerCallback cb)
+{
+    return timerqueue_->addTimer(cb, time, 0);
+}
+
+time::TimerId runtime::EventLoop::runAfter(double delay, time::TimerCallback cb)
+{
+    time::Timestamp when(time::addTime(time::Timestamp::now(), delay));
+    return runAt(when, cb);
+}
+
+time::TimerId runtime::EventLoop::runEvery(double interval, time::TimerCallback cb)
+{
+    time::Timestamp when(time::addTime(time::Timestamp::now(), interval));
+    return timerqueue_->addTimer(cb, when, interval);
+}
+
+void runtime::EventLoop::cancelTimer(time::TimerId timerid)
+{
+    timerqueue_->removeTimer(timerid);
 }
 
 runtime::EventLoop::RoutineId runtime::EventLoop::getCurrentRoutineId()

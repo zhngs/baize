@@ -12,7 +12,7 @@ using namespace baize;
 net::Socket::~Socket()
 {
     if (::close(sockfd_) < 0) {
-        LOG_SYSERR << "sockets::close";
+        LOG_SYSERR << "Socket::close";
     }
 }
 
