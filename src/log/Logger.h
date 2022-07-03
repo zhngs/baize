@@ -2,7 +2,7 @@
 #define BAIZE_LOGGER_H
 // copy from muduo and make some small changes
 
-#include <iostream>
+#include "log/LogStream.h"
 
 namespace baize
 {
@@ -32,10 +32,15 @@ public:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
-    std::ostream& stream() { return logStream_; }
+    LogStream& stream() { return logStream_; }
 
     static LogLevel getLogLevel() { return logLevel_; };
     static void setLogLevel(LogLevel level) { logLevel_ = level; };
+
+    typedef void (*OutputFunc)(const char* msg, int len);
+    typedef void (*FlushFunc)();
+    static void setOutput(OutputFunc);
+    static void setFlush(FlushFunc);
 private:
     static LogLevel logLevel_; 
 
@@ -43,9 +48,7 @@ private:
     int line_;
     const char* func_;
     LogLevel level_;
-
-    // todo: do not use cout
-    std::ostream& logStream_; 
+    LogStream logStream_; 
 };
 
 

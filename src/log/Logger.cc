@@ -5,6 +5,22 @@ using namespace baize;
 
 thread_local char errnobuf[512];
 
+
+void defaultOutput(const char* msg, int len)
+{
+    size_t n = fwrite(msg, 1, len, stdout);
+    (void)n;
+}
+
+void defaultFlush()
+{
+    fflush(stdout);
+}
+
+log::Logger::OutputFunc g_output = defaultOutput;
+log::Logger::FlushFunc g_flush = defaultFlush;
+
+
 log::Logger::LogLevel log::Logger::logLevel_ = []{
     return log::Logger::LogLevel::TRACE;
 }();
@@ -27,8 +43,7 @@ log::Logger::Logger(const char* filename, int line, const char* func, LogLevel l
   : filename_(filename),
     line_(line),
     func_(func),
-    level_(level),
-    logStream_(std::cout)
+    level_(level)
 {
     logStream_ << logLevelName[level_];
     logStream_ << time::Timestamp::now().toFormatString();
@@ -42,5 +57,19 @@ log::Logger::Logger(const char* filename, int line, const char* func, LogLevel l
 log::Logger::~Logger()
 {
     logStream_ << " ] " << filename_ << ":" << line_ << " -> " << func_ << "\n";
-    if (level_ == LogLevel::FATAL) abort();
+    g_output(logStream_.getLogBuffer(), logStream_.getContentLength());
+    if (level_ == LogLevel::FATAL) {
+        g_flush();
+        abort();
+    }
+}
+
+void log::Logger::setOutput(OutputFunc func)
+{
+    g_output = func;
+}
+
+void log::Logger::setFlush(FlushFunc func)
+{
+    g_flush = func;
 }

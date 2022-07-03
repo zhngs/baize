@@ -4,11 +4,6 @@
 using namespace baize;
 using namespace baize::runtime;
 
-void test()
-{
-    LOG_DEBUG << "test";
-}
-
 int main()
 {
     int a;
@@ -26,7 +21,4 @@ int main()
         routine1.call();
         LOG_DEBUG << "a = " << a;
     }
-
-    Routine routine2(test);
-    routine2.call();
 }

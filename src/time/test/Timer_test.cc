@@ -16,12 +16,18 @@ void test2()
     LOG_INFO << "test2";
 }
 
+void timer()
+{
+    EventLoop* loop = EventLoop::getCurrentLoop();
+    LOG_INFO << "timer start";
+    loop->runAfter(2, test2);
+    loop->runEvery(1, test);
+}
+
 int main()
 {
     log::Logger::setLogLevel(log::Logger::INFO);
     EventLoop loop;
-    LOG_INFO << "timer start";
-    loop.runAfter(2, test2);
-    loop.runEvery(1, test);
+    loop.addAndExecRoutine(timer);
     loop.start();
 }

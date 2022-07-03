@@ -74,8 +74,13 @@ time::TimerId time::TimerQueue::addTimer(TimerCallback cb,
 
 void time::TimerQueue::removeTimer(time::TimerId id)
 {
-    if (timers_.find(id) != timers_.end()) {
-        timers_.erase(id);
+    // can be O(logn)
+    for (auto it = timers_.begin(); it != timers_.end();) {
+        if (it->first.second == id.second) {
+            timers_.erase(it++);
+        } else {
+            it++;
+        }
     }
 }
 
