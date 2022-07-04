@@ -11,6 +11,7 @@ namespace baize
 namespace runtime
 {
 
+
 class Routine // noncopyable
 {
 public:
@@ -28,8 +29,8 @@ public:
     
     uint64_t getRoutineId();
     static uint64_t getCurrentRoutineId();
+    static bool isMainRoutine();
 
-    static bool isInMainRoutine();
 private:
     class Impl;
     std::unique_ptr<Impl> impl_;

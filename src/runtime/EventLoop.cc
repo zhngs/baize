@@ -26,7 +26,7 @@ runtime::EventLoop::~EventLoop()
 {
 }
 
-runtime::EventLoop* runtime::EventLoop::getCurrentLoop()
+runtime::EventLoop* runtime::getCurrentLoop()
 {
     assert(loopInThisThread != nullptr);
     return loopInThisThread;
@@ -123,7 +123,7 @@ void runtime::EventLoop::backToMainRoutine()
 
 void runtime::EventLoop::addWaitRequest(int fd, int mode, uint64_t routineid)
 {
-    if (Routine::isInMainRoutine()) {
+    if (Routine::isMainRoutine()) {
         LOG_FATAL << "addWaitRequest can't be called by main routine";
     }
     WaitRequest key(fd, mode);
@@ -138,7 +138,7 @@ void runtime::EventLoop::addWaitRequest(int fd, int mode, uint64_t routineid)
 
 void runtime::EventLoop::runInMainRoutine(FunctionCallBack func)
 {
-    if (Routine::isInMainRoutine()) {
+    if (Routine::isMainRoutine()) {
         LOG_FATAL << "runInMainRoutine can't be called by main routine";
     }
     functions_.push_back(func);
@@ -192,7 +192,7 @@ void runtime::EventLoop::cancelTimer(time::TimerId timerid)
     timerqueue_->removeTimer(timerid);
 }
 
-runtime::EventLoop::RoutineId runtime::EventLoop::getCurrentRoutineId()
+uint64_t runtime::getCurrentRoutineId()
 {
     return Routine::getCurrentRoutineId();
 }

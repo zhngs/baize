@@ -22,14 +22,14 @@ public:
         LOG_TRACE << "routine " << routineid_ << " creat";
         routine_ = boost::context::callcc([this](boost::context::continuation&& routine){
             mainRoutine = std::move(routine);
-            LOG_TRACE << "enter routine " << routineid_;
             g_currentRoutineId = routineid_;
+            LOG_TRACE << "enter routine " << routineid_;
             hangup();
 
             cb_();
 
-            EventLoop::getCurrentLoop()->runInMainRoutine([=]{
-                EventLoop::getCurrentLoop()->removeRoutine(routineid_);
+            getCurrentLoop()->runInMainRoutine([=]{
+                getCurrentLoop()->removeRoutine(routineid_);
             });
             isfinished_ = true;
             g_currentRoutineId = kmainRoutineId;
@@ -45,11 +45,11 @@ public:
 
     void call()
     {
+        LOG_TRACE << "call routine " << routineid_;
         g_currentRoutineId = routineid_;
         if (isfinished_) {
             LOG_FATAL << "Routine has finished";    
         }
-        LOG_TRACE << "call routine " << routineid_;
         routine_ = routine_.resume();
     }
 
@@ -71,7 +71,7 @@ runtime::Routine::~Routine()
 {
 }
 
-bool runtime::Routine::isInMainRoutine()
+bool runtime::Routine::isMainRoutine()
 {
     return g_currentRoutineId == kmainRoutineId;
 }
@@ -88,7 +88,7 @@ uint64_t runtime::Routine::getRoutineId()
 
 void runtime::Routine::call()
 {
-    if (!isInMainRoutine()) {
+    if (!isMainRoutine()) {
         LOG_FATAL << "Routine::call must be called by main routine";
     }
     impl_->call();
@@ -96,7 +96,7 @@ void runtime::Routine::call()
 
 void runtime::Routine::hangup()
 {
-    if (isInMainRoutine()) {
+    if (isMainRoutine()) {
         LOG_FATAL << "Routine::hangup can't be called by main routine";
     }
     LOG_TRACE << "routine " << g_currentRoutineId << " hangup to main routine";

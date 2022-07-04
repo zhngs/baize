@@ -36,14 +36,14 @@ void discard_connection(TcpStreamSptr conn)
 {
     char buf[1024];
     g_last_time = Timestamp::now();
-    TimerId id = EventLoop::getCurrentLoop()->runEvery(1, server_print);
+    TimerId id = getCurrentLoop()->runEvery(1, server_print);
     while (1) {
         int rn = conn->asyncReadOrDie(buf, sizeof(buf));
         if (rn == 0) break;
         g_readbytes += rn;
     }
     LOG_INFO << "discard_connection finish";
-    EventLoop::getCurrentLoop()->cancelTimer(id);
+    getCurrentLoop()->cancelTimer(id);
 }
 
 void discard_server()
@@ -53,7 +53,7 @@ void discard_server()
 
     while (1) {
         TcpStreamSptr stream = listener.asyncAccept();
-        EventLoop::getCurrentLoop()->addRoutine([stream]{ discard_connection(stream); });
+        getCurrentLoop()->addRoutine([stream]{ discard_connection(stream); });
         LOG_INFO << "accept connection " << stream->getPeerIpPort();
     }
 }
@@ -78,7 +78,7 @@ void discard_client()
     TcpStreamSptr stream = TcpStream::asyncConnect("127.0.0.1", 6070);
     if (!stream) return;
 
-    EventLoop::getCurrentLoop()->runEvery(1, client_print);
+    getCurrentLoop()->runEvery(1, client_print);
     g_last_time = Timestamp::now();
     while (1) {
         int wn = stream->asyncWriteOrDie(message.c_str(), message.size());

@@ -1,4 +1,6 @@
 #include "log/Logger.h"
+#include "runtime/EventLoop.h"
+#include "thread/Thread.h"
 #include "time/Timestamp.h"
 
 using namespace baize;
@@ -56,7 +58,9 @@ log::Logger::Logger(const char* filename, int line, const char* func, LogLevel l
 
 log::Logger::~Logger()
 {
-    logStream_ << " ] " << filename_ << ":" << line_ << " -> " << func_ << "\n";
+    logStream_ << " ] " << filename_ << ":" << line_ << ":" << func_
+               << " -> " << "routine" << runtime::getCurrentRoutineId()
+               << " -> " << thread::getCurrentThreadName() << ":" << thread::getCurrentTidString() << "\n";
     g_output(logStream_.getLogBuffer(), logStream_.getContentLength());
     if (level_ == LogLevel::FATAL) {
         g_flush();

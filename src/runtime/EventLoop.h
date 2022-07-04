@@ -22,12 +22,15 @@ namespace runtime
 {
 
 class Routine;
+class EventLoop;
+typedef uint64_t RoutineId;
+
+EventLoop* getCurrentLoop();
+RoutineId getCurrentRoutineId();
 
 class EventLoop //noncopyable
 {
 public:
-    using RoutineId = uint64_t;
-
     EventLoop();
     ~EventLoop();
 
@@ -60,8 +63,6 @@ public:
     time::TimerId runEvery(double interval, time::TimerCallback cb);
     void cancelTimer(time::TimerId timerId);
 
-    static EventLoop* getCurrentLoop();
-    RoutineId getCurrentRoutineId();
     int getEpollfd() { return epollfd_; }
     string getEpollEventString(int events);   
 
@@ -77,7 +78,7 @@ private:
     std::unique_ptr<time::TimerQueue> timerqueue_;
 };
 
-    
+
 } // namespace runtime
 
     

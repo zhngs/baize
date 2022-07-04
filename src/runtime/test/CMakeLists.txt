@@ -1,5 +1,5 @@
 add_executable(routine_test routine_test.cc)
-target_link_libraries(routine_test baize_net baize_runtime boost_context baize_log baize_time)
+target_link_libraries(routine_test baize_net baize_runtime boost_context baize_log baize_time baize_thread pthread)
 
 add_executable(eventloop_test eventloop_test.cc)
-target_link_libraries(eventloop_test baize_net baize_runtime boost_context baize_log baize_time)
+target_link_libraries(eventloop_test baize_net baize_runtime boost_context baize_log baize_time baize_thread pthread)

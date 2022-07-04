@@ -125,7 +125,7 @@ time::Timestamp time::TimerQueue::asyncReadTimerfd()
         ssize_t n = ::read(timerfd_, &howmany, sizeof(howmany));
         if (n < 0) {
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(timerfd_, WAIT_READ_REQUEST, loop_->getCurrentRoutineId());
+                loop_->addWaitRequest(timerfd_, WAIT_READ_REQUEST, runtime::getCurrentRoutineId());
                 loop_->backToMainRoutine();
                 continue;
             } else {

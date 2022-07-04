@@ -8,7 +8,7 @@
 using namespace baize;
 
 net::TcpStream::TcpStream(int fd, InetAddress peeraddr)
-  : loop_(runtime::EventLoop::getCurrentLoop()),
+  : loop_(runtime::getCurrentLoop()),
     conn_(std::make_unique<Socket>(fd)),
     peeraddr_(peeraddr)
 {
@@ -42,7 +42,7 @@ int net::TcpStream::asyncRead(void* buf, size_t count)
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(conn_->getSockfd(), WAIT_READ_REQUEST, loop_->getCurrentRoutineId());
+                loop_->addWaitRequest(conn_->getSockfd(), WAIT_READ_REQUEST, runtime::getCurrentRoutineId());
                 loop_->backToMainRoutine();
                 continue;
             } else {
@@ -61,7 +61,7 @@ int net::TcpStream::asyncWrite(const void* buf, size_t count)
         if (rn <= 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(conn_->getSockfd(), WAIT_WRITE_REQUEST, loop_->getCurrentRoutineId());
+                loop_->addWaitRequest(conn_->getSockfd(), WAIT_WRITE_REQUEST, runtime::getCurrentRoutineId());
                 loop_->backToMainRoutine();
                 continue;
             } else {
@@ -99,14 +99,14 @@ string net::TcpStream::getPeerIpPort()
 
 net::TcpStreamSptr net::TcpStream::asyncConnect(const char* ip, uint16_t port)
 {
-    runtime::EventLoop* loop = runtime::EventLoop::getCurrentLoop();
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
     InetAddress serveraddr(ip, port);
     int fd = creatTcpSocket(serveraddr.getFamily());
     TcpStreamSptr stream(std::make_shared<TcpStream>(fd, serveraddr));
     int ret = stream->conn_->connect(serveraddr);
     if (ret < 0) {
         if (errno == EINPROGRESS) {
-            loop->addWaitRequest(fd, WAIT_WRITE_REQUEST, loop->getCurrentRoutineId());
+            loop->addWaitRequest(fd, WAIT_WRITE_REQUEST, runtime::getCurrentRoutineId());
             loop->backToMainRoutine();
 
             int err = stream->conn_->getSocketError();

@@ -18,7 +18,7 @@ void test2()
 
 void timer()
 {
-    EventLoop* loop = EventLoop::getCurrentLoop();
+    EventLoop* loop = getCurrentLoop();
     LOG_INFO << "timer start";
     loop->runAfter(2, test2);
     loop->runEvery(1, test);

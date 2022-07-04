@@ -1,2 +1,2 @@
 add_executable(Logger_test Logger_test.cc)
-target_link_libraries(Logger_test baize_log baize_time)
+target_link_libraries(Logger_test baize_log baize_runtime baize_thread baize_time pthread boost_context)

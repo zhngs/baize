@@ -8,7 +8,7 @@ using namespace baize;
 
 net::TcpListener::TcpListener(uint16_t port)
   : started_(false),
-    loop_(runtime::EventLoop::getCurrentLoop()),
+    loop_(runtime::getCurrentLoop()),
     listenaddr_(port),
     sock_(std::make_unique<Socket>(creatTcpSocket((listenaddr_.getFamily()))))
 {
@@ -47,7 +47,7 @@ net::TcpStreamSptr net::TcpListener::asyncAccept()
         int connfd = sock_->accept(&peeraddr);
         if (connfd < 0) {
             if (errno == EAGAIN || errno == EINTR) {
-                loop_->addWaitRequest(sock_->getSockfd(), WAIT_READ_REQUEST, loop_->getCurrentRoutineId());
+                loop_->addWaitRequest(sock_->getSockfd(), WAIT_READ_REQUEST, runtime::getCurrentRoutineId());
                 loop_->backToMainRoutine();
                 continue;
             }
