@@ -37,8 +37,8 @@ public:
     static LogLevel getLogLevel() { return logLevel_; };
     static void setLogLevel(LogLevel level) { logLevel_ = level; };
 
-    typedef void (*OutputFunc)(const char* msg, int len);
-    typedef void (*FlushFunc)();
+    typedef std::function<void(const char*, int)> OutputFunc;
+    typedef std::function<void()> FlushFunc;
     static void setOutput(OutputFunc);
     static void setFlush(FlushFunc);
 private:
