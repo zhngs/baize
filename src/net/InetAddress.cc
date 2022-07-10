@@ -85,3 +85,14 @@ string net::InetAddress::getIp() const
     return buf;
 }
 
+socklen_t net::InetAddress::getSockLen() const 
+{
+    if (addr_.sin_family == AF_INET) {
+        return sizeof(addr_);
+    } else if (addr_.sin_family == AF_INET6) {
+        return sizeof(addr6_);
+    } else {
+        return -1;
+    }
+}
+

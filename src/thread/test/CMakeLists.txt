@@ -1,5 +1,5 @@
 add_executable(Thread_test Thread_test.cc)
-target_link_libraries(Thread_test baize_runtime baize_thread baize_log baize_time pthread boost_context)
+target_link_libraries(Thread_test baize pthread boost_context)
 
 add_executable(WaitGroup_test WaitGroup_test.cc)
-target_link_libraries(WaitGroup_test baize_log baize_runtime baize_thread baize_time pthread boost_context)
+target_link_libraries(WaitGroup_test baize pthread boost_context)

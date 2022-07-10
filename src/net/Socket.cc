@@ -99,10 +99,27 @@ ssize_t net::Socket::write(const void* buf, size_t count)
     return ::write(sockfd_, buf, count);
 }
 
+ssize_t net::Socket::sendto(const void* buf, size_t count, const InetAddress& addr)
+{
+    return ::sendto(sockfd_, buf, count, 0, addr.getSockAddr(), sizeof(sockaddr_in6));
+}
+
+ssize_t net::Socket::recvfrom(void* buf, size_t count, InetAddress* addr)
+{
+    sockaddr_in6 addr6;
+    memZero(&addr6, sizeof(addr6));
+    socklen_t len = sizeof(addr6);
+    ssize_t rn = ::recvfrom(sockfd_, buf, count, 0, reinterpret_cast<sockaddr*>(&addr6), &len);
+    if (rn > 0) {
+        addr->setSockAddrIn6(addr6);
+    }
+    return rn;
+}
+
 void net::Socket::setTcpNoDelay(bool on)
 {
     int optval = on ? 1 : 0;
-    int ret =::setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, &optval, static_cast<socklen_t>(sizeof optval));
+    int ret =::setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, &optval, static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
         LOG_SYSERR << "setTcpNoDelay to " << on << " failed";
     }
@@ -111,7 +128,7 @@ void net::Socket::setTcpNoDelay(bool on)
 void net::Socket::setReuseAddr(bool on)
 {
     int optval = on ? 1 : 0;
-    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, static_cast<socklen_t>(sizeof optval));
+    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
         LOG_SYSERR << "setReuseAddr to " << on << " failed";
     }
@@ -120,7 +137,7 @@ void net::Socket::setReuseAddr(bool on)
 void net::Socket::setReusePort(bool on)
 {
     int optval = on ? 1 : 0;
-    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &optval, static_cast<socklen_t>(sizeof optval));
+    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &optval, static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
         LOG_SYSERR << "setReusePort to " << on << " failed";
     }
@@ -129,7 +146,7 @@ void net::Socket::setReusePort(bool on)
 void net::Socket::setKeepAlive(bool on)
 {
     int optval = on ? 1 : 0;
-    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &optval, static_cast<socklen_t>(sizeof optval));
+    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &optval, static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
         LOG_SYSERR << "setKeepAlive to " << on << " failed";
     }

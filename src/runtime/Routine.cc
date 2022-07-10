@@ -20,7 +20,8 @@ public:
         cb_(func)
     {
         LOG_TRACE << "routine " << routineid_ << " creat";
-        routine_ = boost::context::callcc([this](boost::context::continuation&& routine){
+        boost::context::fixedsize_stack salloc(128 * 1024 * 1024);
+        routine_ = boost::context::callcc(std::allocator_arg, salloc, [this](boost::context::continuation&& routine){
             mainRoutine = std::move(routine);
             g_currentRoutineId = routineid_;
             LOG_TRACE << "enter routine " << routineid_;

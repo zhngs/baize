@@ -32,6 +32,8 @@ public:
 
     ssize_t read(void* buf, size_t count);
     ssize_t write(const void* buf, size_t count);
+    ssize_t sendto(const void* buf, size_t count, const InetAddress& addr);
+    ssize_t recvfrom(void* buf, size_t count, InetAddress* addr);
 
     void setTcpNoDelay(bool on);
     void setReuseAddr(bool on);

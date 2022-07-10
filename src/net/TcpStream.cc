@@ -13,6 +13,7 @@ net::TcpStream::TcpStream(int fd, InetAddress peeraddr)
     peeraddr_(peeraddr)
 {
     loop_->registerPollEvent(conn_->getSockfd());
+    // conn_->setTcpNoDelay(true);
 }
 
 net::TcpStream::~TcpStream()
@@ -57,8 +58,8 @@ int net::TcpStream::asyncRead(void* buf, size_t count)
 int net::TcpStream::asyncWrite(const void* buf, size_t count)
 {
     while (1) {
-        ssize_t rn = conn_->write(buf, count);
-        if (rn <= 0) {
+        ssize_t wn = conn_->write(buf, count);
+        if (wn <= 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
                 loop_->addWaitRequest(conn_->getSockfd(), WAIT_WRITE_REQUEST, runtime::getCurrentRoutineId());
@@ -69,7 +70,7 @@ int net::TcpStream::asyncWrite(const void* buf, size_t count)
             }
             errno = saveErrno;
         }
-        return static_cast<int>(rn);
+        return static_cast<int>(wn);
     }
 }
 

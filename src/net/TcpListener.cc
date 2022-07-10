@@ -12,6 +12,7 @@ net::TcpListener::TcpListener(uint16_t port)
     listenaddr_(port),
     sock_(std::make_unique<Socket>(creatTcpSocket((listenaddr_.getFamily()))))
 {
+    sock_->setReuseAddr(true);
 }
 
 net::TcpListener::~TcpListener()

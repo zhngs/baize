@@ -11,6 +11,8 @@ namespace net
     
 class TcpStream;
 typedef std::shared_ptr<TcpStream> TcpStreamSptr;
+class UdpStream;
+typedef std::shared_ptr<UdpStream> UdpStreamSptr;
 
 } // namespace net
     

@@ -1,9 +1,11 @@
 #include "runtime/EventLoop.h"
 
 #include "log/Logger.h"
-#include "net/TcpListener.h"
-#include "net/TcpStream.h"
+#include "net/UdpStream.h"
 #include "time/Timestamp.h"
+#include "thread/Thread.h"
+
+#include <unistd.h>
 
 using namespace baize;
 using namespace baize::net;
@@ -36,31 +38,21 @@ void server_print()
     g_msg = 0;
 }
 
-void discard_connection(TcpStreamSptr conn)
+void discard_server()
 {
-    char buf[65536];
+    char buf[4096];
     g_last_time = Timestamp::now();
-    TimerId id = getCurrentLoop()->runEvery(1, server_print);
+    getCurrentLoop()->runEvery(1, server_print);
+    UdpStreamSptr stream = UdpStream::asServer(6060);
+    InetAddress clientaddr;
     while (1) {
-        int rn = conn->asyncReadOrDie(buf, sizeof(buf));
-        if (rn == 0) break;
+        int rn = stream->asyncRecvfrom(buf, sizeof(buf), &clientaddr);
+
+        // LOG_INFO << "discard_server recv " << rn << " bytes from " << clientaddr.getIpPort();
         g_msg++;
         g_readbytes += rn;
     }
     LOG_INFO << "discard_connection finish";
-    getCurrentLoop()->cancelTimer(id);
-}
-
-void discard_server()
-{
-    TcpListener listener(6070);
-    listener.start();
-
-    while (1) {
-        TcpStreamSptr stream = listener.asyncAccept();
-        getCurrentLoop()->addRoutine([stream]{ discard_connection(stream); });
-        LOG_INFO << "accept connection " << stream->getPeerIpPort();
-    }
 }
 
 void client_print()
@@ -74,25 +66,31 @@ void client_print()
 
     g_sendbytes_last = g_sendbytes;
     g_last_time = current_time;
+    sleep(1);
 }
 
 void discard_client()
 {
-    char buf[1024];
     string message(1024, 'z');
-    TcpStreamSptr stream = TcpStream::asyncConnect("127.0.0.1", 6070);
-    if (!stream) return;
+    UdpStreamSptr stream = UdpStream::asClient();
 
-    getCurrentLoop()->runEvery(1, client_print);
+    // getCurrentLoop()->runEvery(1, client_print);
+    thread::Thread thread_print([]{
+        while (1) {
+            client_print();
+        }
+    }, "client_print");
+    thread_print.start();
+
     g_last_time = Timestamp::now();
+    InetAddress serveraddr("127.0.0.1", 6060);
+    LOG_INFO << "discard_client start";
     while (1) {
-        int wn = stream->asyncWriteOrDie(message.c_str(), message.size());
+        int wn = stream->asyncSendto(message.c_str(), static_cast<int>(message.size()), serveraddr);
+        // LOG_INFO << "discard_client sendto " << wn << " bytes to " << serveraddr.getIpPort();
         g_sendbytes += wn;
     }
     LOG_INFO << "discard_client finish";
-    stream->shutdownWrite();
-    while(stream->asyncReadOrDie(buf, sizeof(buf)) != 0) {
-    }
 }
 
 int main(int argc, char* argv[])
