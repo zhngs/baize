@@ -16,6 +16,9 @@ public:
     QuicConfig(uint32_t version);
     ~QuicConfig();
 
+    void setCertAndKey(const char* cert, const char* key);
+    void setClientConfig();
+    void setServerConfig();
     quiche_config* getConfig() { return config_; }
 private:
     quiche_config* config_;

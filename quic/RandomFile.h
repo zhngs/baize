@@ -19,12 +19,14 @@ public:
         return instance;
     }
 
-    void genRandom(void* buf, int len)
+    bool genRandom(void* buf, int len)
     {
         ssize_t ret = read(fd_, buf, len);
         if (ret != len) {
             LOG_SYSERR << "random file read failed";
+            return false;
         }
+        return true;
     }
 private:
     RandomFile()

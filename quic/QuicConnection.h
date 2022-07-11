@@ -12,6 +12,8 @@ namespace net
 {
 
 class QuicConfig;
+extern thread_local uint8_t quicWriteBuffer[kMaxDatagramSize];
+extern thread_local uint8_t quicReadBuffer[65536];
 
 class QuicConnection //noncopyable
 {
@@ -19,7 +21,7 @@ public:
     QuicConnection(UdpStreamSptr udpstream,
                    InetAddress localaddr,
                    InetAddress peeraddr,
-                   QuicConfigUptr config,
+                   QuicConfigSptr config,
                    quiche_conn* conn);
     ~QuicConnection();
     QuicConnection(const QuicConnection&) = delete;
@@ -30,6 +32,8 @@ public:
     int quicStreamWrite(uint64_t streamid, const void* buf, int len, bool fin);
     int quicStreamRead(uint64_t streamid, void* buf, int len, bool* fin);
 
+    void quicConnRead(void* buf, int len, InetAddress& peeraddr);
+
     bool fillQuic();
     bool isClosed();
 private:
@@ -39,7 +43,8 @@ private:
     UdpStreamSptr udpstream_;
     InetAddress localaddr_;
     InetAddress peeraddr_;
-    QuicConfigUptr config_;
+
+    QuicConfigSptr config_;
     quiche_conn* conn_;
 };
 

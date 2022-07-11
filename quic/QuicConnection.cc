@@ -8,18 +8,18 @@
 
 using namespace baize;
 
-thread_local uint8_t quicWriteBuffer[net::kMaxDatagramSize];
-thread_local uint8_t quicReadBuffer[65536];
+thread_local uint8_t net::quicWriteBuffer[kMaxDatagramSize];
+thread_local uint8_t net::quicReadBuffer[65536];
 
 net::QuicConnection::QuicConnection(UdpStreamSptr udpstream,
                                     InetAddress localaddr,
                                     InetAddress peeraddr,
-                                    QuicConfigUptr config,
+                                    QuicConfigSptr config,
                                     quiche_conn* conn)
   : udpstream_(udpstream),
     localaddr_(localaddr),
     peeraddr_(peeraddr),
-    config_(std::move(config)),
+    config_(config),
     conn_(conn)
 {
 }
@@ -34,10 +34,11 @@ net::QuicConnSptr net::QuicConnection::connect(const char* ip, uint16_t port)
     InetAddress peeraddr(ip, port);
     UdpStreamSptr udpstream(UdpStream::asClient());
     InetAddress localaddr = udpstream->getLocalAddr();
-    QuicConfigUptr config(std::make_unique<QuicConfig>(0xbabababa));
-    QuicConnId scid;
-    RandomFile::getInstance().genRandom(scid.data(), scid.length());
-    quiche_conn *conn = quiche_connect(ip, scid.data(), scid.length(),
+    QuicConfigSptr config(std::make_shared<QuicConfig>(0xbabababa));
+    config->setClientConfig();
+    uint8_t scid[kConnIdLen];
+    RandomFile::getInstance().genRandom(scid, sizeof(scid));
+    quiche_conn *conn = quiche_connect(ip, scid, sizeof(scid),
                                        localaddr.getSockAddr(), localaddr.getSockLen(),
                                        peeraddr.getSockAddr(), peeraddr.getSockLen(), config->getConfig());
     if (conn == nullptr) {
@@ -77,7 +78,7 @@ bool net::QuicConnection::flushQuic()
             LOG_SYSERR << "failed to send";
             return false;
         }
-        LOG_INFO << "send " << written << " bytes";
+        LOG_INFO << "flushQuic " << written << " bytes";
     }
     return true;
 }
@@ -129,8 +130,6 @@ int net::QuicConnection::quicStreamWrite(uint64_t streamid, const void* buf, int
     if (wn <= 0) {
         return static_cast<int>(wn);
     }
-    // should buffered
-    assert(wn == len);
 
     bool ret = flushQuic();
     if (!ret) {
@@ -146,6 +145,49 @@ int net::QuicConnection::quicStreamRead(uint64_t streamid, void* buf, int len, b
     return static_cast<int>(rn);
 }
 
+void net::QuicConnection::quicConnRead(void* buf, int len, InetAddress& peeraddr)
+{
+    quiche_recv_info recv_info = {
+        peeraddr.getSockAddr(),
+        peeraddr.getSockLen(),
+        localaddr_.getSockAddr(),
+        localaddr_.getSockLen(),
+    };
+
+    ssize_t done = quiche_conn_recv(conn_, static_cast<uint8_t*>(buf), len, &recv_info);
+    if (done < 0) {
+        LOG_ERROR << "failed to process packet: " << done;
+        return;
+    }
+    LOG_INFO << "recv " << done << " bytes";
+
+    if (quiche_conn_is_established(conn_))
+    {
+        uint64_t s = 0;
+        quiche_stream_iter* readable = quiche_conn_readable(conn_);
+        while (quiche_stream_iter_next(readable, &s)) {
+            LOG_INFO << "stream " << s << " is readable";
+            bool fin = false;
+            ssize_t recv_len = quiche_conn_stream_recv(conn_, s,
+                                                       quicReadBuffer, sizeof(quicReadBuffer),
+                                                       &fin);
+            if (recv_len < 0) {
+                break;
+            }
+
+            LOG_INFO << "read " << "stream " << s << " " << recv_len << " bytes";
+
+            if (fin) {
+                static const char *resp = "byez\n";
+                quiche_conn_stream_send(conn_, s, reinterpret_cast<const uint8_t*>(resp), 5, true);
+            }
+        }
+        quiche_stream_iter_free(readable);
+    }
+
+    flushQuic();
+}
+
 bool net::QuicConnection::fillQuic()
 {
     while (1) {
@@ -154,6 +196,8 @@ bool net::QuicConnection::fillQuic()
         if (read < 0) {
             return false;
         }
+
+        LOG_INFO << "fillQuic udpsocket read " << read << " bytes";
 
         quiche_recv_info recv_info = {
             peeraddr.getSockAddr(),
@@ -165,6 +209,8 @@ bool net::QuicConnection::fillQuic()
         if (done < 0) {
             continue;
         }
+
+        LOG_INFO << "fillQuic " << done << " bytes";
         return true;
     }
 }
