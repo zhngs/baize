@@ -58,6 +58,7 @@ void discard_server()
 
     while (1) {
         TcpStreamSptr stream = listener.asyncAccept();
+        stream->setTcpNoDelay();
         getCurrentLoop()->addRoutine([stream]{ discard_connection(stream); });
         LOG_INFO << "accept connection " << stream->getPeerIpPort();
     }
@@ -82,6 +83,7 @@ void discard_client()
     string message(1024, 'z');
     TcpStreamSptr stream = TcpStream::asyncConnect("127.0.0.1", 6070);
     if (!stream) return;
+    stream->setTcpNoDelay();
 
     getCurrentLoop()->runEvery(1, client_print);
     g_last_time = Timestamp::now();

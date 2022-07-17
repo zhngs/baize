@@ -34,6 +34,7 @@ public:
     ssize_t write(const void* buf, size_t count);
 
     void shutdownWrite();
+    void setTcpNoDelay();
 
     static TcpStreamSptr asyncConnect(const char* ip, uint16_t port);
 

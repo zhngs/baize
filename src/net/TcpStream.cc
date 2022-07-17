@@ -36,6 +36,11 @@ void net::TcpStream::shutdownWrite()
     return conn_->shutdownWrite();
 }
 
+void net::TcpStream::setTcpNoDelay()
+{
+    conn_->setTcpNoDelay(true);
+}
+
 int net::TcpStream::asyncRead(void* buf, size_t count)
 {
     while (1) {
