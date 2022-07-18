@@ -11,7 +11,7 @@ baize只是我业余的作品，目前不具备工业强度，初衷是在阅读
 - 我对baize的希冀是可以孵化出一些工业级的代码
 
 ## 3.编译
-构建系统选择cmake，编译方法如下，但要提前安装boost-context依赖
+构建系统选择cmake，编译方法如下，但要提前安装boost-context依赖，版本为1.66及以上
 ```shell
 $ cd baize
 $ mkdir build
