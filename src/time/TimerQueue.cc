@@ -120,6 +120,7 @@ void time::TimerQueue::handleActiveTimer()
 time::Timestamp time::TimerQueue::asyncReadTimerfd()
 {
     while (1) {
+        loop_->checkRoutineTimeout();
         uint64_t howmany;
         Timestamp now(Timestamp::now());
         ssize_t n = ::read(timerfd_, &howmany, sizeof(howmany));

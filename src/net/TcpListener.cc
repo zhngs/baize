@@ -45,6 +45,7 @@ net::TcpStreamSptr net::TcpListener::asyncAccept()
 {
     InetAddress peeraddr;
     while (1) {
+        loop_->checkRoutineTimeout();
         int connfd = sock_->accept(&peeraddr);
         if (connfd < 0) {
             if (errno == EAGAIN || errno == EINTR) {

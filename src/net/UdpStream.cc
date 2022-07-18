@@ -52,6 +52,7 @@ int net::UdpStream::recvfrom(void* buf, int len, InetAddress* addr)
 int net::UdpStream::asyncSendto(const void* buf, int len, const InetAddress& addr)
 {
     while (1) {
+        loop_->checkRoutineTimeout();
         ssize_t wn = conn_->sendto(buf, len, addr);
         if (wn < 0) {
             int saveErrno = errno;
@@ -72,6 +73,7 @@ int net::UdpStream::asyncRecvfrom(void* buf, int len, InetAddress* addr)
 {
     memZero(addr, sizeof(InetAddress));
     while (1) {
+        loop_->checkRoutineTimeout();
         ssize_t rn = conn_->recvfrom(buf, len, addr);
         if (rn < 0) {
             int saveErrno = errno;

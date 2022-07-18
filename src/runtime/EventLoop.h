@@ -51,6 +51,7 @@ public:
     // called by other routine
     void addRoutine(RoutineCallBack func);
     void addWaitRequest(int fd, int mode, uint64_t routineid);
+    void checkRoutineTimeout();
     void runInMainRoutine(FunctionCallBack func);
     void backToMainRoutine();
 
@@ -69,6 +70,8 @@ public:
 private:
     std::map<RoutineId, std::unique_ptr<Routine>> routines_;
     std::map<WaitRequest, RoutineId> waitRequests_;
+
+    std::vector<RoutineId> timeoutRoutines_;
 
     std::vector<FunctionCallBack> functions_;
 

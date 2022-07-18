@@ -14,10 +14,11 @@ using namespace baize::runtime;
 
 int64_t g_sendbytes = 0;
 int64_t g_sendbytes_last = 0;
+int64_t g_send_msg = 0;
 
 int64_t g_readbytes = 0;
 int64_t g_readbytes_last = 0;
-int64_t g_msg = 0;
+int64_t g_read_msg = 0;
 
 Timestamp g_last_time;
 
@@ -28,14 +29,14 @@ void server_print()
     double sec = elapsedInSecond(current_time, g_last_time);
     double read_bytes = static_cast<double>(g_readbytes - g_readbytes_last);
     double speed = read_bytes / sec / 1024 / 1024;
-    double bytes_msg = read_bytes / static_cast<double>(g_msg);
+    double bytes_msg = read_bytes / static_cast<double>(g_read_msg);
 
     LOG_INFO << "discard server read speed " << speed << " MiB/s, "
-             << g_msg << " Msg/s, " << bytes_msg << " bytes/msg";
+             << g_read_msg << " Msg/s, " << bytes_msg << " bytes/msg";
 
     g_readbytes_last = g_readbytes;
     g_last_time = current_time;
-    g_msg = 0;
+    g_read_msg = 0;
 }
 
 void discard_server()
@@ -49,7 +50,7 @@ void discard_server()
         int rn = stream->asyncRecvfrom(buf, sizeof(buf), &clientaddr);
 
         // LOG_INFO << "discard_server recv " << rn << " bytes from " << clientaddr.getIpPort();
-        g_msg++;
+        g_read_msg++;
         g_readbytes += rn;
     }
     LOG_INFO << "discard_connection finish";
@@ -61,12 +62,14 @@ void client_print()
     double sec = elapsedInSecond(current_time, g_last_time);
     double send_bytes = static_cast<double>(g_sendbytes - g_sendbytes_last);
     double speed = send_bytes / sec / 1024 / 1024;
+    double bytes_msg = send_bytes / static_cast<double>(g_send_msg);
 
-    LOG_INFO << "discard client write speed " << speed << " MiB/s";
+    LOG_INFO << "discard client write speed " << speed << " MiB/s, "
+             << g_send_msg << " Msg/s, " << bytes_msg << " bytes/msg";
 
     g_sendbytes_last = g_sendbytes;
     g_last_time = current_time;
-    sleep(1);
+    g_send_msg = 0;
 }
 
 void discard_client()
@@ -74,13 +77,13 @@ void discard_client()
     string message(1024, 'z');
     UdpStreamSptr stream = UdpStream::asClient();
 
-    // getCurrentLoop()->runEvery(1, client_print);
-    thread::Thread thread_print([]{
-        while (1) {
-            client_print();
-        }
-    }, "client_print");
-    thread_print.start();
+    getCurrentLoop()->runEvery(1, client_print);
+    // thread::Thread thread_print([]{
+    //     while (1) {
+    //         client_print();
+    //     }
+    // }, "client_print");
+    // thread_print.start();
 
     g_last_time = Timestamp::now();
     InetAddress serveraddr("127.0.0.1", 6060);
@@ -89,6 +92,7 @@ void discard_client()
         int wn = stream->asyncSendto(message.c_str(), static_cast<int>(message.size()), serveraddr);
         // LOG_INFO << "discard_client sendto " << wn << " bytes to " << serveraddr.getIpPort();
         g_sendbytes += wn;
+        g_send_msg++;
     }
     LOG_INFO << "discard_client finish";
 }

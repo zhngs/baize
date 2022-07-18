@@ -34,6 +34,9 @@ runtime::EventLoop* runtime::getCurrentLoop()
 
 void runtime::EventLoop::start()
 {
+    int epolltime = kepollTimeout;
+    std::vector<RoutineId> timeout;
+
     timerqueue_->start();
     while (1) {
         for (auto& item : functions_) {
@@ -44,7 +47,7 @@ void runtime::EventLoop::start()
         int numEvents = ::epoll_wait(epollfd_,
                                     &*events_.begin(),
                                     static_cast<int>(events_.size()),
-                                    kepollTimeout);
+                                    epolltime);
         int savedErrno = errno;
         if (numEvents > 0) {
             LOG_TRACE << numEvents << " events happened";
@@ -74,7 +77,21 @@ void runtime::EventLoop::start()
                 LOG_SYSERR << "epoll_wait()";
             }
         }
+
+        timeout = std::move(timeoutRoutines_);
+        assert(timeoutRoutines_.size() == 0);
+        for (RoutineId id : timeout) {
+            routines_[id]->call();
+        }
+        timeout.clear();
+
+        if (!timeoutRoutines_.empty()) {
+            epolltime = 0;
+        } else {
+            epolltime = kepollTimeout;
+        }
     }
+
 }
 
 void runtime::EventLoop::schedule(WaitRequest req)
@@ -93,8 +110,9 @@ void runtime::EventLoop::schedule(WaitRequest req)
 void runtime::EventLoop::addAndExecRoutine(RoutineCallBack func)
 {
     auto routine = std::make_unique<Routine>(func);
-    routine->call();
-    routines_[routine->getRoutineId()] = std::move(routine);
+    RoutineId id = routine->getRoutineId();
+    routines_[id] = std::move(routine);
+    routines_[id]->call();
 }
 
 void runtime::EventLoop::addRoutine(RoutineCallBack func)
@@ -134,6 +152,22 @@ void runtime::EventLoop::addWaitRequest(int fd, int mode, uint64_t routineid)
               << ", mode:" << (mode == WAIT_READ_REQUEST ? "WAIT_READ_REQUEST" : "WAIT_WRITE_REQUEST")
               << "} : routine" << routineid << " }";
     waitRequests_[key] = routineid;
+}
+
+void runtime::EventLoop::checkRoutineTimeout()
+{
+    if (Routine::isMainRoutine()) {
+        LOG_FATAL << "isRoutineTimeout can't be called by main routine";
+    }
+    RoutineId id = Routine::getCurrentRoutineId();
+    auto& routine = routines_[id];
+    if (routine->isTimeout()) {
+        routine->setTimeout(10);
+        timeoutRoutines_.push_back(id);
+        backToMainRoutine();
+    } else {
+        routine->timeDecrease();
+    }
 }
 
 void runtime::EventLoop::runInMainRoutine(FunctionCallBack func)

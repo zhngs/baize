@@ -64,7 +64,8 @@ public:
 
 
 runtime::Routine::Routine(RoutineCallBack func)
-    : impl_(std::make_unique<Impl>(func))
+    : impl_(std::make_unique<Impl>(func)),
+      timeout_(10)
 {
 }
 

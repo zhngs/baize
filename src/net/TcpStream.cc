@@ -44,6 +44,7 @@ void net::TcpStream::setTcpNoDelay()
 int net::TcpStream::asyncRead(void* buf, size_t count)
 {
     while (1) {
+        loop_->checkRoutineTimeout();
         ssize_t rn = conn_->read(buf, count);
         if (rn < 0) {
             int saveErrno = errno;
@@ -63,6 +64,7 @@ int net::TcpStream::asyncRead(void* buf, size_t count)
 int net::TcpStream::asyncWrite(const void* buf, size_t count)
 {
     while (1) {
+        loop_->checkRoutineTimeout();
         ssize_t wn = conn_->write(buf, count);
         if (wn <= 0) {
             int saveErrno = errno;
