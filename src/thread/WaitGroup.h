@@ -3,31 +3,29 @@
 
 #include "thread/Condition.h"
 
-namespace baize
-{
+namespace baize {
 
-namespace thread
-{
+namespace thread {
 
-class WaitGroup //noncopyable
+class WaitGroup // noncopyable
 {
 public:
-    explicit WaitGroup(int count);
-    WaitGroup(const WaitGroup&) = delete;
-    WaitGroup& operator=(const WaitGroup&) = delete;
+  explicit WaitGroup(int count);
+  WaitGroup(const WaitGroup &) = delete;
+  WaitGroup &operator=(const WaitGroup &) = delete;
 
-    void wait();
-    void done();
-    int getCount();
+  void wait();
+  void done();
+  int getCount();
+
 private:
-    MutexLock mutex_;
-    Condition cond_;
-    int count_;
+  MutexLock mutex_;
+  Condition cond_;
+  int count_;
 };
-    
+
 } // namespace thread
-    
+
 } // namespace baize
 
-
-#endif //BAIZE_WAITGROUP_H
+#endif // BAIZE_WAITGROUP_H

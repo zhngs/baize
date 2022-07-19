@@ -1,49 +1,48 @@
 #ifndef BAIZE_THREAD_H
 #define BAIZE_THREAD_H
 
+#include <pthread.h>
+
+#include <functional>
+
 #include "thread/WaitGroup.h"
 #include "util/types.h"
 
-#include <functional>
-#include <pthread.h>
+namespace baize {
 
-namespace baize
-{
-
-namespace thread
-{
+namespace thread {
 
 pid_t getCurrentTid();
 string getCurrentTidString();
-const char* getCurrentThreadName();
+const char *getCurrentThreadName();
 bool isMainThread();
 
-class Thread //noncopyable
+class Thread // noncopyable
 {
 public:
-    typedef std::function<void()> ThreadFunc;
-    Thread(ThreadFunc func, const char* name);
-    ~Thread();
-    Thread(const Thread&) = delete;
-    Thread& operator=(const Thread&) = delete;
+  typedef std::function<void()> ThreadFunc;
+  Thread(ThreadFunc func, const char *name);
+  ~Thread();
+  Thread(const Thread &) = delete;
+  Thread &operator=(const Thread &) = delete;
 
-    void start();
-    void join();
+  void start();
+  void join();
 
-    friend void* startThread(void* arg);
+  friend void *startThread(void *arg);
+
 private:
-    ThreadFunc func_;
-    const char* threadname_;
-    pthread_t pthreadId_;
-    pid_t tid_;
-    bool started_;
-    bool joined_;
-    WaitGroup waitgroup_;
+  ThreadFunc func_;
+  const char *threadname_;
+  pthread_t pthreadId_;
+  pid_t tid_;
+  bool started_;
+  bool joined_;
+  WaitGroup waitgroup_;
 };
 
 } // namespace thread
-    
+
 } // namespace baize
 
-
-#endif //BAIZE_THREAD_H
+#endif // BAIZE_THREAD_H

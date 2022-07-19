@@ -5,11 +5,9 @@
 
 #include <functional>
 
-namespace baize
-{
+namespace baize {
 
-namespace time
-{
+namespace time {
 
 typedef std::function<void()> TimerCallback;
 typedef std::pair<Timestamp, uint64_t> TimerId;
@@ -18,5 +16,4 @@ typedef std::pair<Timestamp, uint64_t> TimerId;
 
 } // namespace baize
 
-
-#endif //BAIZE_TIMETYPE_H
+#endif // BAIZE_TIMETYPE_H
