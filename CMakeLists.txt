@@ -20,9 +20,8 @@ add_compile_options(
 -Wshadow
 -Wwrite-strings
 
-
 -std=c++14
 )
 
 add_subdirectory(src)
-add_subdirectory(quic)
+#add_subdirectory(quic)
