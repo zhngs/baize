@@ -1,4 +1,4 @@
-APP_DIR=$(cd `dirname $0`/../; pwd)
+APP_DIR=$(cd `dirname $0`; pwd)
 echo "format files in $APP_DIR"
 
 for file in `find $APP_DIR -name "*.h"`
