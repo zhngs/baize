@@ -6,40 +6,43 @@
 
 #include "time/TimeType.h"
 
-namespace baize {
+namespace baize
+{
 
-namespace runtime {
+namespace runtime
+{
 class EventLoop;
-} // namespace runtime
+}  // namespace runtime
 
-namespace time {
+namespace time
+{
 
 class Timer;
 
-class TimerQueue // noncopyable
+class TimerQueue  // noncopyable
 {
 public:
-  TimerQueue(runtime::EventLoop *loop);
-  ~TimerQueue();
-  TimerQueue(const TimerQueue &) = delete;
-  TimerQueue &operator=(const TimerQueue &) = delete;
+    TimerQueue(runtime::EventLoop* loop);
+    ~TimerQueue();
+    TimerQueue(const TimerQueue&) = delete;
+    TimerQueue& operator=(const TimerQueue&) = delete;
 
-  TimerId addTimer(TimerCallback cb, Timestamp when, double interval);
-  void removeTimer(TimerId id);
+    TimerId addTimer(TimerCallback cb, Timestamp when, double interval);
+    void removeTimer(TimerId id);
 
-  void start();
+    void start();
 
 private:
-  void handleActiveTimer();
-  Timestamp asyncReadTimerfd();
+    void handleActiveTimer();
+    Timestamp asyncReadTimerfd();
 
-  runtime::EventLoop *loop_;
-  const int timerfd_;
-  std::map<TimerId, std::unique_ptr<Timer>> timers_;
+    runtime::EventLoop* loop_;
+    const int timerfd_;
+    std::map<TimerId, std::unique_ptr<Timer>> timers_;
 };
 
-} // namespace time
+}  // namespace time
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_TIMERQUEUE_H
+#endif  // BAIZE_TIMERQUEUE_H

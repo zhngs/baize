@@ -6,40 +6,43 @@
 #include "net/InetAddress.h"
 #include "net/NetType.h"
 
-namespace baize {
+namespace baize
+{
 
-namespace runtime {
+namespace runtime
+{
 class EventLoop;
-} // namespace runtime
+}  // namespace runtime
 
-namespace net {
+namespace net
+{
 
 class Socket;
 
-class TcpListener // noncopyable
+class TcpListener  // noncopyable
 {
 public:
-  explicit TcpListener(uint16_t port);
-  ~TcpListener();
+    explicit TcpListener(uint16_t port);
+    ~TcpListener();
 
-  TcpListener(const TcpListener &) = delete;
-  TcpListener &operator=(const TcpListener &) = delete;
+    TcpListener(const TcpListener&) = delete;
+    TcpListener& operator=(const TcpListener&) = delete;
 
-  void start();
-  TcpStreamSptr accept();
-  TcpStreamSptr asyncAccept();
-  int getSockfd();
+    void start();
+    TcpStreamSptr accept();
+    TcpStreamSptr asyncAccept();
+    int getSockfd();
 
 private:
-  bool started_;
-  runtime::EventLoop *loop_;
+    bool started_;
+    runtime::EventLoop* loop_;
 
-  InetAddress listenaddr_;
-  std::unique_ptr<Socket> sock_;
+    InetAddress listenaddr_;
+    std::unique_ptr<Socket> sock_;
 };
 
-} // namespace net
+}  // namespace net
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_TCPLISTENER_H
+#endif  // BAIZE_TCPLISTENER_H

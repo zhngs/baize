@@ -7,52 +7,55 @@
 #include "net/NetType.h"
 #include "util/types.h"
 
-namespace baize {
+namespace baize
+{
 
-namespace runtime {
+namespace runtime
+{
 class EventLoop;
-} // namespace runtime
+}  // namespace runtime
 
-namespace net {
+namespace net
+{
 
 class Socket;
 
-class TcpStream // noncopyable
+class TcpStream  // noncopyable
 {
 public:
-  TcpStream(int fd, InetAddress peeraddr);
-  ~TcpStream();
+    TcpStream(int fd, InetAddress peeraddr);
+    ~TcpStream();
 
-  TcpStream(const TcpStream &) = delete;
-  TcpStream &operator=(const TcpStream &) = delete;
+    TcpStream(const TcpStream&) = delete;
+    TcpStream& operator=(const TcpStream&) = delete;
 
-  ssize_t read(void *buf, size_t count);
-  ssize_t write(const void *buf, size_t count);
+    ssize_t read(void* buf, size_t count);
+    ssize_t write(const void* buf, size_t count);
 
-  void shutdownWrite();
-  void setTcpNoDelay();
+    void shutdownWrite();
+    void setTcpNoDelay();
 
-  static TcpStreamSptr asyncConnect(const char *ip, uint16_t port);
+    static TcpStreamSptr asyncConnect(const char* ip, uint16_t port);
 
-  int asyncRead(void *buf, size_t count);
-  int asyncWrite(const void *buf, size_t count);
+    int asyncRead(void* buf, size_t count);
+    int asyncWrite(const void* buf, size_t count);
 
-  int asyncReadOrDie(void *buf, size_t count);
-  int asyncWriteOrDie(const void *buf, size_t count);
+    int asyncReadOrDie(void* buf, size_t count);
+    int asyncWriteOrDie(const void* buf, size_t count);
 
-  int getSockfd();
-  string getPeerIp();
-  string getPeerIpPort();
+    int getSockfd();
+    string getPeerIp();
+    string getPeerIpPort();
 
 private:
-  runtime::EventLoop *loop_;
+    runtime::EventLoop* loop_;
 
-  std::unique_ptr<Socket> conn_;
-  InetAddress peeraddr_;
+    std::unique_ptr<Socket> conn_;
+    InetAddress peeraddr_;
 };
 
-} // namespace net
+}  // namespace net
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_TCPSTREAM_H
+#endif  // BAIZE_TCPSTREAM_H

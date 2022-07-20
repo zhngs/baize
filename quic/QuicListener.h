@@ -7,36 +7,38 @@
 #include "net/InetAddress.h"
 #include "net/NetType.h"
 
-namespace baize {
+namespace baize
+{
 
-namespace net {
+namespace net
+{
 
 class QuicListenerData;
 
-class QuicListener // noncopyable
+class QuicListener  // noncopyable
 {
 public:
-  QuicListener(uint16_t port);
-  ~QuicListener();
-  QuicListener(const QuicListener &) = delete;
-  QuicListener &operator=(const QuicListener &) = delete;
+    QuicListener(uint16_t port);
+    ~QuicListener();
+    QuicListener(const QuicListener&) = delete;
+    QuicListener& operator=(const QuicListener&) = delete;
 
-  void loopAndAccept();
+    void loopAndAccept();
 
 private:
-  bool quicNegotiate(QuicListenerData *data);
-  bool validateToken(QuicListenerData *data);
-  QuicConnSptr quicAccept(QuicListenerData *data);
+    bool quicNegotiate(QuicListenerData* data);
+    bool validateToken(QuicListenerData* data);
+    QuicConnSptr quicAccept(QuicListenerData* data);
 
-  UdpStreamSptr udpstream_;
-  InetAddress localaddr_;
+    UdpStreamSptr udpstream_;
+    InetAddress localaddr_;
 
-  QuicConfigSptr config_;
-  std::map<QuicConnId, QuicConnSptr> conns_;
+    QuicConfigSptr config_;
+    std::map<QuicConnId, QuicConnSptr> conns_;
 };
 
-} // namespace net
+}  // namespace net
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_QUICLISTENER_H
+#endif  // BAIZE_QUICLISTENER_H

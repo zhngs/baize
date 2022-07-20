@@ -6,9 +6,10 @@
 
 using namespace baize;
 
-int main() {
-  LOG_TRACE << "logger test" << 3;
-  LOG_SYSERR << "test error";
-  open("/notexist", 0);
-  LOG_SYSERR << "test error2";
+int main()
+{
+    LOG_TRACE << "logger test" << 3;
+    LOG_SYSERR << "test error";
+    open("/notexist", 0);
+    LOG_SYSERR << "test error2";
 }

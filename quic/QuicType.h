@@ -6,9 +6,11 @@
 
 #include "quiche.h"
 
-namespace baize {
+namespace baize
+{
 
-namespace net {
+namespace net
+{
 
 class QuicConnection;
 typedef std::shared_ptr<QuicConnection> QuicConnSptr;
@@ -25,8 +27,8 @@ const int kMaxConnIdLen = 20;
 typedef std::vector<uint8_t> QuicConnId;
 typedef std::vector<uint8_t> Token;
 
-} // namespace net
+}  // namespace net
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_QUICTYPE_H
+#endif  // BAIZE_QUICTYPE_H

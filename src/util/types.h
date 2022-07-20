@@ -13,11 +13,12 @@
 #include <assert.h>
 #endif
 
-namespace baize {
+namespace baize
+{
 
 using std::string;
 
-inline void memZero(void *p, size_t n) { memset(p, 0, n); }
+inline void memZero(void* p, size_t n) { memset(p, 0, n); }
 
 inline uint64_t hostToNetwork64(uint64_t host64) { return htobe64(host64); }
 
@@ -31,6 +32,6 @@ inline uint32_t networkToHost32(uint32_t net32) { return be32toh(net32); }
 
 inline uint16_t networkToHost16(uint16_t net16) { return be16toh(net16); }
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_TYPES_H
+#endif  // BAIZE_TYPES_H

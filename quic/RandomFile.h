@@ -7,36 +7,41 @@
 
 #include "log/Logger.h"
 
-namespace baize {
+namespace baize
+{
 
-class RandomFile {
+class RandomFile
+{
 public:
-  static RandomFile &getInstance() {
-    static RandomFile instance;
-    return instance;
-  }
-
-  bool genRandom(void *buf, int len) {
-    ssize_t ret = read(fd_, buf, len);
-    if (ret != len) {
-      LOG_SYSERR << "random file read failed";
-      return false;
+    static RandomFile& getInstance()
+    {
+        static RandomFile instance;
+        return instance;
     }
-    return true;
-  }
+
+    bool genRandom(void* buf, int len)
+    {
+        ssize_t ret = read(fd_, buf, len);
+        if (ret != len) {
+            LOG_SYSERR << "random file read failed";
+            return false;
+        }
+        return true;
+    }
 
 private:
-  RandomFile() {
-    fd_ = open("/dev/urandom", O_RDONLY);
-    assert(fd_ != -1);
-  }
-  ~RandomFile() = default;
-  RandomFile(const RandomFile &) = default;
-  RandomFile &operator=(const RandomFile &) = default;
+    RandomFile()
+    {
+        fd_ = open("/dev/urandom", O_RDONLY);
+        assert(fd_ != -1);
+    }
+    ~RandomFile() = default;
+    RandomFile(const RandomFile&) = default;
+    RandomFile& operator=(const RandomFile&) = default;
 
-  int fd_;
+    int fd_;
 };
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_RANDOMFILE_H
+#endif  // BAIZE_RANDOMFILE_H

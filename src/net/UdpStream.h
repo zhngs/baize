@@ -6,46 +6,49 @@
 #include "net/InetAddress.h"
 #include "net/NetType.h"
 
-namespace baize {
+namespace baize
+{
 
-namespace runtime {
+namespace runtime
+{
 class EventLoop;
-} // namespace runtime
+}  // namespace runtime
 
-namespace net {
+namespace net
+{
 
 class Socket;
 
-class UdpStream // noncopyable
+class UdpStream  // noncopyable
 {
 public:
-  // for client
-  UdpStream();
-  // for server
-  explicit UdpStream(uint16_t port);
-  ~UdpStream();
-  UdpStream(const UdpStream &) = delete;
-  UdpStream &operator=(const UdpStream &) = delete;
+    // for client
+    UdpStream();
+    // for server
+    explicit UdpStream(uint16_t port);
+    ~UdpStream();
+    UdpStream(const UdpStream&) = delete;
+    UdpStream& operator=(const UdpStream&) = delete;
 
-  static UdpStreamSptr asServer(uint16_t port);
-  static UdpStreamSptr asClient();
+    static UdpStreamSptr asServer(uint16_t port);
+    static UdpStreamSptr asClient();
 
-  int sendto(const void *buf, int len, const InetAddress &addr);
-  int recvfrom(void *buf, int len, InetAddress *addr);
+    int sendto(const void* buf, int len, const InetAddress& addr);
+    int recvfrom(void* buf, int len, InetAddress* addr);
 
-  int asyncSendto(const void *buf, int len, const InetAddress &addr);
-  int asyncRecvfrom(void *buf, int len, InetAddress *addr);
+    int asyncSendto(const void* buf, int len, const InetAddress& addr);
+    int asyncRecvfrom(void* buf, int len, InetAddress* addr);
 
-  InetAddress getLocalAddr();
+    InetAddress getLocalAddr();
 
 private:
-  runtime::EventLoop *loop_;
-  InetAddress bindaddr_;
-  std::unique_ptr<Socket> conn_;
+    runtime::EventLoop* loop_;
+    InetAddress bindaddr_;
+    std::unique_ptr<Socket> conn_;
 };
 
-} // namespace net
+}  // namespace net
 
-} // namespace baize
+}  // namespace baize
 
-#endif // BAIZE_UDPSTREAM_H
+#endif  // BAIZE_UDPSTREAM_H
