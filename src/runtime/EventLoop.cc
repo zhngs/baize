@@ -1,5 +1,7 @@
 #include "runtime/EventLoop.h"
 
+#include <signal.h>
+
 #include "log/Logger.h"
 #include "runtime/Routine.h"
 #include "time/TimerQueue.h"
@@ -9,6 +11,12 @@ using namespace baize;
 thread_local runtime::EventLoop* loopInThisThread = nullptr;
 const int kepollTimeout = 10000;
 const int kepollEventSize = 16;
+
+class IgnoreSigPipe
+{
+public:
+    IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
+} ignore_sigpipe;
 
 runtime::EventLoop::EventLoop()
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),

@@ -7,6 +7,8 @@
 
 using namespace baize;
 
+static const int kStackSize = 128 * 1024 * 2;  // 256k，可自定义
+
 thread_local boost::context::continuation mainRoutine;
 thread_local uint64_t g_currentRoutineId = runtime::Routine::kmainRoutineId;
 thread_local uint64_t g_routineId = runtime::Routine::kmainRoutineId + 1;
@@ -18,7 +20,7 @@ public:
       : routineid_(g_routineId++), isfinished_(false), cb_(func)
     {
         LOG_TRACE << "routine " << routineid_ << " creat";
-        boost::context::fixedsize_stack salloc(128 * 1024 * 1024);
+        boost::context::fixedsize_stack salloc(kStackSize);
         routine_ = boost::context::callcc(
             std::allocator_arg,
             salloc,
