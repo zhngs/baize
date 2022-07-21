@@ -5,24 +5,18 @@
 #include <memory>
 
 #include "time/TimeType.h"
+#include "time/Timer.h"
 
 namespace baize
 {
 
-namespace runtime
-{
-class EventLoop;
-}  // namespace runtime
-
 namespace time
 {
-
-class Timer;
 
 class TimerQueue  // noncopyable
 {
 public:
-    TimerQueue(runtime::EventLoop* loop);
+    TimerQueue();
     ~TimerQueue();
     TimerQueue(const TimerQueue&) = delete;
     TimerQueue& operator=(const TimerQueue&) = delete;
@@ -36,7 +30,6 @@ private:
     void handleActiveTimer();
     Timestamp asyncReadTimerfd();
 
-    runtime::EventLoop* loop_;
     const int timerfd_;
     std::map<TimerId, std::unique_ptr<Timer>> timers_;
 };

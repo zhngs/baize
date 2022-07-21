@@ -5,19 +5,13 @@
 
 #include "net/InetAddress.h"
 #include "net/NetType.h"
+#include "net/Socket.h"
 
 namespace baize
 {
 
-namespace runtime
-{
-class EventLoop;
-}  // namespace runtime
-
 namespace net
 {
-
-class Socket;
 
 class TcpListener  // noncopyable
 {
@@ -35,8 +29,6 @@ public:
 
 private:
     bool started_;
-    runtime::EventLoop* loop_;
-
     InetAddress listenaddr_;
     std::unique_ptr<Socket> sock_;
 };

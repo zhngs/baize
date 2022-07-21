@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "log/AppendFile.h"
 #include "util/types.h"
 
 namespace baize
@@ -10,8 +11,6 @@ namespace baize
 
 namespace log
 {
-
-class AppendFile;
 
 class LogFile  // noncopyable
 {

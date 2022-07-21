@@ -1,6 +1,5 @@
 #include "log/AsyncLogging.h"
 
-#include "log/LogFile.h"
 #include "time/Timestamp.h"
 
 using namespace baize;

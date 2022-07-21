@@ -4,7 +4,6 @@
 
 #include "log/Logger.h"
 #include "runtime/Routine.h"
-#include "time/TimerQueue.h"
 
 using namespace baize;
 
@@ -21,7 +20,7 @@ public:
 runtime::EventLoop::EventLoop()
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
     events_(kepollEventSize),
-    timerqueue_(std::make_unique<time::TimerQueue>(this))
+    timerqueue_(std::make_unique<time::TimerQueue>())
 {
     if (loopInThisThread) {
         LOG_FATAL << "another loop exists";
@@ -77,6 +76,7 @@ void runtime::EventLoop::start()
         } else if (numEvents == 0) {
             LOG_TRACE << "nothing happened";
         } else {
+            LOG_TRACE << "epoll error happened";
             // error happens, log uncommon ones
             if (savedErrno != EINTR) {
                 errno = savedErrno;

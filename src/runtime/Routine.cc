@@ -7,7 +7,8 @@
 
 using namespace baize;
 
-static const int kStackSize = 128 * 1024 * 2;  // 256k，可自定义
+// 栈大小，256k，可自定义，可参考libco的128k
+static const int kStackSize = 128 * 1024 * 2;
 
 thread_local boost::context::continuation mainRoutine;
 thread_local uint64_t g_currentRoutineId = runtime::Routine::kmainRoutineId;

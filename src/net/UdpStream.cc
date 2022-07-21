@@ -1,28 +1,31 @@
 #include "net/UdpStream.h"
 
 #include "log/Logger.h"
-#include "net/Socket.h"
 #include "runtime/EventLoop.h"
 
 using namespace baize;
 
 net::UdpStream::UdpStream()
-  : loop_(runtime::getCurrentLoop()),
-    conn_(std::make_unique<Socket>(creatUdpSocket(AF_INET)))
+  : conn_(std::make_unique<Socket>(creatUdpSocket(AF_INET)))
 {
-    loop_->registerPollEvent(conn_->getSockfd());
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    loop->registerPollEvent(conn_->getSockfd());
 }
 
 net::UdpStream::UdpStream(uint16_t port)
-  : loop_(runtime::getCurrentLoop()),
-    bindaddr_(port),
+  : bindaddr_(port),
     conn_(std::make_unique<Socket>(creatUdpSocket(bindaddr_.getFamily())))
 {
-    loop_->registerPollEvent(conn_->getSockfd());
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    loop->registerPollEvent(conn_->getSockfd());
     conn_->bindAddress(bindaddr_);
 }
 
-net::UdpStream::~UdpStream() {}
+net::UdpStream::~UdpStream()
+{
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    loop->unregisterPollEvent(conn_->getSockfd());
+}
 
 net::UdpStreamSptr net::UdpStream::asServer(uint16_t port)
 {
@@ -51,16 +54,17 @@ int net::UdpStream::asyncSendto(const void* buf,
                                 int len,
                                 const InetAddress& addr)
 {
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
     while (1) {
-        loop_->checkRoutineTimeout();
+        loop->checkRoutineTimeout();
         ssize_t wn = conn_->sendto(buf, len, addr);
         if (wn < 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(conn_->getSockfd(),
-                                      WAIT_WRITE_REQUEST,
-                                      runtime::getCurrentRoutineId());
-                loop_->backToMainRoutine();
+                loop->addWaitRequest(conn_->getSockfd(),
+                                     WAIT_WRITE_REQUEST,
+                                     runtime::getCurrentRoutineId());
+                loop->backToMainRoutine();
                 continue;
             } else {
                 LOG_SYSERR << "async write failed";
@@ -73,17 +77,18 @@ int net::UdpStream::asyncSendto(const void* buf,
 
 int net::UdpStream::asyncRecvfrom(void* buf, int len, InetAddress* addr)
 {
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
     memZero(addr, sizeof(InetAddress));
     while (1) {
-        loop_->checkRoutineTimeout();
+        loop->checkRoutineTimeout();
         ssize_t rn = conn_->recvfrom(buf, len, addr);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(conn_->getSockfd(),
-                                      WAIT_READ_REQUEST,
-                                      runtime::getCurrentRoutineId());
-                loop_->backToMainRoutine();
+                loop->addWaitRequest(conn_->getSockfd(),
+                                     WAIT_READ_REQUEST,
+                                     runtime::getCurrentRoutineId());
+                loop->backToMainRoutine();
                 continue;
             } else {
                 LOG_SYSERR << "async read failed";

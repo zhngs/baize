@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "log/LogFile.h"
 #include "thread/Thread.h"
 #include "util/FixedBuffer.h"
 
@@ -13,8 +14,6 @@ namespace baize
 
 namespace log
 {
-
-class LogFile;
 
 class AsyncLogging  // noncopyable
 {

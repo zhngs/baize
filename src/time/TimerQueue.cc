@@ -5,7 +5,6 @@
 
 #include "log/Logger.h"
 #include "runtime/EventLoop.h"
-#include "time/Timer.h"
 #include "time/Timestamp.h"
 
 using namespace baize;
@@ -44,10 +43,7 @@ void resetTimerfd(int timerfd, time::Timestamp expiration)
     }
 }
 
-time::TimerQueue::TimerQueue(runtime::EventLoop* loop)
-  : loop_(loop), timerfd_(createTimerfd())
-{
-}
+time::TimerQueue::TimerQueue() : timerfd_(createTimerfd()) {}
 
 time::TimerQueue::~TimerQueue() { ::close(timerfd_); }
 
@@ -115,17 +111,18 @@ void time::TimerQueue::handleActiveTimer()
 
 time::Timestamp time::TimerQueue::asyncReadTimerfd()
 {
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
     while (1) {
-        loop_->checkRoutineTimeout();
+        loop->checkRoutineTimeout();
         uint64_t howmany;
         Timestamp now(Timestamp::now());
         ssize_t n = ::read(timerfd_, &howmany, sizeof(howmany));
         if (n < 0) {
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(timerfd_,
-                                      WAIT_READ_REQUEST,
-                                      runtime::getCurrentRoutineId());
-                loop_->backToMainRoutine();
+                loop->addWaitRequest(timerfd_,
+                                     WAIT_READ_REQUEST,
+                                     runtime::getCurrentRoutineId());
+                loop->backToMainRoutine();
                 continue;
             } else {
                 LOG_SYSERR << "async read timer failed";
@@ -142,6 +139,8 @@ time::Timestamp time::TimerQueue::asyncReadTimerfd()
 void time::TimerQueue::start()
 {
     LOG_TRACE << "TimerQueue start";
-    loop_->registerPollEvent(timerfd_);
-    loop_->addAndExecRoutine([=] { handleActiveTimer(); });
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
+
+    loop->registerPollEvent(timerfd_);
+    loop->addAndExecRoutine([=] { handleActiveTimer(); });
 }

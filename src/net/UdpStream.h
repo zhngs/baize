@@ -5,19 +5,13 @@
 
 #include "net/InetAddress.h"
 #include "net/NetType.h"
+#include "net/Socket.h"
 
 namespace baize
 {
 
-namespace runtime
-{
-class EventLoop;
-}  // namespace runtime
-
 namespace net
 {
-
-class Socket;
 
 class UdpStream  // noncopyable
 {
@@ -42,7 +36,6 @@ public:
     InetAddress getLocalAddr();
 
 private:
-    runtime::EventLoop* loop_;
     InetAddress bindaddr_;
     std::unique_ptr<Socket> conn_;
 };

@@ -7,22 +7,18 @@
 #include <memory>
 #include <vector>
 
+#include "runtime/Routine.h"
 #include "runtime/RuntimeType.h"
 #include "time/TimeType.h"
+#include "time/TimerQueue.h"
 #include "util/types.h"
 
 namespace baize
 {
 
-namespace time
-{
-class TimerQueue;
-}
-
 namespace runtime
 {
 
-class Routine;
 class EventLoop;
 typedef uint64_t RoutineId;
 

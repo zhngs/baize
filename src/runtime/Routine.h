@@ -1,7 +1,7 @@
 #ifndef BAIZE_ROUTINE_H
 #define BAIZE_ROUTINE_H
 
-#include <boost/context/all.hpp>
+#include <memory>
 
 #include "runtime/RuntimeType.h"
 

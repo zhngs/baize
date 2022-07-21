@@ -2,21 +2,22 @@
 
 #include "log/Logger.h"
 #include "net/InetAddress.h"
-#include "net/Socket.h"
 #include "runtime/EventLoop.h"
 
 using namespace baize;
 
 net::TcpStream::TcpStream(int fd, InetAddress peeraddr)
-  : loop_(runtime::getCurrentLoop()),
-    conn_(std::make_unique<Socket>(fd)),
-    peeraddr_(peeraddr)
+  : conn_(std::make_unique<Socket>(fd)), peeraddr_(peeraddr)
 {
-    loop_->registerPollEvent(conn_->getSockfd());
-    // conn_->setTcpNoDelay(true);
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    loop->registerPollEvent(conn_->getSockfd());
 }
 
-net::TcpStream::~TcpStream() { loop_->unregisterPollEvent(conn_->getSockfd()); }
+net::TcpStream::~TcpStream()
+{
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    loop->unregisterPollEvent(conn_->getSockfd());
+}
 
 ssize_t net::TcpStream::read(void* buf, size_t count)
 {
@@ -34,16 +35,17 @@ void net::TcpStream::setTcpNoDelay() { conn_->setTcpNoDelay(true); }
 
 int net::TcpStream::asyncRead(void* buf, size_t count)
 {
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
     while (1) {
-        loop_->checkRoutineTimeout();
+        loop->checkRoutineTimeout();
         ssize_t rn = conn_->read(buf, count);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(conn_->getSockfd(),
-                                      WAIT_READ_REQUEST,
-                                      runtime::getCurrentRoutineId());
-                loop_->backToMainRoutine();
+                loop->addWaitRequest(conn_->getSockfd(),
+                                     WAIT_READ_REQUEST,
+                                     runtime::getCurrentRoutineId());
+                loop->backToMainRoutine();
                 continue;
             } else {
                 LOG_SYSERR << "async read failed";
@@ -56,16 +58,17 @@ int net::TcpStream::asyncRead(void* buf, size_t count)
 
 int net::TcpStream::asyncWrite(const void* buf, size_t count)
 {
+    runtime::EventLoop* loop = runtime::getCurrentLoop();
     while (1) {
-        loop_->checkRoutineTimeout();
+        loop->checkRoutineTimeout();
         ssize_t wn = conn_->write(buf, count);
         if (wn <= 0) {
             int saveErrno = errno;
             if (errno == EAGAIN) {
-                loop_->addWaitRequest(conn_->getSockfd(),
-                                      WAIT_WRITE_REQUEST,
-                                      runtime::getCurrentRoutineId());
-                loop_->backToMainRoutine();
+                loop->addWaitRequest(conn_->getSockfd(),
+                                     WAIT_WRITE_REQUEST,
+                                     runtime::getCurrentRoutineId());
+                loop->backToMainRoutine();
                 continue;
             } else {
                 LOG_SYSERR << "async write failed";

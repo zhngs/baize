@@ -5,20 +5,14 @@
 
 #include "net/InetAddress.h"
 #include "net/NetType.h"
+#include "net/Socket.h"
 #include "util/types.h"
 
 namespace baize
 {
 
-namespace runtime
-{
-class EventLoop;
-}  // namespace runtime
-
 namespace net
 {
-
-class Socket;
 
 class TcpStream  // noncopyable
 {
@@ -48,8 +42,6 @@ public:
     string getPeerIpPort();
 
 private:
-    runtime::EventLoop* loop_;
-
     std::unique_ptr<Socket> conn_;
     InetAddress peeraddr_;
 };

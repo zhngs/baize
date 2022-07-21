@@ -2,8 +2,6 @@
 
 #include <unistd.h>
 
-#include "log/AppendFile.h"
-
 using namespace baize;
 
 log::LogFile::LogFile(const string& basename,
