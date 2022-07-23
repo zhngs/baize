@@ -8,13 +8,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 add_compile_options(
 -g
+-O2
 
 -Wall
 -Wextra
 -Werror
 -Wconversion
 -Wno-unused-parameter
--Wold-style-cast
+# -Wold-style-cast
 -Woverloaded-virtual
 -Wpointer-arith
 -Wshadow

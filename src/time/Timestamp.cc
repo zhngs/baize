@@ -15,7 +15,7 @@ time::Timestamp time::Timestamp::now()
 
 string time::Timestamp::toFormatString()
 {
-    char buf[64] = {0};
+    char buf[64] = "";
     time_t seconds = static_cast<time_t>(us_ / kusPerSec);
     int us = static_cast<int>(us_ % kusPerSec);
     struct tm tm_time;

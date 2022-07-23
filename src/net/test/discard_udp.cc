@@ -77,12 +77,6 @@ void discard_client()
     UdpStreamSptr stream = UdpStream::asClient();
 
     getCurrentLoop()->runEvery(1, client_print);
-    // thread::Thread thread_print([]{
-    //     while (1) {
-    //         client_print();
-    //     }
-    // }, "client_print");
-    // thread_print.start();
 
     g_last_time = Timestamp::now();
     InetAddress serveraddr("127.0.0.1", 6060);

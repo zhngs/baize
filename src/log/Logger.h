@@ -35,6 +35,8 @@ public:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
+    void formatTime();
+
     LogStream& stream() { return logStream_; }
 
     static LogLevel getLogLevel() { return logLevel_; };

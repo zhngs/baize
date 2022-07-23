@@ -119,3 +119,32 @@ log::LogStream& log::LogStream::operator<<(const string& v)
     append(v.data(), static_cast<int>(v.length()));
     return *this;
 }
+
+log::LogStream& log::LogStream::operator<<(const StringPiece& v)
+{
+    append(v.data(), v.size());
+    return *this;
+}
+
+template <typename T>
+log::Fmt::Fmt(const char* fmt, T val)
+{
+    static_assert(std::is_arithmetic<T>::value == true,
+                  "Must be arithmetic type");
+
+    length_ = snprintf(buf_, sizeof(buf_), fmt, val);
+    assert(static_cast<size_t>(length_) < sizeof(buf_));
+}
+
+// Explicit instantiations
+template log::Fmt::Fmt(const char* fmt, char);
+template log::Fmt::Fmt(const char* fmt, short);
+template log::Fmt::Fmt(const char* fmt, unsigned short);
+template log::Fmt::Fmt(const char* fmt, int);
+template log::Fmt::Fmt(const char* fmt, unsigned int);
+template log::Fmt::Fmt(const char* fmt, long);
+template log::Fmt::Fmt(const char* fmt, unsigned long);
+template log::Fmt::Fmt(const char* fmt, long long);
+template log::Fmt::Fmt(const char* fmt, unsigned long long);
+template log::Fmt::Fmt(const char* fmt, float);
+template log::Fmt::Fmt(const char* fmt, double);

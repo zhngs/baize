@@ -1,6 +1,7 @@
 #ifndef BAIZE_LOGSTREAM_H
 #define BAIZE_LOGSTREAM_H
 
+#include "util/StringPiece.h"
 #include "util/types.h"
 
 namespace baize
@@ -8,6 +9,19 @@ namespace baize
 
 namespace log
 {
+class Fmt  // : noncopyable
+{
+public:
+    template <typename T>
+    Fmt(const char* fmt, T val);
+
+    const char* data() const { return buf_; }
+    int length() const { return length_; }
+
+private:
+    char buf_[32];
+    int length_;
+};
 
 class LogStream  // noncopy
 {
@@ -31,6 +45,7 @@ public:
 
     LogStream& operator<<(const char* v);
     LogStream& operator<<(const string& v);
+    LogStream& operator<<(const StringPiece& v);
 
     void append(const void* buf, int len);
     const char* getLogBuffer();
