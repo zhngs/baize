@@ -1,13 +1,13 @@
-#ifndef BAIZE_ASYNCLOGGING_H
-#define BAIZE_ASYNCLOGGING_H
+#ifndef BAIZE_ASYNCLOGGING_H_
+#define BAIZE_ASYNCLOGGING_H_
 
 #include <atomic>
 #include <memory>
 #include <vector>
 
-#include "log/LogFile.h"
-#include "thread/Thread.h"
-#include "util/FixedBuffer.h"
+#include "log/log_file.h"
+#include "thread/thread.h"
+#include "util/fixed_buffer.h"
 
 namespace baize
 {
@@ -18,18 +18,18 @@ namespace log
 class AsyncLogging  // noncopyable
 {
 public:
-    AsyncLogging(const string& basename, off_t rollSize, int flushInterval = 3);
+    AsyncLogging(const string& basename, off_t rollsize, int flushinterval = 3);
     ~AsyncLogging();
     AsyncLogging(const AsyncLogging&) = delete;
     AsyncLogging& operator=(const AsyncLogging&) = delete;
 
-    void append(const char* logline, int len);
-    void flush();
-    void start();
-    void stop();
+    void Append(const char* logline, int len);
+    void Flush();
+    void Start();
+    void Stop();
 
 private:
-    void threadFunc();
+    void ThreadFunc();
 
     typedef FixedBuffer<4096 * 1024> Buffer;
     typedef std::vector<std::unique_ptr<Buffer>> BufferVector;

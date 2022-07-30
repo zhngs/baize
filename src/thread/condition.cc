@@ -1,11 +1,15 @@
-#include "thread/Condition.h"
+#include "thread/condition.h"
 
 #include <errno.h>
 #include <stdint.h>
 
-using namespace baize;
+namespace baize
+{
 
-bool thread::Condition::waitForSeconds(double seconds)
+namespace thread
+{
+
+bool Condition::WaitForSeconds(double seconds)
 {
     struct timespec abstime;
     // FIXME: use CLOCK_MONOTONIC or CLOCK_MONOTONIC_RAW to prevent time rewind.
@@ -20,5 +24,9 @@ bool thread::Condition::waitForSeconds(double seconds)
                                         kNanoSecondsPerSecond);
 
     return ETIMEDOUT ==
-           pthread_cond_timedwait(&cond_, mutex_.getMutex(), &abstime);
+           pthread_cond_timedwait(&cond_, mutex_.mutex(), &abstime);
 }
+
+}  // namespace thread
+
+}  // namespace baize

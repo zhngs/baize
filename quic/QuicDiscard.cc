@@ -2,10 +2,10 @@
 
 #include "QuicConnection.h"
 #include "QuicListener.h"
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "runtime/EventLoop.h"
-#include "thread/Thread.h"
-#include "time/Timestamp.h"
+#include "thread/thread.h"
+#include "time/time_stamp.h"
 
 using namespace baize;
 using namespace baize::net;
@@ -60,8 +60,8 @@ Timestamp g_last_time;
 
 void client_print()
 {
-    Timestamp current_time(Timestamp::now());
-    double sec = elapsedInSecond(current_time, g_last_time);
+    Timestamp current_time(Timestamp::Now());
+    double sec = ElapsedInSecond(current_time, g_last_time);
     double send_bytes = static_cast<double>(g_sendbytes - g_sendbytes_last);
     double speed = send_bytes / sec / 1024 / 1024;
 
@@ -108,7 +108,7 @@ void discard_quic_server()
 
 int main(int argc, char* argv[])
 {
-    Logger::setLogLevel(Logger::WARN);
+    Logger::set_loglevel(Logger::WARN);
     EventLoop loop;
     if (argc != 2) {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";

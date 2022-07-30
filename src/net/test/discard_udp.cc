@@ -1,10 +1,10 @@
 #include <unistd.h>
 
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "net/UdpStream.h"
 #include "runtime/EventLoop.h"
-#include "thread/Thread.h"
-#include "time/Timestamp.h"
+#include "thread/thread.h"
+#include "time/time_stamp.h"
 
 using namespace baize;
 using namespace baize::net;
@@ -23,8 +23,8 @@ Timestamp g_last_time;
 
 void server_print()
 {
-    Timestamp current_time(Timestamp::now());
-    double sec = elapsedInSecond(current_time, g_last_time);
+    Timestamp current_time(Timestamp::Now());
+    double sec = ElapsedInSecond(current_time, g_last_time);
     double read_bytes = static_cast<double>(g_readbytes - g_readbytes_last);
     double speed = read_bytes / sec / 1024 / 1024;
     double bytes_msg = read_bytes / static_cast<double>(g_read_msg);
@@ -40,7 +40,7 @@ void server_print()
 void discard_server()
 {
     char buf[4096];
-    g_last_time = Timestamp::now();
+    g_last_time = Timestamp::Now();
     getCurrentLoop()->runEvery(1, server_print);
     UdpStreamSptr stream = UdpStream::asServer(6060);
     InetAddress clientaddr;
@@ -57,8 +57,8 @@ void discard_server()
 
 void client_print()
 {
-    Timestamp current_time(Timestamp::now());
-    double sec = elapsedInSecond(current_time, g_last_time);
+    Timestamp current_time(Timestamp::Now());
+    double sec = ElapsedInSecond(current_time, g_last_time);
     double send_bytes = static_cast<double>(g_sendbytes - g_sendbytes_last);
     double speed = send_bytes / sec / 1024 / 1024;
     double bytes_msg = send_bytes / static_cast<double>(g_send_msg);
@@ -78,7 +78,7 @@ void discard_client()
 
     getCurrentLoop()->runEvery(1, client_print);
 
-    g_last_time = Timestamp::now();
+    g_last_time = Timestamp::Now();
     InetAddress serveraddr("127.0.0.1", 6060);
     LOG_INFO << "discard_client start";
     while (1) {
@@ -94,7 +94,7 @@ void discard_client()
 
 int main(int argc, char* argv[])
 {
-    log::Logger::setLogLevel(log::Logger::DEBUG);
+    log::Logger::set_loglevel(log::Logger::DEBUG);
     EventLoop loop;
     if (argc != 2) {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";

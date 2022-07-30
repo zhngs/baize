@@ -1,7 +1,7 @@
-#ifndef BAIZE_WAITGROUP_H
-#define BAIZE_WAITGROUP_H
+#ifndef BAIZE_WAITGROUP_H_
+#define BAIZE_WAITGROUP_H_
 
-#include "thread/Condition.h"
+#include "thread/condition.h"
 
 namespace baize
 {
@@ -16,9 +16,11 @@ public:
     WaitGroup(const WaitGroup&) = delete;
     WaitGroup& operator=(const WaitGroup&) = delete;
 
-    void wait();
-    void done();
-    int getCount();
+    void Wait();
+    void Done();
+
+    // getter
+    int count();
 
 private:
     MutexLock mutex_;

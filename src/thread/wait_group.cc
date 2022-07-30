@@ -1,30 +1,38 @@
-#include "thread/WaitGroup.h"
+#include "thread/wait_group.h"
 
-using namespace baize;
+namespace baize
+{
+
+namespace thread
+{
 
 thread::WaitGroup::WaitGroup(int count) : mutex_(), cond_(mutex_), count_(count)
 {
 }
 
-void thread::WaitGroup::wait()
+void WaitGroup::Wait()
 {
     MutexLockGuard lock(mutex_);
     while (count_ > 0) {
-        cond_.wait();
+        cond_.Wait();
     }
 }
 
-void thread::WaitGroup::done()
+void thread::WaitGroup::Done()
 {
     MutexLockGuard lock(mutex_);
     count_--;
     if (count_ == 0) {
-        cond_.notifyAll();
+        cond_.NotifyAll();
     }
 }
 
-int thread::WaitGroup::getCount()
+int thread::WaitGroup::count()
 {
     MutexLockGuard lock(mutex_);
     return count_;
 }
+
+}  // namespace thread
+
+}  // namespace baize

@@ -3,7 +3,7 @@
 #include "QuicConfig.h"
 #include "QuicConnection.h"
 #include "RandomFile.h"
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "net/UdpStream.h"
 
 using namespace baize;

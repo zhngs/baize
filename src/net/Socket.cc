@@ -1,7 +1,7 @@
 #include "net/Socket.h"
 
 #include "arpa/inet.h"
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "net/InetAddress.h"
 #include "netinet/tcp.h"
 #include "unistd.h"

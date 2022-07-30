@@ -1,5 +1,5 @@
-#ifndef BAIZE_FIXEDBUFFER_H
-#define BAIZE_FIXEDBUFFER_H
+#ifndef BAIZE_FIXEDBUFFER_H_
+#define BAIZE_FIXEDBUFFER_H_
 
 #include "util/types.h"
 

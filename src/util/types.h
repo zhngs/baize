@@ -1,6 +1,5 @@
 #ifndef BAIZE_TYPES_H
 #define BAIZE_TYPES_H
-// copy from muduo and make some small changes
 
 #include <endian.h>
 #include <stdint.h>

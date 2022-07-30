@@ -2,7 +2,7 @@
 
 #include <signal.h>
 
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "runtime/Routine.h"
 
 using namespace baize;
@@ -41,7 +41,7 @@ void runtime::EventLoop::start()
     int epolltime = kepollTimeout;
     std::vector<RoutineId> timeout;
 
-    timerqueue_->start();
+    timerqueue_->Start();
     while (1) {
         for (auto& item : functions_) {
             item();
@@ -211,25 +211,25 @@ void runtime::EventLoop::epollControl(int op, int fd, epoll_event* ev)
 time::TimerId runtime::EventLoop::runAt(time::Timestamp time,
                                         time::TimerCallback cb)
 {
-    return timerqueue_->addTimer(cb, time, 0);
+    return timerqueue_->AddTimer(cb, time, 0);
 }
 
 time::TimerId runtime::EventLoop::runAfter(double delay, time::TimerCallback cb)
 {
-    time::Timestamp when(time::addTime(time::Timestamp::now(), delay));
+    time::Timestamp when(time::AddTime(time::Timestamp::Now(), delay));
     return runAt(when, cb);
 }
 
 time::TimerId runtime::EventLoop::runEvery(double interval,
                                            time::TimerCallback cb)
 {
-    time::Timestamp when(time::addTime(time::Timestamp::now(), interval));
-    return timerqueue_->addTimer(cb, when, interval);
+    time::Timestamp when(time::AddTime(time::Timestamp::Now(), interval));
+    return timerqueue_->AddTimer(cb, when, interval);
 }
 
 void runtime::EventLoop::cancelTimer(time::TimerId timerid)
 {
-    timerqueue_->removeTimer(timerid);
+    timerqueue_->RemoveTimer(timerid);
 }
 
 uint64_t runtime::getCurrentRoutineId()

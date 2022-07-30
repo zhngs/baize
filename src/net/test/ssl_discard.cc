@@ -6,9 +6,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "log/Logger.h"
-#include "thread/Thread.h"
-#include "time/Timestamp.h"
+#include "log/logger.h"
+#include "thread/thread.h"
+#include "time/time_stamp.h"
 
 using namespace baize;
 using namespace baize::time;
@@ -127,8 +127,8 @@ int64_t g_read_msg = 0;
 Timestamp g_last_time;
 void server_print()
 {
-    Timestamp current_time(Timestamp::now());
-    double sec = elapsedInSecond(current_time, g_last_time);
+    Timestamp current_time(Timestamp::Now());
+    double sec = ElapsedInSecond(current_time, g_last_time);
     double read_bytes = static_cast<double>(g_readbytes - g_readbytes_last);
     double speed = read_bytes / sec / 1024 / 1024;
     double bytes_msg = read_bytes / static_cast<double>(g_read_msg);
@@ -237,7 +237,7 @@ int main(int argc, char** argv)
                     },
                     "client_print");
                 thread_print.start();
-                g_last_time = Timestamp::now();
+                g_last_time = Timestamp::Now();
 
                 /* Echo loop */
                 while (true) {

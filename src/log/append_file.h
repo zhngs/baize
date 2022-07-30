@@ -1,5 +1,5 @@
-#ifndef BAIZE_APPENDFILE_H
-#define BAIZE_APPENDFILE_H
+#ifndef BAIZE_APPENDFILE_H_
+#define BAIZE_APPENDFILE_H_
 
 #include <stdio.h>
 
@@ -19,16 +19,18 @@ public:
     AppendFile(const AppendFile&) = delete;
     AppendFile& operator=(const AppendFile&) = delete;
 
-    void append(const char* logline, size_t len);
-    void flush();
-    off_t getWrittenBytes() const { return writtenBytes_; }
+    void Append(const char* logline, size_t len);
+    void Flush();
+
+    // getter
+    off_t written() const { return written_; }
 
 private:
     size_t write(const char* logline, size_t len);
 
     FILE* file_;
     char buffer_[kBufferSize];
-    off_t writtenBytes_;
+    off_t written_;
 };
 
 }  // namespace log

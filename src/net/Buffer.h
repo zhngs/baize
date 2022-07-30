@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "util/StringPiece.h"
+#include "util/string_piece.h"
 #include "util/types.h"
 
 namespace baize

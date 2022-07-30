@@ -1,7 +1,7 @@
-#ifndef BAIZE_LOGSTREAM_H
-#define BAIZE_LOGSTREAM_H
+#ifndef BAIZE_LOGSTREAM_H_
+#define BAIZE_LOGSTREAM_H_
 
-#include "util/StringPiece.h"
+#include "util/string_piece.h"
 #include "util/types.h"
 
 namespace baize
@@ -47,9 +47,11 @@ public:
     LogStream& operator<<(const string& v);
     LogStream& operator<<(const StringPiece& v);
 
-    void append(const void* buf, int len);
-    const char* getLogBuffer();
-    int getContentLength();
+    void Append(const void* buf, int len);
+
+    // getter
+    const char* buffer();
+    int length();
 
 private:
     char* cur_;

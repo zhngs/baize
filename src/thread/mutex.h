@@ -1,5 +1,5 @@
-#ifndef BAIZE_MUTEX_H
-#define BAIZE_MUTEX_H
+#ifndef BAIZE_MUTEX_H_
+#define BAIZE_MUTEX_H_
 
 #include <assert.h>
 #include <pthread.h>
@@ -18,10 +18,11 @@ public:
     MutexLock(const MutexLock&) = delete;
     MutexLock& operator=(const MutexLock&) = delete;
 
-    void lock() { assert(pthread_mutex_lock(&mutex_) == 0); }
-    void unlock() { assert(pthread_mutex_unlock(&mutex_) == 0); }
+    void Lock() { assert(pthread_mutex_lock(&mutex_) == 0); }
+    void Unlock() { assert(pthread_mutex_unlock(&mutex_) == 0); }
 
-    pthread_mutex_t* getMutex() { return &mutex_; }
+    // getter
+    pthread_mutex_t* mutex() { return &mutex_; }
 
 private:
     pthread_mutex_t mutex_;
@@ -30,8 +31,8 @@ private:
 class MutexLockGuard  // noncopyable
 {
 public:
-    MutexLockGuard(MutexLock& mutex) : mutex_(mutex) { mutex_.lock(); }
-    ~MutexLockGuard() { mutex_.unlock(); }
+    MutexLockGuard(MutexLock& mutex) : mutex_(mutex) { mutex_.Lock(); }
+    ~MutexLockGuard() { mutex_.Unlock(); }
     MutexLockGuard(const MutexLockGuard&) = delete;
     MutexLockGuard& operator=(const MutexLockGuard&) = delete;
 

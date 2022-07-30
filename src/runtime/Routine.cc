@@ -2,7 +2,7 @@
 
 #include <boost/context/all.hpp>
 
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "runtime/EventLoop.h"
 
 using namespace baize;

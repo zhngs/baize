@@ -1,5 +1,5 @@
-#ifndef BAIZE_STRINGPIECE_H
-#define BAIZE_STRINGPIECE_H
+#ifndef BAIZE_STRINGPIECE_H_
+#define BAIZE_STRINGPIECE_H_
 
 #include "util/types.h"
 

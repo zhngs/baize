@@ -1,105 +1,110 @@
-#include "log/LogStream.h"
+#include "log/log_stream.h"
 
-using namespace baize;
+namespace baize
+{
+
+namespace log
+{
 
 const int klogBufferLen = 4096;
-thread_local char g_logBuffer[klogBufferLen];
+thread_local char g_logbuffer[klogBufferLen];
 
-log::LogStream::LogStream() : cur_(g_logBuffer) {}
+log::LogStream::LogStream() : cur_(g_logbuffer) {}
 
-void log::LogStream::append(const void* buf, int len)
+void log::LogStream::Append(const void* buf, int len)
 {
-    if (cur_ - g_logBuffer + len <= klogBufferLen) {
+    if (cur_ - g_logbuffer + len <= klogBufferLen) {
         memcpy(cur_, buf, len);
         cur_ += len;
     }
 }
 
-const char* log::LogStream::getLogBuffer() { return g_logBuffer; }
+const char* log::LogStream::buffer() { return g_logbuffer; }
 
-int log::LogStream::getContentLength()
-{
-    return static_cast<int>(cur_ - g_logBuffer);
-}
+int log::LogStream::length() { return static_cast<int>(cur_ - g_logbuffer); }
 
 log::LogStream& log::LogStream::operator<<(bool v)
 {
-    append(v ? "1" : "0", 1);
+    if (v) {
+        Append("true", 4);
+    } else {
+        Append("false", 5);
+    }
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(char v)
 {
-    append(&v, 1);
+    Append(&v, 1);
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(short v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%hd", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%hd", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(unsigned short v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%hu", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%hu", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(int v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%d", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%d", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(unsigned int v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%u", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%u", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(long v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%ld", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%ld", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(unsigned long v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%lu", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%lu", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(long long v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%lld", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%lld", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(unsigned long long v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%llu", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%llu", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(float v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%g", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%g", v);
     cur_ += len;
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(double v)
 {
-    int len = snprintf(cur_, klogBufferLen - getContentLength(), "%g", v);
+    int len = snprintf(cur_, klogBufferLen - length(), "%g", v);
     cur_ += len;
     return *this;
 }
@@ -107,22 +112,22 @@ log::LogStream& log::LogStream::operator<<(double v)
 log::LogStream& log::LogStream::operator<<(const char* v)
 {
     if (v) {
-        append(v, static_cast<int>(strlen(v)));
+        Append(v, static_cast<int>(strlen(v)));
     } else {
-        append("(null)", 6);
+        Append("(null)", 6);
     }
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(const string& v)
 {
-    append(v.data(), static_cast<int>(v.length()));
+    Append(v.data(), static_cast<int>(v.length()));
     return *this;
 }
 
 log::LogStream& log::LogStream::operator<<(const StringPiece& v)
 {
-    append(v.data(), v.size());
+    Append(v.data(), v.size());
     return *this;
 }
 
@@ -148,3 +153,7 @@ template log::Fmt::Fmt(const char* fmt, long long);
 template log::Fmt::Fmt(const char* fmt, unsigned long long);
 template log::Fmt::Fmt(const char* fmt, float);
 template log::Fmt::Fmt(const char* fmt, double);
+
+}  // namespace log
+
+}  // namespace baize

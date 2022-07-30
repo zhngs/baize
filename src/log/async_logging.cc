@@ -1,17 +1,21 @@
-#include "log/AsyncLogging.h"
+#include "log/async_logging.h"
 
-#include "time/Timestamp.h"
+#include "time/time_stamp.h"
 
-using namespace baize;
+namespace baize
+{
 
-log::AsyncLogging::AsyncLogging(const string& basename,
-                                off_t rollSize,
-                                int flushInterval)
-  : flushInterval_(flushInterval),
+namespace log
+{
+
+AsyncLogging::AsyncLogging(const string& basename,
+                           off_t rollsize,
+                           int flushinterval)
+  : flushInterval_(flushinterval),
     running_(false),
     basename_(basename),
-    rollSize_(rollSize),
-    thread_([=] { threadFunc(); }, "AsyncLoggingThread"),
+    rollSize_(rollsize),
+    thread_("async_logging_thread", [=] { ThreadFunc(); }),
     wg_(1),
     mutex_(),
     cond_(mutex_),
@@ -23,14 +27,14 @@ log::AsyncLogging::AsyncLogging(const string& basename,
     buffers_.reserve(16);
 }
 
-log::AsyncLogging::~AsyncLogging()
+AsyncLogging::~AsyncLogging()
 {
     if (running_) {
-        stop();
+        Stop();
     }
 }
 
-void log::AsyncLogging::append(const char* logline, int len)
+void AsyncLogging::Append(const char* logline, int len)
 {
     thread::MutexLockGuard lock(mutex_);
     if (currentBuffer_->avail() > len) {
@@ -44,30 +48,30 @@ void log::AsyncLogging::append(const char* logline, int len)
             currentBuffer_.reset(new Buffer);  // Rarely happens
         }
         currentBuffer_->append(logline, len);
-        cond_.notify();
+        cond_.Notify();
     }
 }
 
-void log::AsyncLogging::flush() { output_->flush(); }
+void AsyncLogging::Flush() { output_->Flush(); }
 
-void log::AsyncLogging::start()
+void AsyncLogging::Start()
 {
     running_ = true;
-    thread_.start();
-    wg_.wait();
+    thread_.Start();
+    wg_.Wait();
 }
 
-void log::AsyncLogging::stop()
+void AsyncLogging::Stop()
 {
     running_ = false;
-    cond_.notify();
-    thread_.join();
+    cond_.Notify();
+    thread_.Join();
 }
 
-void log::AsyncLogging::threadFunc()
+void AsyncLogging::ThreadFunc()
 {
     assert(running_ == true);
-    wg_.done();
+    wg_.Done();
     BufferPtr newBuffer1(std::make_unique<Buffer>());
     BufferPtr newBuffer2(std::make_unique<Buffer>());
     BufferVector buffersToWrite;
@@ -81,7 +85,7 @@ void log::AsyncLogging::threadFunc()
             thread::MutexLockGuard lock(mutex_);
             if (buffers_.empty()) {
                 // unusual usage!
-                cond_.waitForSeconds(flushInterval_);
+                cond_.WaitForSeconds(flushInterval_);
             }
             buffers_.push_back(std::move(currentBuffer_));
             currentBuffer_ = std::move(newBuffer1);
@@ -98,17 +102,17 @@ void log::AsyncLogging::threadFunc()
             snprintf(buf,
                      sizeof(buf),
                      "Dropped log messages at %s, %zd larger buffers\n",
-                     time::Timestamp::now().toFormatString().c_str(),
+                     time::Timestamp::Now().date().c_str(),
                      buffersToWrite.size() - 2);
             fputs(buf, stderr);
-            output_->append(buf, static_cast<int>(strlen(buf)));
+            output_->Append(buf, static_cast<int>(strlen(buf)));
             buffersToWrite.erase(buffersToWrite.begin() + 2,
                                  buffersToWrite.end());
         }
 
         for (const auto& buffer : buffersToWrite) {
             // FIXME: use unbuffered stdio FILE ? or use ::writev ?
-            output_->append(buffer->data(), buffer->length());
+            output_->Append(buffer->data(), buffer->length());
         }
 
         if (buffersToWrite.size() > 2) {
@@ -131,7 +135,11 @@ void log::AsyncLogging::threadFunc()
         }
 
         buffersToWrite.clear();
-        output_->flush();
+        output_->Flush();
     }
-    output_->flush();
+    output_->Flush();
 }
+
+}  // namespace log
+
+}  // namespace baize

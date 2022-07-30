@@ -1,23 +1,27 @@
-#include "time/Timestamp.h"
+#include "time/time_stamp.h"
 
 #include <stddef.h>
 #include <sys/time.h>
 
-using namespace baize;
+namespace baize
+{
 
-time::Timestamp time::Timestamp::now()
+namespace time
+{
+
+Timestamp Timestamp::Now()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     int64_t seconds = tv.tv_sec;
-    return Timestamp(seconds * kusPerSec + tv.tv_usec);
+    return Timestamp(seconds * kUsPerSec + tv.tv_usec);
 }
 
-string time::Timestamp::toFormatString()
+string Timestamp::date() const
 {
     char buf[64] = "";
-    time_t seconds = static_cast<time_t>(us_ / kusPerSec);
-    int us = static_cast<int>(us_ % kusPerSec);
+    time_t seconds = static_cast<time_t>(us_ / kUsPerSec);
+    int us = static_cast<int>(us_ % kUsPerSec);
     struct tm tm_time;
     gmtime_r(&seconds, &tm_time);
 
@@ -33,3 +37,7 @@ string time::Timestamp::toFormatString()
              us);
     return buf;
 }
+
+}  // namespace time
+
+}  // namespace baize

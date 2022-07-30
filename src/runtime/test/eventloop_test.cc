@@ -1,9 +1,9 @@
 #include "runtime/EventLoop.h"
 
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "net/TcpListener.h"
 #include "net/TcpStream.h"
-#include "time/Timestamp.h"
+#include "time/time_stamp.h"
 
 using namespace baize;
 using namespace baize::net;
@@ -21,8 +21,8 @@ Timestamp g_last_time;
 
 void server_print()
 {
-    Timestamp current_time(Timestamp::now());
-    double sec = elapsedInSecond(current_time, g_last_time);
+    Timestamp current_time(Timestamp::Now());
+    double sec = ElapsedInSecond(current_time, g_last_time);
     double read_bytes = static_cast<double>(g_readbytes - g_readbytes_last);
     double speed = read_bytes / sec / 1024 / 1024;
     double bytes_msg = read_bytes / static_cast<double>(g_msg);
@@ -38,7 +38,7 @@ void server_print()
 void discard_connection(TcpStreamSptr conn)
 {
     char buf[65536];
-    g_last_time = Timestamp::now();
+    g_last_time = Timestamp::Now();
     TimerId id = getCurrentLoop()->runEvery(1, server_print);
     while (1) {
         int rn = conn->asyncReadOrDie(buf, sizeof(buf));
@@ -65,8 +65,8 @@ void discard_server()
 
 void client_print()
 {
-    Timestamp current_time(Timestamp::now());
-    double sec = elapsedInSecond(current_time, g_last_time);
+    Timestamp current_time(Timestamp::Now());
+    double sec = ElapsedInSecond(current_time, g_last_time);
     double send_bytes = static_cast<double>(g_sendbytes - g_sendbytes_last);
     double speed = send_bytes / sec / 1024 / 1024;
 
@@ -85,7 +85,7 @@ void discard_client()
     stream->setTcpNoDelay();
 
     getCurrentLoop()->runEvery(1, client_print);
-    g_last_time = Timestamp::now();
+    g_last_time = Timestamp::Now();
     while (1) {
         int wn = stream->asyncWriteOrDie(message.c_str(), message.size());
         g_sendbytes += wn;
@@ -98,7 +98,7 @@ void discard_client()
 
 int main(int argc, char* argv[])
 {
-    log::Logger::setLogLevel(log::Logger::DEBUG);
+    log::Logger::set_loglevel(log::Logger::DEBUG);
     EventLoop loop;
     if (argc != 2) {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";

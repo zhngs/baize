@@ -1,13 +1,17 @@
-#include "log/LogFile.h"
+#include "log/log_file.h"
 
 #include <unistd.h>
 
-using namespace baize;
+namespace baize
+{
 
-log::LogFile::LogFile(const string& basename,
-                      off_t rollSize,
-                      int flushInterval,
-                      int checkEveryN)
+namespace log
+{
+
+LogFile::LogFile(const string& basename,
+                 off_t rollSize,
+                 int flushInterval,
+                 int checkEveryN)
   : basename_(basename),
     rollSize_(rollSize),
     flushInterval_(flushInterval),
@@ -17,15 +21,15 @@ log::LogFile::LogFile(const string& basename,
     lastRoll_(0),
     lastFlush_(0)
 {
-    rollFile();
+    RollFile();
 }
 
-log::LogFile::~LogFile() {}
+LogFile::~LogFile() {}
 
-bool log::LogFile::rollFile()
+bool LogFile::RollFile()
 {
     time_t now = 0;
-    string filename = getLogFileName(basename_, &now);
+    string filename = log_file_name(basename_, &now);
     time_t start = now / kRollPerSeconds_ * kRollPerSeconds_;
 
     if (now > lastRoll_) {
@@ -38,7 +42,7 @@ bool log::LogFile::rollFile()
     return false;
 }
 
-string log::LogFile::getLogFileName(const string& basename, time_t* now)
+string LogFile::log_file_name(const string& basename, time_t* now)
 {
     string filename;
     filename.reserve(basename.length() + 64);
@@ -66,14 +70,14 @@ string log::LogFile::getLogFileName(const string& basename, time_t* now)
     return filename;
 }
 
-void log::LogFile::flush() { file_->flush(); }
+void LogFile::Flush() { file_->Flush(); }
 
-void log::LogFile::append(const char* logline, int len)
+void LogFile::Append(const char* logline, int len)
 {
-    file_->append(logline, len);
+    file_->Append(logline, len);
 
-    if (file_->getWrittenBytes() > rollSize_) {
-        rollFile();
+    if (file_->written() > rollSize_) {
+        RollFile();
     } else {
         ++count_;
         if (count_ >= checkEveryN_) {
@@ -81,11 +85,15 @@ void log::LogFile::append(const char* logline, int len)
             time_t now = ::time(NULL);
             time_t thisPeriod_ = now / kRollPerSeconds_ * kRollPerSeconds_;
             if (thisPeriod_ != startOfPeriod_) {
-                rollFile();
+                RollFile();
             } else if (now - lastFlush_ > flushInterval_) {
                 lastFlush_ = now;
-                file_->flush();
+                file_->Flush();
             }
         }
     }
 }
+
+}  // namespace log
+
+}  // namespace baize

@@ -1,7 +1,7 @@
-#ifndef BAIZE_CONDITION_H
-#define BAIZE_CONDITION_H
+#ifndef BAIZE_CONDITION_H_
+#define BAIZE_CONDITION_H_
 
-#include "thread/Mutex.h"
+#include "thread/mutex.h"
 
 namespace baize
 {
@@ -20,10 +20,10 @@ public:
     Condition(const Condition&) = delete;
     Condition& operator=(const Condition&) = delete;
 
-    void wait() { assert(pthread_cond_wait(&cond_, mutex_.getMutex()) == 0); }
-    bool waitForSeconds(double seconds);
-    void notify() { assert(pthread_cond_signal(&cond_) == 0); }
-    void notifyAll() { assert(pthread_cond_broadcast(&cond_) == 0); }
+    void Wait() { assert(pthread_cond_wait(&cond_, mutex_.mutex()) == 0); }
+    bool WaitForSeconds(double seconds);
+    void Notify() { assert(pthread_cond_signal(&cond_) == 0); }
+    void NotifyAll() { assert(pthread_cond_broadcast(&cond_) == 0); }
 
 private:
     MutexLock& mutex_;

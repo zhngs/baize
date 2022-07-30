@@ -1,5 +1,5 @@
-add_executable(Timestamp_test Timestamp_test.cc)
-target_link_libraries(Timestamp_test baize pthread boost_context)
+add_executable(time_stamp_test time_stamp_test.cc)
+target_link_libraries(time_stamp_test baize pthread boost_context)
 
-add_executable(Timer_test Timer_test.cc)
-target_link_libraries(Timer_test baize boost_context pthread)
+add_executable(timer_test timer_test.cc)
+target_link_libraries(timer_test baize boost_context pthread)

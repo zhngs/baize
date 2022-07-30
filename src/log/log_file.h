@@ -1,9 +1,9 @@
-#ifndef BAIZE_LOGFILE_H
-#define BAIZE_LOGFILE_H
+#ifndef BAIZE_LOGFILE_H_
+#define BAIZE_LOGFILE_H_
 
 #include <memory>
 
-#include "log/AppendFile.h"
+#include "log/append_file.h"
 #include "util/types.h"
 
 namespace baize
@@ -23,13 +23,13 @@ public:
     LogFile(const LogFile&) = delete;
     LogFile& operator=(const LogFile&) = delete;
 
-    void append(const char* logline, int len);
-    void flush();
-    bool rollFile();
-
-    static string getLogFileName(const string& basename, time_t* now);
+    void Append(const char* logline, int len);
+    void Flush();
 
 private:
+    bool RollFile();
+    static string log_file_name(const string& basename, time_t* now);
+
     const string basename_;
     const off_t rollSize_;
     const int flushInterval_;

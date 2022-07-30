@@ -1,6 +1,6 @@
-#include "log/Logger.h"
+#include "log/logger.h"
 #include "runtime/EventLoop.h"
-#include "time/TimerQueue.h"
+#include "time/timer_queue.h"
 
 using namespace baize;
 using namespace baize::time;
@@ -14,13 +14,14 @@ void timer()
 {
     EventLoop* loop = getCurrentLoop();
     LOG_INFO << "timer start";
-    loop->runAfter(2, test2);
+    TimerId id = loop->runAfter(2, test2);
+    loop->cancelTimer(id);
     loop->runEvery(1, test);
 }
 
 int main()
 {
-    log::Logger::setLogLevel(log::Logger::INFO);
+    // log::Logger::set_loglevel(log::Logger::INFO);
     EventLoop loop;
     loop.addAndExecRoutine(timer);
     loop.start();

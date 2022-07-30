@@ -1,5 +1,5 @@
-#ifndef BAIZE_EVENTLOOP_H
-#define BAIZE_EVENTLOOP_H
+#ifndef BAIZE_EVENTLOOP_H_
+#define BAIZE_EVENTLOOP_H_
 
 #include <sys/epoll.h>
 
@@ -9,8 +9,7 @@
 
 #include "runtime/Routine.h"
 #include "runtime/RuntimeType.h"
-#include "time/TimeType.h"
-#include "time/TimerQueue.h"
+#include "time/timer_queue.h"
 #include "util/types.h"
 
 namespace baize

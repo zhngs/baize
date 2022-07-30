@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "log/Logger.h"
+#include "log/logger.h"
 
 namespace baize
 {

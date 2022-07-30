@@ -1,5 +1,5 @@
-add_executable(Logger_test Logger_test.cc)
-target_link_libraries(Logger_test baize pthread boost_context)
+add_executable(logger_test logger_test.cc)
+target_link_libraries(logger_test baize pthread boost_context)
 
-add_executable(AsyncLogging_test AsyncLogging_test.cc)
-target_link_libraries(AsyncLogging_test baize pthread boost_context)
+add_executable(async_logging_test async_logging_test.cc)
+target_link_libraries(async_logging_test baize pthread boost_context)

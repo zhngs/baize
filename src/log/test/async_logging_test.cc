@@ -1,10 +1,10 @@
-#include "log/AsyncLogging.h"
+#include "log/async_logging.h"
 
 #include <iostream>
 
-#include "log/Logger.h"
-#include "thread/Thread.h"
-#include "time/Timestamp.h"
+#include "log/logger.h"
+#include "thread/thread.h"
+#include "time/time_stamp.h"
 #include "unistd.h"
 
 using namespace baize;
@@ -18,11 +18,11 @@ Timestamp g_last_time;
 
 void log_print()
 {
-    g_last_time = Timestamp::now();
+    g_last_time = Timestamp::Now();
     while (1) {
         sleep(1);
-        Timestamp current_time(Timestamp::now());
-        double sec = elapsedInSecond(current_time, g_last_time);
+        Timestamp current_time(Timestamp::Now());
+        double sec = ElapsedInSecond(current_time, g_last_time);
         double write_bytes =
             static_cast<double>(g_writtenbytes - g_writtenbytes_last);
         double speed = write_bytes / sec / 1024 / 1024;
@@ -36,16 +36,16 @@ void log_print()
 
 int main()
 {
-    Thread thread_log([] { log_print(); }, "log");
-    thread_log.start();
+    Thread thread_log("log", [] { log_print(); });
+    thread_log.Start();
 
     AsyncLogging log("AsyncLoggingTest", 1024 * 1024 * 1000);
-    Logger::setOutput([&](const char* msg, int len) {
-        log.append(msg, len);
+    Logger::set_output([&](const char* msg, int len) {
+        log.Append(msg, len);
         g_writtenbytes += len;
     });
-    Logger::setFlush([&] { log.flush(); });
-    log.start();
+    Logger::set_flush([&] { log.Flush(); });
+    log.Start();
 
     while (1) {
         LOG_INFO << "hello world" << 123;

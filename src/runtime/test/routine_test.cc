@@ -1,6 +1,6 @@
 #include "runtime/Routine.h"
 
-#include "log/Logger.h"
+#include "log/logger.h"
 
 using namespace baize;
 using namespace baize::runtime;
