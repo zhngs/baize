@@ -6,7 +6,7 @@ namespace baize
 namespace time
 {
 
-thread_local uint64_t g_timerid = 0;
+thread_local uint64_t g_timerid = 1;
 
 Timer::Timer(TimerCallback cb, Timestamp when, double interval)
   : cb_(std::move(cb)),

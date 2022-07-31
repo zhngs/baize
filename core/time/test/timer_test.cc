@@ -6,9 +6,13 @@ using namespace baize;
 using namespace baize::time;
 using namespace baize::runtime;
 
-void test() { LOG_INFO << "test"; }
-
 void test2() { LOG_INFO << "test2"; }
+
+void test()
+{
+    LOG_INFO << "test";
+    current_loop()->RunEvery(1, test2);
+}
 
 void timer()
 {
@@ -16,7 +20,7 @@ void timer()
     LOG_INFO << "timer start";
     TimerId id = loop->RunAfter(2, test2);
     loop->CancelTimer(id);
-    loop->RunEvery(1, test);
+    loop->RunAfter(3, test);
 }
 
 int main()

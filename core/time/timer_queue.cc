@@ -49,7 +49,7 @@ void ResetTimerfd(int timerfd, Timestamp expiration)
     }
 }
 
-TimerQueue::TimerQueue() : timerfd_(CreateTimerfd()) {}
+TimerQueue::TimerQueue() : timerfd_(CreateTimerfd()), calling_timers(false) {}
 
 TimerQueue::~TimerQueue() { ::close(timerfd_); }
 
@@ -72,7 +72,7 @@ TimerId TimerQueue::AddTimer(TimerCallback cb, Timestamp when, double interval)
 
     ordered_timers_.insert(order);
     timers_[timerid] = std::move(timer);
-    if (shouldreset) {
+    if (shouldreset && !calling_timers) {
         ResetTimerfd(timerfd_, when);
     }
     return timerid;
@@ -116,6 +116,7 @@ void TimerQueue::HandleActiveTimer()
         }
 
         // run timer callback and handle repeat timer
+        calling_timers = true;
         for (TimerId id : expired) {
             auto& timer = timers_[id];
             timer->Run();
@@ -126,6 +127,7 @@ void TimerQueue::HandleActiveTimer()
                 timers_.erase(id);
             }
         }
+        calling_timers = false;
 
         // reset timers
         if (!ordered_timers_.empty()) {

@@ -23,6 +23,7 @@ enum class WaitMode {
     kWaitWritable,
 };
 using WaitRequest = std::pair<int, WaitMode>;
+using ScheduleInfo = std::pair<RoutineId, time::TimerId>;
 
 class EventLoop;
 EventLoop* current_loop();
@@ -43,8 +44,10 @@ public:
     void EnablePoll(int fd);
     void DisablePoll(int fd);
 
-    void WaitReadable(int fd);
-    void WaitWritable(int fd);
+    WaitRequest WaitReadable(int fd);
+    WaitRequest WaitReadable(int fd, double ms, bool& timeout);
+    WaitRequest WaitWritable(int fd);
+    WaitRequest WaitWritable(int fd, double ms, bool& timeout);
 
     void CheckTicks();
 
@@ -61,6 +64,7 @@ private:
     void SpawnRoutine(RoutineCallBack func);
     void ScheduleRoutine(WaitRequest req);
     void MonitorRoutine();
+    void Call(RoutineId id);
 
     void RunInLoop(FunctionCallBack func);
     void EpollControl(int op, int fd, epoll_event* ev);
@@ -69,11 +73,22 @@ private:
     string epoll_event_string(int events);
 
     int epollfd_;
+    // routines
     std::map<RoutineId, std::unique_ptr<Routine>> routines_;
-    std::map<WaitRequest, RoutineId> wait_requests_;
+
+    // WaitRequests
+    std::map<WaitRequest, ScheduleInfo> wait_requests_;
+
+    // ticks end routines
     std::vector<RoutineId> ticks_end_routines_;
+
+    // call function in loop
     std::vector<FunctionCallBack> functions_;
+
+    // epoll events
     std::vector<epoll_event> events_;
+
+    // timerqueue
     std::unique_ptr<time::TimerQueue> timerqueue_;
 };
 

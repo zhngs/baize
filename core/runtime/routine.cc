@@ -56,7 +56,8 @@ public:
         LOG_TRACE << "call routine" << routineid_;
         g_current_routineid = routineid_;
         if (finished_) {
-            LOG_FATAL << "Routine has finished";
+            LOG_ERROR << "Routine has finished";
+            return;
         }
         routine_ = routine_.resume();
     }

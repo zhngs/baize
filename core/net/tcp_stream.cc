@@ -58,6 +58,30 @@ int TcpStream::AsyncRead(void* buf, size_t count)
     }
 }
 
+int TcpStream::AsyncRead(void* buf, size_t count, double ms, bool& timeout)
+{
+    runtime::EventLoop* loop = runtime::current_loop();
+    while (1) {
+        loop->CheckTicks();
+        ssize_t rn = conn_->Read(buf, count);
+        if (rn < 0) {
+            int saveErrno = errno;
+            if (errno == EAGAIN) {
+                loop->WaitReadable(conn_->sockfd(), ms, timeout);
+                runtime::Return();
+                if (timeout) {
+                    return -1;
+                }
+                continue;
+            } else {
+                LOG_SYSERR << "async read failed";
+            }
+            errno = saveErrno;
+        }
+        return static_cast<int>(rn);
+    }
+}
+
 int TcpStream::AsyncWrite(const void* buf, size_t count)
 {
     runtime::EventLoop* loop = runtime::current_loop();

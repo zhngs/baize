@@ -31,6 +31,7 @@ public:
     ssize_t Write(const void* buf, size_t count);
 
     int AsyncRead(void* buf, size_t count);
+    int AsyncRead(void* buf, size_t count, double ms, bool& timeout);
     int AsyncWrite(const void* buf, size_t count);
 
     int AsyncReadOrDie(void* buf, size_t count);

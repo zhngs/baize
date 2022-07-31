@@ -30,6 +30,7 @@ private:
     Timestamp AsyncReadTimerfd();
 
     const int timerfd_;
+    bool calling_timers;
     using TimerOrder = std::pair<Timestamp, TimerId>;
     std::set<TimerOrder> ordered_timers_;
     std::map<TimerId, std::unique_ptr<Timer>> timers_;

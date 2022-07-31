@@ -25,6 +25,7 @@ public:
     void Start();
     TcpStreamSptr Accept();
     TcpStreamSptr AsyncAccept();
+    TcpStreamSptr AsyncAccept(double ms, bool& timeout);
 
     // getter
     int sockfd();

@@ -43,28 +43,50 @@ EventLoop::~EventLoop() {}
 
 void EventLoop::Start()
 {
-    int epolltime = kEpollTimeout;
     std::vector<RoutineId> ticks_end;
+    std::vector<FunctionCallBack> functions;
 
     timerqueue_->Start();
     RunEvery(3, [=] { MonitorRoutine(); });
 
     while (1) {
-        for (auto& func : functions_) {
-            func();
-        }
-        functions_.clear();
+        int epolltime = kEpollTimeout;
 
-        int numEvents = ::epoll_wait(epollfd_,
-                                     &*events_.begin(),
-                                     static_cast<int>(events_.size()),
-                                     epolltime);
-        int savedErrno = errno;
-        if (numEvents > 0) {
-            if (static_cast<size_t>(numEvents) == events_.size()) {
+        // call function in loop
+        if (!functions_.empty()) {
+            functions = std::move(functions_);
+            for (auto& func : functions) {
+                func();
+            }
+            functions.clear();
+        }
+
+        // call ticks over routine
+        if (!ticks_end_routines_.empty()) {
+            ticks_end = std::move(ticks_end_routines_);
+            for (RoutineId id : ticks_end) {
+                routines_[id]->Call();
+            }
+            ticks_end.clear();
+        }
+
+        // set epolltime for quick reaction
+        if (!functions_.empty() || !ticks_end_routines_.empty()) {
+            epolltime = std::min(0, epolltime);
+        }
+
+        // do epoll
+        int num_events = ::epoll_wait(epollfd_,
+                                      &*events_.begin(),
+                                      static_cast<int>(events_.size()),
+                                      epolltime);
+        int saved_errno = errno;
+        if (num_events > 0) {
+            LOG_TRACE << num_events << " events happen";
+            if (static_cast<size_t>(num_events) == events_.size()) {
                 events_.resize(events_.size() * 2);
             }
-            for (int i = 0; i < numEvents; i++) {
+            for (int i = 0; i < num_events; i++) {
                 int fd = events_[i].data.fd;
                 int events = events_[i].events;
                 LOG_TRACE << "fd " << fd << " epoll event is ["
@@ -79,59 +101,73 @@ void EventLoop::Start()
                     ScheduleRoutine(req);
                 }
             }
-        } else if (numEvents == 0) {
+        } else if (num_events == 0) {
             LOG_TRACE << "nothing happened";
         } else {
             LOG_TRACE << "epoll error happened";
             // error happens, log uncommon ones
-            if (savedErrno != EINTR) {
-                errno = savedErrno;
+            if (saved_errno != EINTR) {
+                errno = saved_errno;
                 LOG_SYSERR << "epoll_wait()";
             }
-        }
-
-        ticks_end = std::move(ticks_end_routines_);
-        assert(ticks_end_routines_.size() == 0);
-        for (RoutineId id : ticks_end) {
-            routines_[id]->Call();
-        }
-        ticks_end.clear();
-
-        if (!ticks_end_routines_.empty()) {
-            epolltime = 0;
-        } else {
-            epolltime = kEpollTimeout;
         }
     }
 }
 
 void EventLoop::Do(RoutineCallBack func)
 {
-    RunInLoop([=] { SpawnRoutine(func); });
+    RunInLoop([this, func] { SpawnRoutine(func); });
 }
 
-void EventLoop::WaitReadable(int fd)
+void EventLoop::Call(RoutineId id)
+{
+    RunInLoop([this, id] { routines_[id]->Call(); });
+}
+
+WaitRequest EventLoop::WaitReadable(int fd)
 {
     assert(!is_main_routine());
     WaitRequest req(fd, WaitMode::kWaitReadable);
     RoutineId id = current_routineid();
-    assert(wait_requests_.find(req) == wait_requests_.end());
     LOG_TRACE << "add wait request { {fd:" << fd << ", mode:"
               << "READ"
               << "} : routine" << id << " }";
-    wait_requests_[req] = id;
+
+    assert(wait_requests_.find(req) == wait_requests_.end());
+    ScheduleInfo info(id, 0);
+    wait_requests_[req] = info;
+
+    return req;
 }
 
-void EventLoop::WaitWritable(int fd)
+WaitRequest EventLoop::WaitReadable(int fd, double ms, bool& timeout)
+{
+    WaitRequest req = WaitReadable(fd);
+    time::TimerId timer_id = RunAfter(ms / 1000, [this, &timeout, req] {
+        RoutineId routine_id = wait_requests_[req].first;
+        LOG_TRACE << "routine" << routine_id << " timeout";
+        timeout = true;
+        wait_requests_.erase(req);
+        Call(routine_id);
+    });
+    wait_requests_[req].second = timer_id;
+
+    return req;
+}
+
+WaitRequest EventLoop::WaitWritable(int fd)
 {
     assert(!is_main_routine());
     WaitRequest req(fd, WaitMode::kWaitWritable);
     RoutineId id = current_routineid();
-    assert(wait_requests_.find(req) == wait_requests_.end());
     LOG_TRACE << "add wait request { {fd:" << fd << ", mode:"
               << "Write"
               << "} : routine" << id << " }";
-    wait_requests_[req] = id;
+    assert(wait_requests_.find(req) == wait_requests_.end());
+    ScheduleInfo info(id, 0);
+    wait_requests_[req] = info;
+
+    return req;
 }
 
 void EventLoop::CheckTicks()
@@ -210,12 +246,18 @@ void EventLoop::SpawnRoutine(RoutineCallBack func)
 void EventLoop::ScheduleRoutine(WaitRequest req)
 {
     if (wait_requests_.find(req) != wait_requests_.end()) {
-        RoutineId id = wait_requests_[req];
-        auto& routine = routines_[id];
+        RoutineId routine_id = wait_requests_[req].first;
+        time::TimerId timer_id = wait_requests_[req].second;
+        auto& routine = routines_[routine_id];
         LOG_TRACE << "erase wait request { {fd:" << req.first << ", mode:"
                   << (req.second == WaitMode::kWaitReadable ? "READ" : "WRITE")
-                  << "} : routine" << id << " }";
+                  << "} : routine" << routine_id << " }";
         wait_requests_.erase(req);
+
+        if (timer_id != 0) {
+            CancelTimer(timer_id);
+        }
+
         routine->Call();
     }
 }
@@ -230,6 +272,7 @@ void EventLoop::MonitorRoutine()
             it++;
         }
     }
+    LOG_TRACE << "there is " << routines_.size() << " routines";
 }
 
 void EventLoop::RunInLoop(FunctionCallBack func)

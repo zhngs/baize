@@ -52,9 +52,31 @@ TcpStreamSptr TcpListener::AsyncAccept()
         loop->CheckTicks();
         int connfd = sock_->Accept(&peeraddr);
         if (connfd < 0) {
-            if (errno == EAGAIN || errno == EINTR) {
+            if (errno == EAGAIN) {
                 loop->WaitReadable(sock_->sockfd());
                 runtime::Return();
+                continue;
+            }
+        } else {
+            return std::make_shared<TcpStream>(connfd, peeraddr);
+        }
+    }
+}
+
+TcpStreamSptr TcpListener::AsyncAccept(double ms, bool& timeout)
+{
+    runtime::EventLoop* loop = runtime::current_loop();
+    InetAddress peeraddr;
+    while (1) {
+        loop->CheckTicks();
+        int connfd = sock_->Accept(&peeraddr);
+        if (connfd < 0) {
+            if (errno == EAGAIN) {
+                loop->WaitReadable(sock_->sockfd(), ms, timeout);
+                runtime::Return();
+                if (timeout) {
+                    return TcpStreamSptr();
+                }
                 continue;
             }
         } else {

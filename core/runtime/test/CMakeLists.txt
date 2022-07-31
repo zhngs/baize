@@ -1,0 +1,8 @@
+add_executable(routine_test routine_test.cc)
+target_link_libraries(routine_test baize boost_context pthread)
+
+add_executable(eventloop_test eventloop_test.cc)
+target_link_libraries(eventloop_test baize boost_context pthread)
+
+add_executable(timeout_routine_test timeout_routine_test.cc)
+target_link_libraries(timeout_routine_test baize boost_context pthread)
