@@ -1,4 +1,4 @@
-#include "runtime/Routine.h"
+#include "runtime/routine.h"
 
 #include "log/logger.h"
 
@@ -12,14 +12,14 @@ int main()
         a = 0;
         int b = 1;
         for (;;) {
-            Routine::hangup();
+            Return();
             int next = a + b;
             a = b;
             b = next;
         }
     });
     for (int i = 0; i < 10; i++) {
-        routine1.call();
+        routine1.Call();
         LOG_DEBUG << "a = " << a;
     }
 }

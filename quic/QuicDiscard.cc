@@ -3,7 +3,7 @@
 #include "QuicConnection.h"
 #include "QuicListener.h"
 #include "log/logger.h"
-#include "runtime/EventLoop.h"
+#include "runtime/event_loop.h"
 #include "thread/thread.h"
 #include "time/time_stamp.h"
 
@@ -115,11 +115,11 @@ int main(int argc, char* argv[])
         return 0;
     }
     if (strcmp(argv[1], "-s") == 0) {
-        loop.addAndExecRoutine(discard_quic_server);
+        loop.Do(discard_quic_server);
     } else if (strcmp(argv[1], "-c") == 0) {
-        loop.addAndExecRoutine(discard_quic_client);
+        loop.Do(discard_quic_client);
     } else {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";
     }
-    loop.start();
+    loop.Start();
 }

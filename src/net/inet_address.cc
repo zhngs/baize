@@ -1,10 +1,8 @@
-#include "net/InetAddress.h"
+#include "net/inet_address.h"
 
 #include <arpa/inet.h>
 
 #include "log/logger.h"
-
-using namespace baize;
 
 //     /* Structure describing an Internet socket address.  */
 //     struct sockaddr_in {
@@ -27,7 +25,13 @@ using namespace baize;
 //         uint32_t        sin6_scope_id; /* IPv6 scope-id */
 //     };
 
-net::InetAddress::InetAddress(const char* ip, uint16_t port, bool ipv6)
+namespace baize
+{
+
+namespace net
+{
+
+InetAddress::InetAddress(const char* ip, uint16_t port, bool ipv6)
 {
     if (ipv6 || strchr(ip, ':')) {
         memZero(&addr6_, sizeof(addr6_));
@@ -46,7 +50,7 @@ net::InetAddress::InetAddress(const char* ip, uint16_t port, bool ipv6)
     }
 }
 
-net::InetAddress::InetAddress(uint16_t port, bool loopback, bool ipv6)
+InetAddress::InetAddress(uint16_t port, bool loopback, bool ipv6)
 {
     if (ipv6) {
         memZero(&addr6_, sizeof(addr6_));
@@ -63,19 +67,19 @@ net::InetAddress::InetAddress(uint16_t port, bool loopback, bool ipv6)
     }
 }
 
-string net::InetAddress::getIpPort() const
+string InetAddress::ip_port() const
 {
     char buf[64] = "";
 
     if (addr_.sin_family == AF_INET6) {
-        snprintf(buf, sizeof(buf), "[%s]:%u", getIp().data(), getPort());
+        snprintf(buf, sizeof(buf), "[%s]:%u", ip().data(), port());
     } else if (addr_.sin_family == AF_INET) {
-        snprintf(buf, sizeof(buf), "%s:%u", getIp().data(), getPort());
+        snprintf(buf, sizeof(buf), "%s:%u", ip().data(), port());
     }
     return buf;
 }
 
-string net::InetAddress::getIp() const
+string InetAddress::ip() const
 {
     char buf[64] = "";
     if (addr_.sin_family == AF_INET) {
@@ -90,7 +94,7 @@ string net::InetAddress::getIp() const
     return buf;
 }
 
-socklen_t net::InetAddress::getSockLen() const
+socklen_t InetAddress::socklen() const
 {
     if (addr_.sin_family == AF_INET) {
         return sizeof(addr_);
@@ -100,3 +104,7 @@ socklen_t net::InetAddress::getSockLen() const
         return -1;
     }
 }
+
+}  // namespace net
+
+}  // namespace baize

@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "log/logger.h"
-#include "runtime/EventLoop.h"
+#include "runtime/event_loop.h"
 
 namespace baize
 {
@@ -136,18 +136,16 @@ void TimerQueue::HandleActiveTimer()
 
 Timestamp TimerQueue::AsyncReadTimerfd()
 {
-    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
-        loop->checkRoutineTimeout();
+        loop->CheckTicks();
         uint64_t howmany;
         Timestamp now(Timestamp::Now());
         ssize_t n = ::read(timerfd_, &howmany, sizeof(howmany));
         if (n < 0) {
             if (errno == EAGAIN) {
-                loop->addWaitRequest(timerfd_,
-                                     WAIT_READ_REQUEST,
-                                     runtime::getCurrentRoutineId());
-                loop->backToMainRoutine();
+                loop->WaitReadable(timerfd_);
+                runtime::Return();
                 continue;
             } else {
                 LOG_SYSERR << "async read timer failed";
@@ -163,10 +161,10 @@ Timestamp TimerQueue::AsyncReadTimerfd()
 
 void TimerQueue::Start()
 {
-    runtime::EventLoop* loop = runtime::getCurrentLoop();
+    runtime::EventLoop* loop = runtime::current_loop();
 
-    loop->registerPollEvent(timerfd_);
-    loop->addAndExecRoutine([=] { HandleActiveTimer(); });
+    loop->EnablePoll(timerfd_);
+    loop->Do([=] { HandleActiveTimer(); });
 }
 
 }  // namespace time

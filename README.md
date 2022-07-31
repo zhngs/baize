@@ -52,7 +52,7 @@ void discard_connection(TcpStreamSptr conn)
     char buf[65536];
     while (1) {
         // 异步read
-        int rn = conn->asyncReadOrDie(buf, sizeof(buf));
+        int rn = conn->AsyncReadOrDie(buf, sizeof(buf));
         if (rn == 0) break;
     }
     LOG_INFO << "discard_connection finish";
@@ -66,9 +66,9 @@ void discard_server()
     while (1) {
         // 异步accept
         TcpStreamSptr stream = listener.asyncAccept();
-        stream->setTcpNoDelay();
-        getCurrentLoop()->addRoutine([stream]{ discard_connection(stream); });
-        LOG_INFO << "accept connection " << stream->getPeerIpPort();
+        stream->set_tcp_nodelay();
+        current_loop()->Do([stream]{ discard_connection(stream); });
+        LOG_INFO << "accept connection " << stream->peer_ip_port();
     }
 }
 
@@ -76,8 +76,8 @@ int main(int argc, char* argv[])
 {
     EventLoop loop;
     // 添加协程
-    loop.addAndExecRoutine(discard_server);
-    loop.start();
+    loop.Do(discard_server);
+    loop.Start();
 }
 ```
 

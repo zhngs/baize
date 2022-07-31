@@ -1,6 +1,6 @@
 #include "log/logger.h"
 
-#include "runtime/EventLoop.h"
+#include "runtime/event_loop.h"
 #include "thread/thread.h"
 #include "time/time_stamp.h"
 
@@ -56,7 +56,7 @@ Logger::Logger(const char* filename,
 Logger::~Logger()
 {
     stream_ << " - " << filename_ << ":" << line_ << ":" << func_ << " - "
-            << "routine" << runtime::getCurrentRoutineId() << " - "
+            << "routine" << runtime::current_routineid() << " - "
             << thread::threadname() << ":" << thread::tidstring() << "\n";
     g_output(stream_.buffer(), stream_.length());
     if (level_ == FATAL) {

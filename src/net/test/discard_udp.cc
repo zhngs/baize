@@ -1,8 +1,8 @@
 #include <unistd.h>
 
 #include "log/logger.h"
-#include "net/UdpStream.h"
-#include "runtime/EventLoop.h"
+#include "net/udp_stream.h"
+#include "runtime/event_loop.h"
 #include "thread/thread.h"
 #include "time/time_stamp.h"
 
@@ -41,14 +41,14 @@ void discard_server()
 {
     char buf[4096];
     g_last_time = Timestamp::Now();
-    getCurrentLoop()->runEvery(1, server_print);
-    UdpStreamSptr stream = UdpStream::asServer(6060);
+    current_loop()->RunEvery(1, server_print);
+    UdpStreamSptr stream = UdpStream::AsServer(6060);
     InetAddress clientaddr;
     while (1) {
-        int rn = stream->asyncRecvfrom(buf, sizeof(buf), &clientaddr);
+        int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &clientaddr);
 
         // LOG_INFO << "discard_server recv " << rn << " bytes from " <<
-        // clientaddr.getIpPort();
+        // clientaddr.ip_port();
         g_read_msg++;
         g_readbytes += rn;
     }
@@ -74,18 +74,18 @@ void client_print()
 void discard_client()
 {
     string message(1024, 'z');
-    UdpStreamSptr stream = UdpStream::asClient();
+    UdpStreamSptr stream = UdpStream::AsClient();
 
-    getCurrentLoop()->runEvery(1, client_print);
+    current_loop()->RunEvery(1, client_print);
 
     g_last_time = Timestamp::Now();
     InetAddress serveraddr("127.0.0.1", 6060);
     LOG_INFO << "discard_client start";
     while (1) {
-        int wn = stream->asyncSendto(
+        int wn = stream->AsyncSendto(
             message.c_str(), static_cast<int>(message.size()), serveraddr);
         // LOG_INFO << "discard_client sendto " << wn << " bytes to " <<
-        // serveraddr.getIpPort();
+        // serveraddr.ip_port();
         g_sendbytes += wn;
         g_send_msg++;
     }
@@ -101,11 +101,11 @@ int main(int argc, char* argv[])
         return 0;
     }
     if (strcmp(argv[1], "-s") == 0) {
-        loop.addAndExecRoutine(discard_server);
+        loop.Do(discard_server);
     } else if (strcmp(argv[1], "-c") == 0) {
-        loop.addAndExecRoutine(discard_client);
+        loop.Do(discard_client);
     } else {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";
     }
-    loop.start();
+    loop.Start();
 }

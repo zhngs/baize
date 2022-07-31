@@ -1,5 +1,5 @@
 #include "log/logger.h"
-#include "runtime/EventLoop.h"
+#include "runtime/event_loop.h"
 #include "time/timer_queue.h"
 
 using namespace baize;
@@ -12,17 +12,17 @@ void test2() { LOG_INFO << "test2"; }
 
 void timer()
 {
-    EventLoop* loop = getCurrentLoop();
+    EventLoop* loop = current_loop();
     LOG_INFO << "timer start";
-    TimerId id = loop->runAfter(2, test2);
-    loop->cancelTimer(id);
-    loop->runEvery(1, test);
+    TimerId id = loop->RunAfter(2, test2);
+    loop->CancelTimer(id);
+    loop->RunEvery(1, test);
 }
 
 int main()
 {
     // log::Logger::set_loglevel(log::Logger::INFO);
     EventLoop loop;
-    loop.addAndExecRoutine(timer);
-    loop.start();
+    loop.Do(timer);
+    loop.Start();
 }

@@ -20,9 +20,9 @@ thread_local string t_threadname;
 pid_t tid() { return t_tid; }
 string tidstring() { return t_tidstring; }
 string threadname() { return t_threadname; }
+bool is_main_thread() { return t_tid == ::getpid(); }
 
 pid_t gettid() { return static_cast<pid_t>(::syscall(SYS_gettid)); }
-bool InMainThread() { return t_tid == ::getpid(); }
 
 class ThreadNameInitializer
 {

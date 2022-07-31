@@ -1,8 +1,7 @@
-#include "runtime/EventLoop.h"
-
 #include "log/logger.h"
-#include "net/TcpListener.h"
-#include "net/TcpStream.h"
+#include "net/tcp_listener.h"
+#include "net/tcp_stream.h"
+#include "runtime/event_loop.h"
 #include "time/time_stamp.h"
 
 using namespace baize;
@@ -39,27 +38,27 @@ void discard_connection(TcpStreamSptr conn)
 {
     char buf[65536];
     g_last_time = Timestamp::Now();
-    TimerId id = getCurrentLoop()->runEvery(1, server_print);
+    TimerId id = current_loop()->RunEvery(1, server_print);
     while (1) {
-        int rn = conn->asyncReadOrDie(buf, sizeof(buf));
+        int rn = conn->AsyncReadOrDie(buf, sizeof(buf));
         if (rn == 0) break;
         g_msg++;
         g_readbytes += rn;
     }
     LOG_INFO << "discard_connection finish";
-    getCurrentLoop()->cancelTimer(id);
+    current_loop()->CancelTimer(id);
 }
 
 void discard_server()
 {
     TcpListener listener(6070);
-    listener.start();
+    listener.Start();
 
     while (1) {
-        TcpStreamSptr stream = listener.asyncAccept();
-        stream->setTcpNoDelay();
-        getCurrentLoop()->addRoutine([stream] { discard_connection(stream); });
-        LOG_INFO << "accept connection " << stream->getPeerIpPort();
+        TcpStreamSptr stream = listener.AsyncAccept();
+        stream->set_tcp_nodelay();
+        current_loop()->Do([stream] { discard_connection(stream); });
+        LOG_INFO << "accept connection " << stream->peer_ip_port();
     }
 }
 
@@ -82,17 +81,17 @@ void discard_client()
     string message(1024, 'z');
     TcpStreamSptr stream = TcpStream::asyncConnect("127.0.0.1", 6070);
     if (!stream) return;
-    stream->setTcpNoDelay();
+    stream->set_tcp_nodelay();
 
-    getCurrentLoop()->runEvery(1, client_print);
+    current_loop()->RunEvery(1, client_print);
     g_last_time = Timestamp::Now();
     while (1) {
-        int wn = stream->asyncWriteOrDie(message.c_str(), message.size());
+        int wn = stream->AsyncWriteOrDie(message.c_str(), message.size());
         g_sendbytes += wn;
     }
     LOG_INFO << "discard_client finish";
-    stream->shutdownWrite();
-    while (stream->asyncReadOrDie(buf, sizeof(buf)) != 0) {
+    stream->ShutdownWrite();
+    while (stream->AsyncReadOrDie(buf, sizeof(buf)) != 0) {
     }
 }
 
@@ -105,11 +104,11 @@ int main(int argc, char* argv[])
         return 0;
     }
     if (strcmp(argv[1], "-s") == 0) {
-        loop.addAndExecRoutine(discard_server);
+        loop.Do(discard_server);
     } else if (strcmp(argv[1], "-c") == 0) {
-        loop.addAndExecRoutine(discard_client);
+        loop.Do(discard_client);
     } else {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";
     }
-    loop.start();
+    loop.Start();
 }

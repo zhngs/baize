@@ -4,7 +4,7 @@
 #include "QuicConnection.h"
 #include "RandomFile.h"
 #include "log/logger.h"
-#include "net/UdpStream.h"
+#include "net/udp_stream.h"
 
 using namespace baize;
 
@@ -38,8 +38,8 @@ struct net::QuicListenerData {
 };
 
 net::QuicListener::QuicListener(uint16_t port)
-  : udpstream_(UdpStream::asServer(port)),
-    localaddr_(udpstream_->getLocalAddr()),
+  : udpstream_(UdpStream::AsServer(port)),
+    localaddr_(udpstream_->localaddr()),
     config_(std::make_shared<QuicConfig>(QUICHE_PROTOCOL_VERSION))
 {
     config_->setCertAndKey("../quic/cert.crt", "../quic/cert.key");
@@ -53,7 +53,7 @@ void net::QuicListener::loopAndAccept()
     while (1) {
         QuicListenerData data;
 
-        int rn = udpstream_->asyncRecvfrom(
+        int rn = udpstream_->AsyncRecvFrom(
             quicReadBuffer, sizeof(quicReadBuffer), &data.peeraddr);
         if (rn < 0) {
             continue;
@@ -120,7 +120,7 @@ bool net::QuicListener::quicNegotiate(QuicListenerData* data)
         return false;
     }
 
-    int sent = udpstream_->asyncSendto(
+    int sent = udpstream_->AsyncSendto(
         quicWriteBuffer, static_cast<int>(written), data->peeraddr);
     if (sent != written) {
         LOG_ERROR << "failed to send";
@@ -180,8 +180,8 @@ bool net::QuicListener::validateToken(QuicListenerData* data)
     if (data->token_len == 0) {
         mint_token(data->dcid,
                    data->dcid_len,
-                   data->peeraddr.getSockAddr(),
-                   data->peeraddr.getSockLen(),
+                   data->peeraddr.sockaddr(),
+                   data->peeraddr.socklen(),
                    data->token,
                    &data->token_len);
 
@@ -208,7 +208,7 @@ bool net::QuicListener::validateToken(QuicListenerData* data)
             return false;
         }
 
-        int sent = udpstream_->asyncSendto(
+        int sent = udpstream_->AsyncSendto(
             quicWriteBuffer, static_cast<int>(written), data->peeraddr);
         if (sent != written) {
             LOG_ERROR << "failed to send";
@@ -219,8 +219,8 @@ bool net::QuicListener::validateToken(QuicListenerData* data)
 
     if (!validate_token(data->token,
                         data->token_len,
-                        data->peeraddr.getSockAddr(),
-                        data->peeraddr.getSockLen(),
+                        data->peeraddr.sockaddr(),
+                        data->peeraddr.socklen(),
                         data->odcid,
                         &data->odcid_len)) {
         LOG_ERROR << "invalid address vallidation token";
@@ -237,10 +237,10 @@ net::QuicConnSptr net::QuicListener::quicAccept(QuicListenerData* data)
                                       data->dcid_len,
                                       data->odcid,
                                       data->odcid_len,
-                                      localaddr_.getSockAddr(),
-                                      localaddr_.getSockLen(),
-                                      data->peeraddr.getSockAddr(),
-                                      data->peeraddr.getSockLen(),
+                                      localaddr_.sockaddr(),
+                                      localaddr_.socklen(),
+                                      data->peeraddr.sockaddr(),
+                                      data->peeraddr.socklen(),
                                       config_->getConfig());
     if (conn == nullptr) {
         return QuicConnSptr();

@@ -1,39 +1,43 @@
-#include "net/Socket.h"
+#include "net/socket.h"
 
 #include "arpa/inet.h"
 #include "log/logger.h"
-#include "net/InetAddress.h"
+#include "net/inet_address.h"
 #include "netinet/tcp.h"
 #include "unistd.h"
 
-using namespace baize;
+namespace baize
+{
 
-net::Socket::~Socket()
+namespace net
+{
+
+Socket::~Socket()
 {
     if (::close(sockfd_) < 0) {
         LOG_SYSERR << "Socket::close";
     }
 }
 
-int net::Socket::connect(const InetAddress& peeraddr)
+int Socket::Connect(const InetAddress& peeraddr)
 {
     // todo: now is too simple
     return ::connect(sockfd_,
-                     peeraddr.getSockAddr(),
+                     peeraddr.sockaddr(),
                      static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
 }
 
-void net::Socket::bindAddress(const InetAddress& localaddr)
+void Socket::BindAddress(const InetAddress& localaddr)
 {
     int ret = ::bind(sockfd_,
-                     localaddr.getSockAddr(),
+                     localaddr.sockaddr(),
                      static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
     if (ret < 0) {
         LOG_SYSFATAL << "Socket::bindAddress";
     }
 }
 
-void net::Socket::listen()
+void Socket::Listen()
 {
     int ret = ::listen(sockfd_, SOMAXCONN);
     if (ret < 0) {
@@ -41,7 +45,7 @@ void net::Socket::listen()
     }
 }
 
-int net::Socket::accept(InetAddress* peeraddr)
+int Socket::Accept(InetAddress* peeraddr)
 {
     struct sockaddr_in6 addr;
     memZero(&addr, sizeof(addr));
@@ -82,37 +86,35 @@ int net::Socket::accept(InetAddress* peeraddr)
     }
 
     if (connfd >= 0) {
-        peeraddr->setSockAddrIn6(addr);
+        peeraddr->set_sockaddr_in6(addr);
     }
     return connfd;
 }
 
-void net::Socket::shutdownWrite()
+void Socket::ShutdownWrite()
 {
     if (::shutdown(sockfd_, SHUT_WR) < 0) {
-        LOG_SYSERR << "sockets::shutdownWrite";
+        LOG_SYSERR << "sockets::ShutdownWrite";
     }
 }
 
-ssize_t net::Socket::read(void* buf, size_t count)
+ssize_t Socket::Read(void* buf, size_t count)
 {
     return ::read(sockfd_, buf, count);
 }
 
-ssize_t net::Socket::write(const void* buf, size_t count)
+ssize_t Socket::Write(const void* buf, size_t count)
 {
     return ::write(sockfd_, buf, count);
 }
 
-ssize_t net::Socket::sendto(const void* buf,
-                            size_t count,
-                            const InetAddress& addr)
+ssize_t Socket::SendTo(const void* buf, size_t count, const InetAddress& addr)
 {
     return ::sendto(
-        sockfd_, buf, count, 0, addr.getSockAddr(), sizeof(sockaddr_in6));
+        sockfd_, buf, count, 0, addr.sockaddr(), sizeof(sockaddr_in6));
 }
 
-ssize_t net::Socket::recvfrom(void* buf, size_t count, InetAddress* addr)
+ssize_t Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
 {
     sockaddr_in6 addr6;
     memZero(&addr6, sizeof(addr6));
@@ -120,12 +122,12 @@ ssize_t net::Socket::recvfrom(void* buf, size_t count, InetAddress* addr)
     ssize_t rn = ::recvfrom(
         sockfd_, buf, count, 0, reinterpret_cast<sockaddr*>(&addr6), &len);
     if (rn > 0) {
-        addr->setSockAddrIn6(addr6);
+        addr->set_sockaddr_in6(addr6);
     }
     return rn;
 }
 
-void net::Socket::setTcpNoDelay(bool on)
+void Socket::set_tcp_nodelay(bool on)
 {
     int optval = on ? 1 : 0;
     int ret = ::setsockopt(sockfd_,
@@ -134,11 +136,11 @@ void net::Socket::setTcpNoDelay(bool on)
                            &optval,
                            static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
-        LOG_SYSERR << "setTcpNoDelay to " << on << " failed";
+        LOG_SYSERR << "set_tcp_nodelay to " << on << " failed";
     }
 }
 
-void net::Socket::setReuseAddr(bool on)
+void Socket::set_reuse_addr(bool on)
 {
     int optval = on ? 1 : 0;
     int ret = ::setsockopt(sockfd_,
@@ -147,11 +149,11 @@ void net::Socket::setReuseAddr(bool on)
                            &optval,
                            static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
-        LOG_SYSERR << "setReuseAddr to " << on << " failed";
+        LOG_SYSERR << "set_reuse_addr to " << on << " failed";
     }
 }
 
-void net::Socket::setReusePort(bool on)
+void Socket::set_reuse_port(bool on)
 {
     int optval = on ? 1 : 0;
     int ret = ::setsockopt(sockfd_,
@@ -160,11 +162,11 @@ void net::Socket::setReusePort(bool on)
                            &optval,
                            static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
-        LOG_SYSERR << "setReusePort to " << on << " failed";
+        LOG_SYSERR << "set_reuse_port to " << on << " failed";
     }
 }
 
-void net::Socket::setKeepAlive(bool on)
+void Socket::set_keep_alive(bool on)
 {
     int optval = on ? 1 : 0;
     int ret = ::setsockopt(sockfd_,
@@ -173,11 +175,11 @@ void net::Socket::setKeepAlive(bool on)
                            &optval,
                            static_cast<socklen_t>(sizeof(optval)));
     if (ret < 0) {
-        LOG_SYSERR << "setKeepAlive to " << on << " failed";
+        LOG_SYSERR << "set_keep_alive to " << on << " failed";
     }
 }
 
-net::InetAddress net::Socket::getLocalAddr()
+InetAddress Socket::localaddr()
 {
     struct sockaddr_in6 localaddr;
     memZero(&localaddr, sizeof(localaddr));
@@ -185,12 +187,12 @@ net::InetAddress net::Socket::getLocalAddr()
     if (::getsockname(sockfd_,
                       reinterpret_cast<struct sockaddr*>(&localaddr),
                       &addrlen) < 0) {
-        LOG_SYSERR << "sockets::getLocalAddr";
+        LOG_SYSERR << "sockets::localaddr";
     }
     return InetAddress(localaddr);
 }
 
-net::InetAddress net::Socket::getPeerAddr()
+InetAddress Socket::peeraddr()
 {
     struct sockaddr_in6 peeraddr;
     memZero(&peeraddr, sizeof(peeraddr));
@@ -198,12 +200,12 @@ net::InetAddress net::Socket::getPeerAddr()
     if (::getpeername(sockfd_,
                       reinterpret_cast<struct sockaddr*>(&peeraddr),
                       &addrlen) < 0) {
-        LOG_SYSERR << "sockets::getPeerAddr";
+        LOG_SYSERR << "sockets::peeraddr";
     }
     return InetAddress(peeraddr);
 }
 
-int net::Socket::getSocketError()
+int Socket::socket_error()
 {
     int optval;
     socklen_t optlen = static_cast<socklen_t>(sizeof(optval));
@@ -215,12 +217,12 @@ int net::Socket::getSocketError()
     }
 }
 
-bool net::Socket::isSelfConnect()
+bool Socket::is_self_connect()
 {
-    InetAddress laddr = getLocalAddr();
-    InetAddress paddr = getPeerAddr();
-    const struct sockaddr* localaddr = laddr.getSockAddr();
-    const struct sockaddr* peeraddr = paddr.getSockAddr();
+    InetAddress laddr = localaddr();
+    InetAddress paddr = peeraddr();
+    const struct sockaddr* localaddr = laddr.sockaddr();
+    const struct sockaddr* peeraddr = paddr.sockaddr();
     if (localaddr->sa_family == AF_INET) {
         const struct sockaddr_in* laddr4 =
             reinterpret_cast<const struct sockaddr_in*>(localaddr);
@@ -242,22 +244,26 @@ bool net::Socket::isSelfConnect()
     }
 }
 
-int net::creatTcpSocket(sa_family_t family)
+int CreatTcpSocket(sa_family_t family)
 {
     int sockfd = ::socket(
         family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
     if (sockfd < 0) {
-        LOG_SYSFATAL << "sockets::creatTcpSocket failed";
+        LOG_SYSFATAL << "sockets::CreatTcpSocket failed";
     }
     return sockfd;
 }
 
-int net::creatUdpSocket(sa_family_t family)
+int CreatUdpSocket(sa_family_t family)
 {
     int sockfd = ::socket(
         family, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_UDP);
     if (sockfd < 0) {
-        LOG_SYSFATAL << "sockets::creatUdpSocket failed";
+        LOG_SYSFATAL << "sockets::CreatUdpSocket failed";
     }
     return sockfd;
 }
+
+}  // namespace net
+
+}  // namespace baize

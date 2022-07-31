@@ -4,7 +4,7 @@
 
 #include "QuicConfig.h"
 #include "RandomFile.h"
-#include "net/UdpStream.h"
+#include "net/udp_stream.h"
 
 using namespace baize;
 
@@ -29,8 +29,8 @@ net::QuicConnection::~QuicConnection() { quiche_conn_free(conn_); }
 net::QuicConnSptr net::QuicConnection::connect(const char* ip, uint16_t port)
 {
     InetAddress peeraddr(ip, port);
-    UdpStreamSptr udpstream(UdpStream::asClient());
-    InetAddress localaddr = udpstream->getLocalAddr();
+    UdpStreamSptr udpstream(UdpStream::AsClient());
+    InetAddress localaddr = udpstream->localaddr();
     QuicConfigSptr config(std::make_shared<QuicConfig>(0xbabababa));
     config->setClientConfig();
     uint8_t scid[kConnIdLen];
@@ -38,10 +38,10 @@ net::QuicConnSptr net::QuicConnection::connect(const char* ip, uint16_t port)
     quiche_conn* conn = quiche_connect(ip,
                                        scid,
                                        sizeof(scid),
-                                       localaddr.getSockAddr(),
-                                       localaddr.getSockLen(),
-                                       peeraddr.getSockAddr(),
-                                       peeraddr.getSockLen(),
+                                       localaddr.sockaddr(),
+                                       localaddr.socklen(),
+                                       peeraddr.sockaddr(),
+                                       peeraddr.socklen(),
                                        config->getConfig());
     if (conn == nullptr) {
         LOG_ERROR << "quiche_connect failed";
@@ -77,7 +77,7 @@ bool net::QuicConnection::flushQuic()
             return false;
         }
 
-        ssize_t sent = udpstream_->asyncSendto(
+        ssize_t sent = udpstream_->AsyncSendto(
             quicWriteBuffer, static_cast<int>(written), peeraddr_);
         if (sent != written) {
             LOG_SYSERR << "failed to send";
@@ -92,17 +92,17 @@ bool net::QuicConnection::untilEstablished()
 {
     while (1) {
         InetAddress peeraddr;
-        ssize_t read = udpstream_->asyncRecvfrom(
+        ssize_t read = udpstream_->AsyncRecvFrom(
             quicReadBuffer, sizeof(quicReadBuffer), &peeraddr);
         if (read < 0) {
             return false;
         }
 
         quiche_recv_info recv_info = {
-            peeraddr.getSockAddr(),
-            peeraddr.getSockLen(),
-            localaddr_.getSockAddr(),
-            localaddr_.getSockLen(),
+            peeraddr.sockaddr(),
+            peeraddr.socklen(),
+            localaddr_.sockaddr(),
+            localaddr_.socklen(),
         };
         ssize_t done =
             quiche_conn_recv(conn_, quicReadBuffer, read, &recv_info);
@@ -164,10 +164,10 @@ void net::QuicConnection::quicConnRead(void* buf,
                                        InetAddress& peeraddr)
 {
     quiche_recv_info recv_info = {
-        peeraddr.getSockAddr(),
-        peeraddr.getSockLen(),
-        localaddr_.getSockAddr(),
-        localaddr_.getSockLen(),
+        peeraddr.sockaddr(),
+        peeraddr.socklen(),
+        localaddr_.sockaddr(),
+        localaddr_.socklen(),
     };
 
     ssize_t done =
@@ -209,7 +209,7 @@ bool net::QuicConnection::fillQuic()
 {
     while (1) {
         InetAddress peeraddr;
-        ssize_t read = udpstream_->asyncRecvfrom(
+        ssize_t read = udpstream_->AsyncRecvFrom(
             quicReadBuffer, sizeof(quicReadBuffer), &peeraddr);
         if (read < 0) {
             return false;
@@ -218,10 +218,10 @@ bool net::QuicConnection::fillQuic()
         LOG_INFO << "fillQuic udpsocket read " << read << " bytes";
 
         quiche_recv_info recv_info = {
-            peeraddr.getSockAddr(),
-            peeraddr.getSockLen(),
-            localaddr_.getSockAddr(),
-            localaddr_.getSockLen(),
+            peeraddr.sockaddr(),
+            peeraddr.socklen(),
+            localaddr_.sockaddr(),
+            localaddr_.socklen(),
         };
         ssize_t done =
             quiche_conn_recv(conn_, quicReadBuffer, read, &recv_info);

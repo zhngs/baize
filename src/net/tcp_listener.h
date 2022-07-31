@@ -1,11 +1,11 @@
-#ifndef BAIZE_TCPLISTENER_H
-#define BAIZE_TCPLISTENER_H
+#ifndef BAIZE_TCPLISTENER_H_
+#define BAIZE_TCPLISTENER_H_
 
 #include <memory>
 
-#include "net/InetAddress.h"
-#include "net/NetType.h"
-#include "net/Socket.h"
+#include "net/inet_address.h"
+#include "net/socket.h"
+#include "net/tcp_stream.h"
 
 namespace baize
 {
@@ -22,10 +22,12 @@ public:
     TcpListener(const TcpListener&) = delete;
     TcpListener& operator=(const TcpListener&) = delete;
 
-    void start();
-    TcpStreamSptr accept();
-    TcpStreamSptr asyncAccept();
-    int getSockfd();
+    void Start();
+    TcpStreamSptr Accept();
+    TcpStreamSptr AsyncAccept();
+
+    // getter
+    int sockfd();
 
 private:
     bool started_;

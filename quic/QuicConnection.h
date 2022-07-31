@@ -2,8 +2,8 @@
 #define BAIZE_QUICCONNECTION_H
 
 #include "QuicType.h"
-#include "net/InetAddress.h"
 #include "net/NetType.h"
+#include "net/inet_address.h"
 
 namespace baize
 {
