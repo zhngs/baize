@@ -31,7 +31,7 @@ $ make
 
 ## 4.目录介绍
 
-baize 源代码在 src 目录下，quic 目录是我针对 quic 协议编写的实验性质的代码
+baize 源代码在 core 目录下，quic 目录是我针对 quic 协议编写的实验性质的代码
 
 目前 baize 核心代码分为如下目录：
 
@@ -65,7 +65,7 @@ void discard_server()
 
     while (1) {
         // 异步accept
-        TcpStreamSptr stream = listener.asyncAccept();
+        TcpStreamSptr stream = listener.AsyncAccept();
         stream->set_tcp_nodelay();
         current_loop()->Do([stream]{ discard_connection(stream); });
         LOG_INFO << "accept connection " << stream->peer_ip_port();
