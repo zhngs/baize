@@ -19,6 +19,8 @@ baize 只是我业余的作品，目前不具备工业强度，初衷是在阅�
 
 构建系统选择 cmake，编译方法如下，但要提前安装 boost-context 依赖，版本为 1.66，版本不同可能会导致一些编译问题
 
+在执行以下命令之前，请阅读 third_party 下的 [README.md](./third_party/README.md)，确保已经满足 baize 的第三方依赖
+
 ```shell
 $ cd baize
 $ mkdir build

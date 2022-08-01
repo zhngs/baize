@@ -22,7 +22,7 @@ $ ./b2 --with-context variant=release
 
 ## 3.quiche
 
-baize 支持 quic 协议，可以通过顶层的 CMakeLists.txt 打开 quic 的编译选项，想要支持 quic 需要依赖第三方库 quiche
+baize 支持 quic 协议，可以通过顶层的 CMakeLists.txt 打开 quic 的编译选项，该选项默认关闭，想要支持 quic 需要依赖第三方库 quiche
 
 quiche 托管在 github 上，下载和编译的命令如下
 

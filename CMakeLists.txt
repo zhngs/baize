@@ -35,4 +35,4 @@ add_compile_options(
 add_subdirectory(core)
 
 # quic的编译选项
-add_subdirectory(quic)
+# add_subdirectory(quic)
