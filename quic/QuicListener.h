@@ -4,8 +4,8 @@
 #include <map>
 
 #include "QuicType.h"
-#include "net/NetType.h"
 #include "net/inet_address.h"
+#include "net/udp_stream.h"
 
 namespace baize
 {

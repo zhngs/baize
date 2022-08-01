@@ -79,14 +79,12 @@ void discard_quic_client()
         LOG_FATAL << "quic conn get failed";
     }
 
-    thread::Thread thread_print(
-        [] {
-            while (1) {
-                client_print();
-            }
-        },
-        "client_print");
-    thread_print.start();
+    thread::Thread thread_print("client_print", [] {
+        while (1) {
+            client_print();
+        }
+    });
+    thread_print.Start();
 
     string message(1024, 'z');
     while (1) {

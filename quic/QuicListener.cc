@@ -4,7 +4,6 @@
 #include "QuicConnection.h"
 #include "RandomFile.h"
 #include "log/logger.h"
-#include "net/udp_stream.h"
 
 using namespace baize;
 
