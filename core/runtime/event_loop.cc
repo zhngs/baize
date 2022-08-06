@@ -14,7 +14,6 @@ namespace runtime
 thread_local EventLoop* tg_loop = nullptr;
 const int kEpollTimeout = 10000;
 const int kEpollEventSize = 16;
-const int kRoutineTicks = 3;
 
 EventLoop* current_loop()
 {
@@ -43,11 +42,10 @@ EventLoop::~EventLoop() {}
 
 void EventLoop::Start()
 {
-    std::vector<RoutineId> ticks_end;
     std::vector<FunctionCallBack> functions;
 
     timerqueue_->Start();
-    RunEvery(3, [=] { MonitorRoutine(); });
+    RunEvery(3, [this] { MonitorRoutine(); });
 
     while (1) {
         int epolltime = kEpollTimeout;
@@ -61,17 +59,8 @@ void EventLoop::Start()
             functions.clear();
         }
 
-        // call ticks over routine
-        if (!ticks_end_routines_.empty()) {
-            ticks_end = std::move(ticks_end_routines_);
-            for (RoutineId id : ticks_end) {
-                routines_[id]->Call();
-            }
-            ticks_end.clear();
-        }
-
         // set epolltime for quick reaction
-        if (!functions_.empty() || !ticks_end_routines_.empty()) {
+        if (!functions_.empty()) {
             epolltime = std::min(0, epolltime);
         }
 
@@ -177,7 +166,7 @@ void EventLoop::CheckTicks()
     auto& routine = routines_[id];
     if (routine->is_ticks_end()) {
         routine->set_ticks(kRoutineTicks);
-        ticks_end_routines_.push_back(id);
+        Call(id);
         Return();
     } else {
         routine->set_ticks_down();

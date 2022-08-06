@@ -17,6 +17,7 @@ Socket::~Socket()
     if (::close(sockfd_) < 0) {
         LOG_SYSERR << "Socket::close";
     }
+    LOG_TRACE << "Socket::close";
 }
 
 int Socket::Connect(const InetAddress& peeraddr)

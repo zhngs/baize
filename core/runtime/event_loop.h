@@ -79,9 +79,6 @@ private:
     // WaitRequests
     std::map<WaitRequest, ScheduleInfo> wait_requests_;
 
-    // ticks end routines
-    std::vector<RoutineId> ticks_end_routines_;
-
     // call function in loop
     std::vector<FunctionCallBack> functions_;
 

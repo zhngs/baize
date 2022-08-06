@@ -1,8 +1,8 @@
 #include "runtime/routine.h"
 
-#include <boost/context/all.hpp>
 #include <functional>
 
+#include "boost/context/all.hpp"
 #include "log/logger.h"
 #include "runtime/event_loop.h"
 
@@ -11,9 +11,6 @@ namespace baize
 
 namespace runtime
 {
-
-// 栈大小，256k，可自定义，可参考libco的128k
-const int kStackSize = 128 * 1024 * 2;
 
 thread_local boost::context::continuation main_routine;
 thread_local uint64_t g_current_routineid = Routine::kMainRoutineId;
@@ -28,11 +25,11 @@ bool is_main_routine()
 class Routine::Impl
 {
 public:
-    Impl(RoutineCallBack func)
-      : routineid_(g_routineid++), finished_(false), cb_(func)
+    Impl(RoutineCallBack func, int stacksize)
+      : routineid_(g_routineid++), finished_(false), cb_(std::move(func))
     {
         LOG_TRACE << "create routine" << routineid_;
-        boost::context::fixedsize_stack salloc(kStackSize);
+        boost::context::fixedsize_stack salloc(stacksize);
         routine_ = boost::context::callcc(
             std::allocator_arg,
             salloc,
@@ -41,6 +38,8 @@ public:
                 g_current_routineid = routineid_;
 
                 cb_();
+                // 提前释放function内存储的资源
+                cb_ = RoutineCallBack();
 
                 finished_ = true;
                 LOG_TRACE << "routine" << routineid_ << " finish";
@@ -71,8 +70,8 @@ public:
     boost::context::continuation routine_;
 };
 
-Routine::Routine(RoutineCallBack func)
-  : impl_(std::make_unique<Impl>(func)), ticks_(10)
+Routine::Routine(RoutineCallBack func, int stacksize)
+  : impl_(std::make_unique<Impl>(func, stacksize)), ticks_(kRoutineTicks)
 {
 }
 

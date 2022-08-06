@@ -10,6 +10,8 @@ namespace baize
 namespace runtime
 {
 
+const int kRoutineTicks = 3;
+
 using RoutineId = uint64_t;
 using RoutineCallBack = std::function<void()>;
 
@@ -23,9 +25,10 @@ class Routine  // noncopyable
 {
 public:
     static const uint64_t kMainRoutineId = 0;
+    static const int kStackSize = 128 * 1024;
 
     // routine cannot be nested
-    Routine(RoutineCallBack func);
+    explicit Routine(RoutineCallBack func, int stacksize = kStackSize);
     ~Routine();
 
     Routine(const Routine&) = delete;

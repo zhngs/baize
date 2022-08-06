@@ -4,11 +4,11 @@ project(baize CXX)
 
 include_directories(${PROJECT_SOURCE_DIR}/core)
 
-# 将boost-context的依赖放在third_party中
+# boost-context
 include_directories(${PROJECT_SOURCE_DIR}/third_party/boost_1_66_0)
 link_directories(${PROJECT_SOURCE_DIR}/third_party/boost_1_66_0/stage/lib)
 
-# 将quiche的依赖放在third_party中
+# quiche
 include_directories(${PROJECT_SOURCE_DIR}/third_party/quiche/quiche/include)
 link_directories(${PROJECT_SOURCE_DIR}/third_party/quiche/target/release)
 
