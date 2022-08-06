@@ -27,8 +27,9 @@ public:
     IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
 } ignore_sigpipe;
 
-EventLoop::EventLoop()
+EventLoop::EventLoop(int routinesize)
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
+    routine_pool_(std::make_unique<RoutinePool>(routinesize)),
     events_(kEpollEventSize),
     timerqueue_(std::make_unique<time::TimerQueue>())
 {
@@ -45,7 +46,6 @@ void EventLoop::Start()
     std::vector<FunctionCallBack> functions;
 
     timerqueue_->Start();
-    RunEvery(3, [this] { MonitorRoutine(); });
 
     while (1) {
         int epolltime = kEpollTimeout;
@@ -105,12 +105,12 @@ void EventLoop::Start()
 
 void EventLoop::Do(RoutineCallBack func)
 {
-    RunInLoop([this, func] { SpawnRoutine(func); });
+    RunInLoop([this, func] { routine_pool_->Start(func); });
 }
 
 void EventLoop::Call(RoutineId id)
 {
-    RunInLoop([this, id] { routines_[id]->Call(); });
+    RunInLoop([this, id] { routine_pool_->Call(id); });
 }
 
 WaitRequest EventLoop::WaitReadable(int fd)
@@ -163,13 +163,13 @@ void EventLoop::CheckTicks()
 {
     assert(!is_main_routine());
     RoutineId id = current_routineid();
-    auto& routine = routines_[id];
-    if (routine->is_ticks_end()) {
-        routine->set_ticks(kRoutineTicks);
+    auto& routine = routine_pool_->routine(id);
+    if (routine.is_ticks_end()) {
+        routine.set_ticks(kRoutineTicks);
         Call(id);
         Return();
     } else {
-        routine->set_ticks_down();
+        routine.set_ticks_down();
     }
 }
 
@@ -223,21 +223,11 @@ string EventLoop::epoll_event_string(int events)
     return s;
 }
 
-void EventLoop::SpawnRoutine(RoutineCallBack func)
-{
-    assert(is_main_routine());
-    auto routine = std::make_unique<Routine>(func);
-    RoutineId id = routine->routineid();
-    routines_[id] = std::move(routine);
-    routines_[id]->Call();
-}
-
 void EventLoop::ScheduleRoutine(WaitRequest req)
 {
     if (wait_requests_.find(req) != wait_requests_.end()) {
         RoutineId routine_id = wait_requests_[req].first;
         time::TimerId timer_id = wait_requests_[req].second;
-        auto& routine = routines_[routine_id];
         LOG_TRACE << "erase wait request { {fd:" << req.first << ", mode:"
                   << (req.second == WaitMode::kWaitReadable ? "READ" : "WRITE")
                   << "} : routine" << routine_id << " }";
@@ -247,21 +237,8 @@ void EventLoop::ScheduleRoutine(WaitRequest req)
             CancelTimer(timer_id);
         }
 
-        routine->Call();
+        routine_pool_->Call(routine_id);
     }
-}
-
-void EventLoop::MonitorRoutine()
-{
-    for (auto it = routines_.begin(); it != routines_.end();) {
-        if (it->second->is_routine_end()) {
-            LOG_TRACE << "erase routine" << it->first;
-            routines_.erase(it++);
-        } else {
-            it++;
-        }
-    }
-    LOG_TRACE << "there is " << routines_.size() << " routines";
 }
 
 void EventLoop::RunInLoop(FunctionCallBack func)

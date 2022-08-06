@@ -20,7 +20,7 @@ add_compile_options(
 
 -Wall
 -Wextra
--Werror
+# -Werror
 -Wconversion
 -Wno-unused-parameter
 -Wold-style-cast

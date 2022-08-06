@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-#include "runtime/routine.h"
+#include "runtime/routine_pool.h"
 #include "time/timer_queue.h"
 #include "util/types.h"
 
@@ -16,6 +16,7 @@ namespace baize
 
 namespace runtime
 {
+const int kRoutinePoolSize = 10000;
 
 using FunctionCallBack = std::function<void()>;
 enum class WaitMode {
@@ -31,7 +32,7 @@ EventLoop* current_loop();
 class EventLoop  // noncopyable
 {
 public:
-    EventLoop();
+    EventLoop(int routine_num = kRoutinePoolSize);
     ~EventLoop();
 
     EventLoop(const EventLoop&) = delete;
@@ -73,8 +74,8 @@ private:
     string epoll_event_string(int events);
 
     int epollfd_;
-    // routines
-    std::map<RoutineId, std::unique_ptr<Routine>> routines_;
+    // routine pool
+    std::unique_ptr<RoutinePool> routine_pool_;
 
     // WaitRequests
     std::map<WaitRequest, ScheduleInfo> wait_requests_;
