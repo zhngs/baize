@@ -24,15 +24,17 @@ bool is_main_thread() { return t_tid == ::getpid(); }
 
 pid_t gettid() { return static_cast<pid_t>(::syscall(SYS_gettid)); }
 
+void CallAfterFork()
+{
+    t_tid = gettid();
+    t_tidstring = std::to_string(t_tid);
+    t_threadname = "main_thread";
+}
+
 class ThreadNameInitializer
 {
 public:
-    ThreadNameInitializer()
-    {
-        t_tid = gettid();
-        t_tidstring = std::to_string(t_tid);
-        t_threadname = "main_thread";
-    }
+    ThreadNameInitializer() { CallAfterFork(); }
 } init_thread;
 
 void* StartThread(void* arg)

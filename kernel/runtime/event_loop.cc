@@ -21,12 +21,6 @@ EventLoop* current_loop()
     return tg_loop;
 }
 
-class IgnoreSigPipe
-{
-public:
-    IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
-} ignore_sigpipe;
-
 EventLoop::EventLoop(int routinesize)
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
     routine_pool_(std::make_unique<RoutinePool>(routinesize)),

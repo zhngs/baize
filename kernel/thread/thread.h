@@ -44,6 +44,9 @@ private:
     WaitGroup waitgroup_;
 };
 
+// call after fork() to set correct tid
+void CallAfterFork();
+
 }  // namespace thread
 
 }  // namespace baize

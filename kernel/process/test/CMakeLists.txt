@@ -1,0 +1,2 @@
+add_executable(daemon_test daemon_test.cc)
+target_link_libraries(daemon_test baize boost_context pthread)
