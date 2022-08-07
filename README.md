@@ -33,7 +33,7 @@ $ make
 
 ## 4.目录介绍
 
-baize 源代码在 core 目录下，quic 目录是我针对 quic 协议编写的实验性质的代码
+baize 源代码在 kernel 目录下，quic 目录是我针对 quic 协议编写的实验性质的代码
 
 目前 baize 核心代码分为如下目录：
 

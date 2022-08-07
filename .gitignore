@@ -36,4 +36,5 @@ build/
 third_party/boost_1_66_0.tar.gz
 third_party/boost_1_66_0/
 third_party/quiche/
+third_party/FlameGraph/
 .vscode/

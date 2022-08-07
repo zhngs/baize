@@ -16,6 +16,8 @@ namespace baize
 
 namespace runtime
 {
+
+// C10K
 const int kRoutinePoolSize = 10000;
 
 using FunctionCallBack = std::function<void()>;

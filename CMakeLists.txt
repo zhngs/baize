@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 
 project(baize CXX)
 
-include_directories(${PROJECT_SOURCE_DIR}/core)
+include_directories(${PROJECT_SOURCE_DIR}/kernel)
 
 # boost-context
 include_directories(${PROJECT_SOURCE_DIR}/third_party/boost_1_66_0)
@@ -32,7 +32,7 @@ add_compile_options(
 -std=c++14
 )
 
-add_subdirectory(core)
+add_subdirectory(kernel)
 
 # quic的编译选项
 # add_subdirectory(quic)
