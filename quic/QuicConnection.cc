@@ -47,6 +47,9 @@ net::QuicConnSptr net::QuicConnection::connect(const char* ip, uint16_t port)
         return QuicConnSptr();
     }
 
+    quiche_conn_set_qlog_path(
+        conn, "quic_discard.qlog", "quic_discard", "quic_discard");
+
     QuicConnSptr quic_conn(std::make_shared<QuicConnection>(
         udpstream, localaddr, peeraddr, std::move(config), conn));
     bool ret = quic_conn->flushQuic();
@@ -136,14 +139,11 @@ int net::QuicConnection::quicStreamWrite(uint64_t streamid,
 {
     ssize_t wn = quiche_conn_stream_send(
         conn_, streamid, static_cast<const uint8_t*>(buf), len, fin);
-    if (wn <= 0) {
-        return static_cast<int>(wn);
+    if (wn != len) {
+        fillQuic();
     }
 
-    bool ret = flushQuic();
-    if (!ret) {
-        return -1;
-    }
+    flushQuic();
 
     return static_cast<int>(wn);
 }
@@ -201,16 +201,27 @@ void net::QuicConnection::quicConnRead(void* buf,
         quiche_stream_iter_free(readable);
     }
 
-    flushQuic();
+    if (!quiche_conn_is_established(conn_)) {
+        flushQuic();
+    } else {
+        static int num = 0;
+        if (num == 10) {
+            flushQuic();
+            num = 0;
+        }
+        num++;
+    }
 }
 
 bool net::QuicConnection::fillQuic()
 {
     while (1) {
         InetAddress peeraddr;
+        bool timeout = false;
         ssize_t read = udpstream_->AsyncRecvFrom(
-            quicReadBuffer, sizeof(quicReadBuffer), &peeraddr);
+            quicReadBuffer, sizeof(quicReadBuffer), &peeraddr, 100, timeout);
         if (read < 0) {
+            LOG_ERROR << "AsyncRecvFrom fail";
             return false;
         }
 
@@ -225,7 +236,8 @@ bool net::QuicConnection::fillQuic()
         ssize_t done =
             quiche_conn_recv(conn_, quicReadBuffer, read, &recv_info);
         if (done < 0) {
-            continue;
+            LOG_ERROR << "quiche_conn_recv err:" << done;
+            return false;
         }
 
         LOG_INFO << "fillQuic " << done << " bytes";

@@ -94,6 +94,32 @@ int UdpStream::AsyncRecvFrom(void* buf, int len, InetAddress* addr)
     }
 }
 
+int UdpStream::AsyncRecvFrom(
+    void* buf, int len, InetAddress* addr, double ms, bool& timeout)
+{
+    runtime::EventLoop* loop = runtime::current_loop();
+    memZero(addr, sizeof(InetAddress));
+    while (1) {
+        loop->CheckTicks();
+        ssize_t rn = conn_->RecvFrom(buf, len, addr);
+        if (rn < 0) {
+            int saveErrno = errno;
+            if (errno == EAGAIN) {
+                loop->WaitReadable(conn_->sockfd(), ms, timeout);
+                runtime::Return();
+                if (timeout) {
+                    return -1;
+                }
+                continue;
+            } else {
+                LOG_SYSERR << "async read failed";
+            }
+            errno = saveErrno;
+        }
+        return static_cast<int>(rn);
+    }
+}
+
 InetAddress UdpStream::localaddr() { return conn_->localaddr(); }
 
 }  // namespace net

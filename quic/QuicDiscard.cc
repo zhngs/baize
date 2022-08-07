@@ -89,12 +89,12 @@ void discard_quic_client()
     string message(1024, 'z');
     while (1) {
         int wn = conn->quicStreamWrite(4, message.c_str(), 1024, false);
-        assert(wn == 1024);
-        g_sendbytes += wn;
-        g_sendpackets++;
+        if (wn > 0) {
+            g_sendbytes += wn;
+            g_sendpackets++;
+        }
         LOG_INFO << "quicStreamWrite " << wn << " bytes, "
                  << "packets: " << g_sendpackets;
-        conn->fillQuic();
     }
 }
 

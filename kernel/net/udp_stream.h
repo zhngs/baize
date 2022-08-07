@@ -35,6 +35,8 @@ public:
 
     int AsyncSendto(const void* buf, int len, const InetAddress& addr);
     int AsyncRecvFrom(void* buf, int len, InetAddress* addr);
+    int AsyncRecvFrom(
+        void* buf, int count, InetAddress* addr, double ms, bool& timeout);
 
     // getter
     InetAddress localaddr();
