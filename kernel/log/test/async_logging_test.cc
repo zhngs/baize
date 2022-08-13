@@ -49,21 +49,5 @@ int main()
 
     while (1) {
         LOG_INFO << "hello world" << 123;
-
-        // LOG_INFO << "AsyncLogging start"
-        //          << "AsyncLogging start"
-        //          << "AsyncLogging start";
-
-        // LOG_INFO << 111111
-        //          << 222222;
-
-        // LOG_INFO << "h" << "e" << "l" << "l" << "o"
-        //          << "h" << "e" << "l" << "l" << "o";
-        // LOG_INFO
-        //     <<
-        //     "hellohellohellohellohellohellohellohellohellohellohellohello";
-
-        // LOG_INFO << "AsyncLogging start AsyncLogging start AsyncLogging
-        // start";
     }
 }

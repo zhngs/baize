@@ -31,8 +31,8 @@ public:
         LOG_TRACE << "create routine" << routineid_;
 
         // boost-context的堆栈是动态增长的，并不会一开始就分配完
-        boost::context::protected_fixedsize_stack salloc(stacksize);
-        // boost::context::fixedsize_stack salloc(stacksize);
+        boost::context::fixedsize_stack salloc(stacksize);
+        // boost::context::protected_fixedsize_stack salloc(stacksize);
         // boost::context::pooled_fixedsize_stack salloc(stacksize);
 
         routine_ = boost::context::callcc(

@@ -77,7 +77,6 @@ void client_print()
 
 void discard_client()
 {
-    char buf[1024];
     string message(1024, 'z');
     TcpStreamSptr stream = TcpStream::AsyncConnect("127.0.0.1", 6070);
     if (!stream) return;
@@ -90,15 +89,12 @@ void discard_client()
         g_sendbytes += wn;
     }
     LOG_INFO << "discard_client finish";
-    stream->ShutdownWrite();
-    while (stream->AsyncReadOrDie(buf, sizeof(buf)) != 0) {
-    }
 }
 
 int main(int argc, char* argv[])
 {
-    log::Logger::set_loglevel(log::Logger::DEBUG);
-    EventLoop loop;
+    log::Logger::set_loglevel(log::Logger::INFO);
+    EventLoop loop(10);
     if (argc != 2) {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";
         return 0;

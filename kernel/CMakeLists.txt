@@ -1,7 +1,6 @@
 add_subdirectory(log/test)
 add_subdirectory(time/test)
 add_subdirectory(process/test)
-add_subdirectory(net/test)
 add_subdirectory(runtime/test)
 add_subdirectory(thread/test)
 

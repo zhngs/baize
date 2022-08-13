@@ -10,12 +10,7 @@ void echo_connection(TcpStreamSptr stream)
 {
     char buf[1024];
     while (1) {
-        bool timeout = false;
-        int rn = stream->AsyncRead(buf, sizeof(buf), 5000, timeout);
-        if (timeout) {
-            LOG_INFO << "connection " << stream->peer_ip_port() << " timeout";
-            break;
-        }
+        int rn = stream->AsyncRead(buf, sizeof(buf));
         if (rn < 0) {
             break;
         }
@@ -24,6 +19,8 @@ void echo_connection(TcpStreamSptr stream)
             break;
         }
         int wn = stream->AsyncWrite(buf, rn);
+        LOG_INFO << "write " << wn << " bytes to connection "
+                 << stream->peer_ip_port();
         assert(wn == rn);
     }
 }
@@ -43,7 +40,7 @@ void echo_server()
 int main()
 {
     log::Logger::set_loglevel(log::Logger::INFO);
-    EventLoop loop;
+    EventLoop loop(10);
     loop.Do(echo_server);
     loop.Start();
 }

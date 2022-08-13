@@ -3,6 +3,7 @@
 #include <signal.h>
 
 #include "log/logger.h"
+#include "process/signal.h"
 #include "runtime/routine.h"
 
 namespace baize
@@ -32,6 +33,7 @@ EventLoop::EventLoop(int routinesize)
     }
     tg_loop = this;
 
+    process::TakeOverSignal();
     timerqueue_->Start();
 }
 

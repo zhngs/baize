@@ -46,9 +46,6 @@ void discard_server()
     InetAddress clientaddr;
     while (1) {
         int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &clientaddr);
-
-        // LOG_INFO << "discard_server recv " << rn << " bytes from " <<
-        // clientaddr.ip_port();
         g_read_msg++;
         g_readbytes += rn;
     }
@@ -84,8 +81,6 @@ void discard_client()
     while (1) {
         int wn = stream->AsyncSendto(
             message.c_str(), static_cast<int>(message.size()), serveraddr);
-        // LOG_INFO << "discard_client sendto " << wn << " bytes to " <<
-        // serveraddr.ip_port();
         g_sendbytes += wn;
         g_send_msg++;
     }
@@ -94,8 +89,8 @@ void discard_client()
 
 int main(int argc, char* argv[])
 {
-    log::Logger::set_loglevel(log::Logger::DEBUG);
-    EventLoop loop;
+    log::Logger::set_loglevel(log::Logger::INFO);
+    EventLoop loop(10);
     if (argc != 2) {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";
         return 0;
