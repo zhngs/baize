@@ -1,5 +1,6 @@
 #include "net/tcp_listener.h"
 
+#include "log/logger.h"
 #include "runtime/event_loop.h"
 
 namespace baize
@@ -52,9 +53,18 @@ TcpStreamSptr TcpListener::AsyncAccept()
         loop->CheckTicks();
         int connfd = sock_->Accept(&peeraddr);
         if (connfd < 0) {
+            if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                loop->WaitReadable(sock_->sockfd());
+                runtime::ScheduleInfo info;
+                runtime::WaitRequest item =
+                    loop->WaitReadable(sock_->sockfd(), &info);
+
                 runtime::Return();
+
+                LOG_DEBUG << "AsyncAccept scheduleinfo = "
+                          << info.debug_string();
+
+                loop->CancelWaiting(item);
                 continue;
             }
         } else {
@@ -63,7 +73,7 @@ TcpStreamSptr TcpListener::AsyncAccept()
     }
 }
 
-TcpStreamSptr TcpListener::AsyncAccept(double ms, bool& timeout)
+TcpStreamSptr TcpListener::AsyncAccept(double ms)
 {
     runtime::EventLoop* loop = runtime::current_loop();
     InetAddress peeraddr;
@@ -71,13 +81,35 @@ TcpStreamSptr TcpListener::AsyncAccept(double ms, bool& timeout)
         loop->CheckTicks();
         int connfd = sock_->Accept(&peeraddr);
         if (connfd < 0) {
+            if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                loop->WaitReadable(sock_->sockfd(), ms, timeout);
+                runtime::ScheduleInfo accept_info;
+                runtime::WaitRequest item =
+                    loop->WaitReadable(sock_->sockfd(), &accept_info);
+
+                runtime::ScheduleInfo timer_info;
+                time::TimerId timer_id =
+                    loop->RunAfter(ms / 1000, [&timer_info, &item] {
+                        timer_info.selected_ = 1;
+                        runtime::current_loop()->CancelWaiting(item);
+                        runtime::current_loop()->Call(timer_info.routineid_);
+                    });
+
                 runtime::Return();
-                if (timeout) {
+
+                LOG_DEBUG << "AsyncAccept timer scheduleinfo = "
+                          << timer_info.debug_string()
+                          << ", accept info = " << accept_info.debug_string();
+
+                if (timer_info.selected_) {
                     return TcpStreamSptr();
+                } else if (accept_info.selected_) {
+                    loop->CancelTimer(timer_id);
+                    loop->CancelWaiting(item);
+                    continue;
+                } else {
+                    LOG_FATAL << "can't happend";
                 }
-                continue;
             }
         } else {
             return std::make_shared<TcpStream>(connfd, peeraddr);

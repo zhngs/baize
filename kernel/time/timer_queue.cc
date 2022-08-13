@@ -38,8 +38,8 @@ void ResetTimerfd(int timerfd, Timestamp expiration)
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
-    memZero(&new_value, sizeof(new_value));
-    memZero(&old_value, sizeof(old_value));
+    MemZero(&new_value, sizeof(new_value));
+    MemZero(&old_value, sizeof(old_value));
     if (expiration.valid()) {
         new_value.it_value = HowMuchTimeFromNow(expiration);
     }
@@ -145,10 +145,22 @@ Timestamp TimerQueue::AsyncReadTimerfd()
         Timestamp now(Timestamp::Now());
         ssize_t n = ::read(timerfd_, &howmany, sizeof(howmany));
         if (n < 0) {
+            if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                loop->WaitReadable(timerfd_);
+                runtime::ScheduleInfo info;
+                auto req = loop->WaitReadable(timerfd_, &info);
+
                 runtime::Return();
-                continue;
+
+                LOG_DEBUG << "AsyncReadTimerfd scheduleinfo = "
+                          << info.debug_string();
+
+                if (info.selected_) {
+                    loop->CancelWaiting(req);
+                    continue;
+                } else {
+                    LOG_FATAL << "can't happen";
+                }
             } else {
                 LOG_SYSERR << "async read timer failed";
             }

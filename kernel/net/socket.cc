@@ -49,7 +49,7 @@ void Socket::Listen()
 int Socket::Accept(InetAddress* peeraddr)
 {
     struct sockaddr_in6 addr;
-    memZero(&addr, sizeof(addr));
+    MemZero(&addr, sizeof(addr));
 
     socklen_t addrlen = static_cast<socklen_t>(sizeof(addr));
     int connfd = ::accept4(sockfd_,
@@ -118,7 +118,7 @@ ssize_t Socket::SendTo(const void* buf, size_t count, const InetAddress& addr)
 ssize_t Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
 {
     sockaddr_in6 addr6;
-    memZero(&addr6, sizeof(addr6));
+    MemZero(&addr6, sizeof(addr6));
     socklen_t len = sizeof(addr6);
     ssize_t rn = ::recvfrom(
         sockfd_, buf, count, 0, reinterpret_cast<sockaddr*>(&addr6), &len);
@@ -183,7 +183,7 @@ void Socket::set_keep_alive(bool on)
 InetAddress Socket::localaddr()
 {
     struct sockaddr_in6 localaddr;
-    memZero(&localaddr, sizeof(localaddr));
+    MemZero(&localaddr, sizeof(localaddr));
     socklen_t addrlen = static_cast<socklen_t>(sizeof(localaddr));
     if (::getsockname(sockfd_,
                       reinterpret_cast<struct sockaddr*>(&localaddr),
@@ -196,7 +196,7 @@ InetAddress Socket::localaddr()
 InetAddress Socket::peeraddr()
 {
     struct sockaddr_in6 peeraddr;
-    memZero(&peeraddr, sizeof(peeraddr));
+    MemZero(&peeraddr, sizeof(peeraddr));
     socklen_t addrlen = static_cast<socklen_t>(sizeof(peeraddr));
     if (::getpeername(sockfd_,
                       reinterpret_cast<struct sockaddr*>(&peeraddr),

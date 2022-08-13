@@ -17,7 +17,7 @@ namespace baize
 
 using std::string;
 
-inline void memZero(void* p, size_t n) { memset(p, 0, n); }
+inline void MemZero(void* p, size_t n) { memset(p, 0, n); }
 
 inline uint64_t hostToNetwork64(uint64_t host64) { return htobe64(host64); }
 

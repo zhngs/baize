@@ -13,17 +13,15 @@ void routine_test_timeout()
     TcpListener listener(6060);
     listener.Start();
 
-    bool timeout = false;
-    TcpStreamSptr stream = listener.AsyncAccept(3000, timeout);
-    if (timeout) {
+    TcpStreamSptr stream = listener.AsyncAccept(3000);
+    if (!stream) {
         LOG_INFO << "routine timeout";
-        assert(!stream);
     }
 }
 
 int main()
 {
-    EventLoop loop;
+    EventLoop loop(2);
     loop.Do(routine_test_timeout);
     loop.Start();
 }

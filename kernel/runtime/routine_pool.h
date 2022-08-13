@@ -24,6 +24,8 @@ public:
     void Start(RoutineCallBack func);
     void Call(RoutineId routineid);
 
+    void Refresh();
+
     // getter
     Routine& routine(RoutineId routineid);
 

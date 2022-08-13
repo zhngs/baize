@@ -40,6 +40,8 @@ private:
     bool flushQuic();
     bool untilEstablished();
 
+    int send_times_;
+
     UdpStreamSptr udpstream_;
     InetAddress localaddr_;
     InetAddress peeraddr_;

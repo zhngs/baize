@@ -24,8 +24,12 @@ public:
 
     void Start();
     TcpStreamSptr Accept();
+
+    // 必定返回可用的stream
     TcpStreamSptr AsyncAccept();
-    TcpStreamSptr AsyncAccept(double ms, bool& timeout);
+
+    // 若超时，返回空的stream
+    TcpStreamSptr AsyncAccept(double ms);
 
     // getter
     int sockfd();

@@ -79,7 +79,7 @@ void discard_client()
 {
     char buf[1024];
     string message(1024, 'z');
-    TcpStreamSptr stream = TcpStream::asyncConnect("127.0.0.1", 6070);
+    TcpStreamSptr stream = TcpStream::AsyncConnect("127.0.0.1", 6070);
     if (!stream) return;
     stream->set_tcp_nodelay();
 

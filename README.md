@@ -33,13 +33,14 @@ $ make
 
 ## 4.目录介绍
 
-baize 源代码在 kernel 目录下，quic 目录是我针对 quic 协议编写的实验性质的代码
+baize 源代码在 kernel 目录下，quic 目录是我针对 quic 协议编写的实验性质的代码，script 目录下是一些脚本如生成火焰图，格式化代码风格，third_party 目录存放第三方依赖
 
-目前 baize 核心代码分为如下目录：
+目前 kernel 核心代码分为如下目录：
 
 - log，日志库
 - net，网络部分核心，提供基于协程的异步接口
 - runtime，epoll 和协程调度核心
+- process，进程方面的封装，如接管信号，将程序变为守护进程
 - thread，简单封装了 thread，mutex，cond，waitgroup
 - time，时间戳和 timerfd 功能
 - util，简单的工具
@@ -63,7 +64,7 @@ void discard_connection(TcpStreamSptr conn)
 void discard_server()
 {
     TcpListener listener(6070);
-    listener.start();
+    listener.Start();
 
     while (1) {
         // 异步accept
@@ -117,12 +118,6 @@ $ eventloop_test -c
 ## 8.代码风格
 
 - 代码风格偏向于 google 的 styleguide，但做出了少部分改变，比如缩进采用 4 个空格，所有详细的格式配置在.clang-format 文件里
-- 代码格式化工具使用 clang-format，linux 内核也使用该工具，format.sh 是格式化所有后缀为 h 或 cc 文件的脚本，使用方法如下
-
-```shell
-$ cd baize
-$ ./format
-```
 
 ## 9.感谢
 

@@ -5,9 +5,11 @@
 
 #include <map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "runtime/routine_pool.h"
+#include "runtime/wait_request.h"
 #include "time/timer_queue.h"
 #include "util/types.h"
 
@@ -21,15 +23,11 @@ namespace runtime
 const int kRoutinePoolSize = 10000;
 
 using FunctionCallBack = std::function<void()>;
-enum class WaitMode {
-    kWaitReadable,
-    kWaitWritable,
-};
-using WaitRequest = std::pair<int, WaitMode>;
-using ScheduleInfo = std::pair<RoutineId, time::TimerId>;
 
 class EventLoop;
 EventLoop* current_loop();
+
+string epoll_event_string(int events);
 
 class EventLoop  // noncopyable
 {
@@ -42,15 +40,17 @@ public:
 
     void Start();
 
+    // 添加并启动一个协程
     void Do(RoutineCallBack func);
+    // 启动已有的协程
+    void Call(RoutineId id);
 
     void EnablePoll(int fd);
     void DisablePoll(int fd);
 
-    WaitRequest WaitReadable(int fd);
-    WaitRequest WaitReadable(int fd, double ms, bool& timeout);
-    WaitRequest WaitWritable(int fd);
-    WaitRequest WaitWritable(int fd, double ms, bool& timeout);
+    WaitRequest WaitReadable(int fd, ScheduleInfo* info);
+    WaitRequest WaitWritable(int fd, ScheduleInfo* info);
+    void CancelWaiting(WaitRequest request);
 
     void CheckTicks();
 
@@ -65,22 +65,19 @@ public:
 
 private:
     void SpawnRoutine(RoutineCallBack func);
-    void ScheduleRoutine(WaitRequest req);
+    void ScheduleRoutine(WaitRequest req, int events);
     void MonitorRoutine();
-    void Call(RoutineId id);
 
     void RunInLoop(FunctionCallBack func);
     void EpollControl(int op, int fd, epoll_event* ev);
-
-    // getter
-    string epoll_event_string(int events);
 
     int epollfd_;
     // routine pool
     std::unique_ptr<RoutinePool> routine_pool_;
 
     // WaitRequests
-    std::map<WaitRequest, ScheduleInfo> wait_requests_;
+    std::unordered_map<WaitRequest, ScheduleInfo*, WaitRequestHash>
+        wait_requests_;
 
     // call function in loop
     std::vector<FunctionCallBack> functions_;

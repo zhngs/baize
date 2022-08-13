@@ -20,7 +20,7 @@ struct net::QuicListenerData {
         token(),
         token_len(sizeof(token))
     {
-        memZero(&peeraddr, sizeof(peeraddr));
+        MemZero(&peeraddr, sizeof(peeraddr));
     }
 
     uint8_t type;

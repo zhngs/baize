@@ -30,7 +30,7 @@ public:
     void add(size_t len) { cur_ += len; }
 
     void reset() { cur_ = data_; }
-    void bzero() { memZero(data_, sizeof(data_)); }
+    void bzero() { MemZero(data_, sizeof(data_)); }
 
     string toString() const { return string(data_, length()); }
 

@@ -56,6 +56,17 @@ void RoutinePool::Call(RoutineId routineid)
     active_list_[routineid]->Call();
 }
 
+void RoutinePool::Refresh()
+{
+    LOG_DEBUG << "routine pool tasks = " << tasks_.size()
+              << ", active routine = " << active_list_.size()
+              << ", free routine = " << free_list_.size();
+
+    while (!tasks_.empty() && !free_list_.empty()) {
+        free_list_.begin()->second->Call();
+    }
+}
+
 Routine& RoutinePool::routine(RoutineId routineid)
 {
     assert(active_list_.find(routineid) != active_list_.end());

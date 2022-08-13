@@ -4,6 +4,7 @@
 
 #include "QuicConfig.h"
 #include "RandomFile.h"
+#include "runtime/event_loop.h"
 
 using namespace baize;
 
@@ -21,6 +22,7 @@ net::QuicConnection::QuicConnection(UdpStreamSptr udpstream,
     config_(config),
     conn_(conn)
 {
+    send_times_ = 1;
 }
 
 net::QuicConnection::~QuicConnection() { quiche_conn_free(conn_); }
@@ -85,6 +87,8 @@ bool net::QuicConnection::flushQuic()
             LOG_SYSERR << "failed to send";
             return false;
         }
+        send_times_++;
+
         LOG_INFO << "flushQuic " << written << " bytes";
     }
     return true;
@@ -139,7 +143,7 @@ int net::QuicConnection::quicStreamWrite(uint64_t streamid,
 {
     ssize_t wn = quiche_conn_stream_send(
         conn_, streamid, static_cast<const uint8_t*>(buf), len, fin);
-    if (wn != len) {
+    if (wn != len || (send_times_ % 10 == 0)) {
         fillQuic();
     }
 

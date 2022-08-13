@@ -31,6 +31,8 @@ EventLoop::EventLoop(int routinesize)
         LOG_FATAL << "another loop exists";
     }
     tg_loop = this;
+
+    timerqueue_->Start();
 }
 
 EventLoop::~EventLoop() {}
@@ -38,8 +40,6 @@ EventLoop::~EventLoop() {}
 void EventLoop::Start()
 {
     std::vector<FunctionCallBack> functions;
-
-    timerqueue_->Start();
 
     while (1) {
         int epolltime = kEpollTimeout;
@@ -76,12 +76,12 @@ void EventLoop::Start()
                           << epoll_event_string(events) << "]";
                 if (events &
                     (EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-                    WaitRequest req(fd, WaitMode::kWaitReadable);
-                    ScheduleRoutine(req);
+                    WaitRequest req(fd, kWaitReadable);
+                    ScheduleRoutine(req, events);
                 }
                 if (events & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
-                    WaitRequest req(fd, WaitMode::kWaitWritable);
-                    ScheduleRoutine(req);
+                    WaitRequest req(fd, kWaitWritable);
+                    ScheduleRoutine(req, events);
                 }
             }
         } else if (num_events == 0) {
@@ -94,6 +94,8 @@ void EventLoop::Start()
                 LOG_SYSERR << "epoll_wait()";
             }
         }
+
+        routine_pool_->Refresh();
     }
 }
 
@@ -107,50 +109,39 @@ void EventLoop::Call(RoutineId id)
     RunInLoop([this, id] { routine_pool_->Call(id); });
 }
 
-WaitRequest EventLoop::WaitReadable(int fd)
+WaitRequest EventLoop::WaitReadable(int fd, ScheduleInfo* info)
 {
     assert(!is_main_routine());
-    WaitRequest req(fd, WaitMode::kWaitReadable);
-    RoutineId id = current_routineid();
-    LOG_TRACE << "add wait request { {fd:" << fd << ", mode:"
-              << "READ"
-              << "} : routine" << id << " }";
+    WaitRequest req(fd, kWaitReadable);
+    LOG_DEBUG << "add WaitReadable " << req.debug_string() << ":"
+              << info->debug_string();
 
     assert(wait_requests_.find(req) == wait_requests_.end());
-    ScheduleInfo info(id, 0);
     wait_requests_[req] = info;
 
     return req;
 }
 
-WaitRequest EventLoop::WaitReadable(int fd, double ms, bool& timeout)
+WaitRequest EventLoop::WaitWritable(int fd, ScheduleInfo* info)
 {
-    WaitRequest req = WaitReadable(fd);
-    time::TimerId timer_id = RunAfter(ms / 1000, [this, &timeout, req] {
-        RoutineId routine_id = wait_requests_[req].first;
-        LOG_TRACE << "routine" << routine_id << " timeout";
-        timeout = true;
-        wait_requests_.erase(req);
-        Call(routine_id);
-    });
-    wait_requests_[req].second = timer_id;
+    assert(!is_main_routine());
+    WaitRequest req(fd, kWaitWritable);
+    LOG_DEBUG << "add WaitWritable " << req.debug_string() << ":"
+              << info->debug_string();
+
+    assert(wait_requests_.find(req) == wait_requests_.end());
+    wait_requests_[req] = info;
 
     return req;
 }
 
-WaitRequest EventLoop::WaitWritable(int fd)
+void EventLoop::CancelWaiting(WaitRequest request)
 {
-    assert(!is_main_routine());
-    WaitRequest req(fd, WaitMode::kWaitWritable);
-    RoutineId id = current_routineid();
-    LOG_TRACE << "add wait request { {fd:" << fd << ", mode:"
-              << "Write"
-              << "} : routine" << id << " }";
-    assert(wait_requests_.find(req) == wait_requests_.end());
-    ScheduleInfo info(id, 0);
-    wait_requests_[req] = info;
-
-    return req;
+    if (wait_requests_.find(request) != wait_requests_.end()) {
+        wait_requests_.erase(request);
+    } else {
+        LOG_ERROR << "there is no request " << request.debug_string();
+    }
 }
 
 void EventLoop::CheckTicks()
@@ -178,7 +169,7 @@ void EventLoop::EnablePoll(int fd)
 void EventLoop::DisablePoll(int fd)
 {
     epoll_event ev;
-    memZero(&ev, sizeof(ev));
+    MemZero(&ev, sizeof(ev));
     EpollControl(EPOLL_CTL_DEL, fd, &ev);
 }
 
@@ -204,34 +195,14 @@ void EventLoop::CancelTimer(time::TimerId timerid)
     timerqueue_->RemoveTimer(timerid);
 }
 
-string EventLoop::epoll_event_string(int events)
-{
-    string s;
-    if (events & EPOLLIN) s += " EPOLLIN";
-    if (events & EPOLLOUT) s += " EPOLLOUT";
-    if (events & EPOLLPRI) s += " EPOLLPRI";
-    if (events & EPOLLRDHUP) s += " EPOLLRDHUP";
-    if (events & EPOLLHUP) s += " EPOLLHUP";
-    if (events & EPOLLERR) s += " EPOLLERR";
-    s += " ";
-    return s;
-}
-
-void EventLoop::ScheduleRoutine(WaitRequest req)
+void EventLoop::ScheduleRoutine(WaitRequest req, int events)
 {
     if (wait_requests_.find(req) != wait_requests_.end()) {
-        RoutineId routine_id = wait_requests_[req].first;
-        time::TimerId timer_id = wait_requests_[req].second;
-        LOG_TRACE << "erase wait request { {fd:" << req.first << ", mode:"
-                  << (req.second == WaitMode::kWaitReadable ? "READ" : "WRITE")
-                  << "} : routine" << routine_id << " }";
-        wait_requests_.erase(req);
+        ScheduleInfo* info = wait_requests_[req];
+        info->epoll_revents_ = events;
+        info->selected_ = 1;
 
-        if (timer_id != 0) {
-            CancelTimer(timer_id);
-        }
-
-        routine_pool_->Call(routine_id);
+        routine_pool_->Call(info->routineid_);
     }
 }
 
@@ -253,6 +224,23 @@ void EventLoop::EpollControl(int op, int fd, epoll_event* ev)
             LOG_SYSFATAL << "epoll_ctl op=" << op << " fd=" << fd;
         }
     }
+}
+
+string epoll_event_string(int events)
+{
+    string s;
+    if (events & EPOLLIN) s += " EPOLLIN";
+    if (events & EPOLLOUT) s += " EPOLLOUT";
+    if (events & EPOLLPRI) s += " EPOLLPRI";
+    if (events & EPOLLRDHUP) s += " EPOLLRDHUP";
+    if (events & EPOLLHUP) s += " EPOLLHUP";
+    if (events & EPOLLERR) s += " EPOLLERR";
+    if (s.empty()) {
+        s = " EMPTY ";
+    } else {
+        s += " ";
+    }
+    return s;
 }
 
 }  // namespace runtime

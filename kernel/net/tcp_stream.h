@@ -20,7 +20,7 @@ class TcpStream  // noncopyable
 {
 public:
     // factory function
-    static TcpStreamSptr asyncConnect(const char* ip, uint16_t port);
+    static TcpStreamSptr AsyncConnect(const char* ip, uint16_t port);
 
     TcpStream(int fd, InetAddress peeraddr);
     ~TcpStream();

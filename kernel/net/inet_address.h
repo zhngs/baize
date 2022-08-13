@@ -15,7 +15,7 @@ namespace net
 class InetAddress  // copyable
 {
 public:
-    InetAddress() { memZero(&addr6_, sizeof(addr6_)); }
+    InetAddress() { MemZero(&addr6_, sizeof(addr6_)); }
     InetAddress(const char* ip, uint16_t port, bool ipv6 = false);
     explicit InetAddress(uint16_t port,
                          bool loopback = false,
