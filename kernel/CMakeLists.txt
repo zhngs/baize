@@ -3,6 +3,7 @@ add_subdirectory(time/test)
 add_subdirectory(process/test)
 add_subdirectory(runtime/test)
 add_subdirectory(thread/test)
+add_subdirectory(util/test)
 
 aux_source_directory(./log log_SRCS)
 aux_source_directory(./net net_SRCS)

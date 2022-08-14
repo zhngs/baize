@@ -8,21 +8,21 @@ using namespace baize::net;
 
 void echo_connection(TcpStreamSptr stream)
 {
-    char buf[1024];
+    net::Buffer* buf = stream->read_buffer();
     while (1) {
-        int rn = stream->AsyncRead(buf, sizeof(buf));
-        if (rn < 0) {
-            break;
-        }
-        if (rn == 0) {
-            LOG_INFO << "connection " << stream->peer_ip_port() << " close";
-            break;
-        }
-        int wn = stream->AsyncWrite(buf, rn);
+        int rn = stream->AsyncRead();
+        LOG_INFO << "read " << rn << " bytes from connection "
+                 << stream->peer_ip_port();
+        if (rn <= 0) break;
+
+        int wn = stream->AsyncWrite(buf->read_index(), buf->readable_bytes());
         LOG_INFO << "write " << wn << " bytes to connection "
                  << stream->peer_ip_port();
-        assert(wn == rn);
+        if (wn != buf->readable_bytes()) break;
+
+        // buf->TakeAll();
     }
+    LOG_INFO << "connection " << stream->peer_ip_port() << " close";
 }
 
 void echo_server()

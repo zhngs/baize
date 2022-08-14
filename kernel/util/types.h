@@ -19,6 +19,20 @@ using std::string;
 
 inline void MemZero(void* p, size_t n) { memset(p, 0, n); }
 
+template <class T1, class T2>
+class Result  // copyable
+{
+public:
+    Result(T1 ret_value, T2 err_info)
+      : ret(std::move(ret_value)), err(std::move(err_info))
+    {
+    }
+
+public:
+    T1 ret;
+    T2 err;
+};
+
 inline uint64_t hostToNetwork64(uint64_t host64) { return htobe64(host64); }
 
 inline uint32_t hostToNetwork32(uint32_t host32) { return htobe32(host32); }

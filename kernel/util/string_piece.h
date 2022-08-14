@@ -1,81 +1,76 @@
 #ifndef BAIZE_STRINGPIECE_H_
 #define BAIZE_STRINGPIECE_H_
 
+#include <algorithm>
+#include <vector>
+
 #include "util/types.h"
 
 namespace baize
 {
 
-class StringPiece
+class StringPiece  // copyable
 {
 public:
-    // We provide non-explicit singleton constructors so users can pass
-    // in a "const char*" or a "string" wherever a "StringPiece" is
-    // expected.
-    StringPiece() : ptr_(NULL), length_(0) {}
-    StringPiece(const char* str)
-      : ptr_(str), length_(static_cast<int>(strlen(ptr_)))
+    StringPiece();
+    StringPiece(const char* str);
+    StringPiece(const unsigned char* str);
+    StringPiece(const string& str);
+    StringPiece(const char* offset, int len);
+    StringPiece(const char* begin, const char* end);
+
+    const char* Find(char ch) const;
+    const char* Find(StringPiece slice) const;
+
+    void TrimSpace();
+    std::vector<StringPiece> Split(char ch) const;
+    std::vector<StringPiece> Split(StringPiece slice) const;
+
+    // 若返回值与begin()相等，说明解析失败
+    const char* ParseInt(int& num) const;
+    Result<int, const char*> ParseInt() const;
+
+    bool StartsWith(const StringPiece& x) const;
+
+    string AsString() const { return string(data(), size()); }
+    void CopyToString(string* target) const { target->assign(ptr_, length_); }
+
+    void RemoveSuffix(int n) { length_ -= n; }
+    void RemovePrefix(int n)
     {
+        ptr_ += n;
+        length_ -= n;
     }
-    StringPiece(const unsigned char* str)
-      : ptr_(reinterpret_cast<const char*>(str)),
-        length_(static_cast<int>(strlen(ptr_)))
-    {
-    }
-    StringPiece(const string& str)
-      : ptr_(str.data()), length_(static_cast<int>(str.size()))
-    {
-    }
-    StringPiece(const char* offset, int len) : ptr_(offset), length_(len) {}
+    void RemovePrefixUntil(const char* pos);
 
     // data() may return a pointer to a buffer with embedded NULs, and the
     // returned buffer may or may not be null terminated.  Therefore it is
     // typically a mistake to pass data() to a routine that expects a NUL
-    // terminated string.  Use "as_string().c_str()" if you really need to do
-    // this.  Or better yet, change your routine so it does not rely on NUL
-    // termination.
+    // terminated string.  Use "as_string().c_str()" if you really need to
+    // do this.  Or better yet, change your routine so it does not rely on
+    // NUL termination.
+
+    // getter
     const char* data() const { return ptr_; }
     int size() const { return length_; }
     bool empty() const { return length_ == 0; }
     const char* begin() const { return ptr_; }
     const char* end() const { return ptr_ + length_; }
 
-    void clear()
-    {
-        ptr_ = NULL;
-        length_ = 0;
-    }
-    void set(const char* buffer, int len)
-    {
-        ptr_ = buffer;
-        length_ = len;
-    }
-    void set(const char* str)
-    {
-        ptr_ = str;
-        length_ = static_cast<int>(strlen(str));
-    }
-    void set(const void* buffer, int len)
-    {
-        ptr_ = reinterpret_cast<const char*>(buffer);
-        length_ = len;
-    }
+    // setter
+    void clear();
+    void set(const char* buffer, int len);
+    void set(const char* str);
+    void set(const void* buffer, int len);
+    void set(const char* begin, const char* end);
 
+    // operator
     char operator[](int i) const { return ptr_[i]; }
-
-    void removePrefix(int n)
-    {
-        ptr_ += n;
-        length_ -= n;
-    }
-    void removeSuffix(int n) { length_ -= n; }
-
     bool operator==(const StringPiece& x) const
     {
         return ((length_ == x.length_) && (memcmp(ptr_, x.ptr_, length_) == 0));
     }
     bool operator!=(const StringPiece& x) const { return !(*this == x); }
-
 #define STRINGPIECE_BINARY_PREDICATE(cmp, auxcmp)                            \
     bool operator cmp(const StringPiece& x) const                            \
     {                                                                        \
@@ -89,27 +84,10 @@ public:
     STRINGPIECE_BINARY_PREDICATE(>, >);
 #undef STRINGPIECE_BINARY_PREDICATE
 
-    int compare(const StringPiece& x) const
+    void swap(StringPiece& rhs)
     {
-        int r = memcmp(ptr_, x.ptr_, length_ < x.length_ ? length_ : x.length_);
-        if (r == 0) {
-            if (length_ < x.length_)
-                r = -1;
-            else if (length_ > x.length_)
-                r = +1;
-        }
-        return r;
-    }
-
-    string asString() const { return string(data(), size()); }
-
-    void copyToString(string* target) const { target->assign(ptr_, length_); }
-
-    // Does "this" start with "x"
-    bool startsWith(const StringPiece& x) const
-    {
-        return ((length_ >= x.length_) &&
-                (memcmp(ptr_, x.ptr_, x.length_) == 0));
+        std::swap(ptr_, rhs.ptr_);
+        std::swap(length_, rhs.length_);
     }
 
 private:

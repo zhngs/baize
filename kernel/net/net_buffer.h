@@ -2,7 +2,6 @@
 #define BAIZE_BUFFER_H
 // copy from muduo and make some small changes
 
-#include <algorithm>
 #include <vector>
 
 #include "util/string_piece.h"
@@ -23,103 +22,64 @@ namespace net
 class Buffer  // copyable
 {
 public:
-    static const size_t kCheapPrepend = 8;
-    static const size_t kInitialSize = 1024;
+    static const int kCheapPrepend = 8;
+    static const int kInitialSize = 1024;
 
-    explicit Buffer(size_t initialSize = kInitialSize)
-      : buffer_(kCheapPrepend + initialSize),
-        readerIndex_(kCheapPrepend),
-        writerIndex_(kCheapPrepend)
+    explicit Buffer(int initialSize = kInitialSize);
+
+    int ReadFd(int fd);
+
+    // find
+    const char* FindCRLF() const;
+    const char* Find(char ch) const;
+    const char* Find(StringPiece slice) const;
+
+    // append
+    void Append(const StringPiece& str);
+    void Append(const void* data, int len);
+
+    // take
+    void Take(int len);
+    void TakeAll();
+    void TakeUntil(const char* pos);
+    void TakeCrossSpace();
+    char TakeChar();
+
+    // getter
+    int readable_bytes() const { return writer_index_ - reader_index_; }
+    int writable_bytes() const
     {
-        assert(readableBytes() == 0);
-        assert(writableBytes() == initialSize);
-        assert(prependableBytes() == kCheapPrepend);
+        return static_cast<int>(buffer_.size() - writer_index_);
     }
+    int prependable_bytes() const { return reader_index_; }
 
-    size_t readableBytes() const { return writerIndex_ - readerIndex_; }
-    size_t writableBytes() const { return buffer_.size() - writerIndex_; }
-    size_t prependableBytes() const { return readerIndex_; }
+    // getter
+    const char* read_index() const { return begin() + reader_index_; }
+    const char* write_index() const { return begin() + writer_index_; }
+    char* read_index() { return begin() + reader_index_; }
+    char* write_index() { return begin() + writer_index_; }
 
-    const char* peek() const { return begin() + readerIndex_; }
+    // getter
+    StringPiece debug_string_piece();
 
     void swap(Buffer& rhs)
     {
         buffer_.swap(rhs.buffer_);
-        std::swap(readerIndex_, rhs.readerIndex_);
-        std::swap(writerIndex_, rhs.writerIndex_);
+        std::swap(reader_index_, rhs.reader_index_);
+        std::swap(writer_index_, rhs.writer_index_);
     }
-
-    void retrieve(size_t len)
-    {
-        assert(len <= readableBytes());
-        if (len < readableBytes()) {
-            readerIndex_ += len;
-        } else {
-            retrieveAll();
-        }
-    }
-
-    void retrieveAll()
-    {
-        readerIndex_ = kCheapPrepend;
-        writerIndex_ = kCheapPrepend;
-    }
-
-    void append(const StringPiece& str) { append(str.data(), str.size()); }
-    void append(const void* data, size_t len)
-    {
-        append(static_cast<const char*>(data), len);
-    }
-    void append(const char* data, size_t len)
-    {
-        ensureWritableBytes(len);
-        std::copy(data, data + len, beginWrite());
-        hasWritten(len);
-    }
-
-    void ensureWritableBytes(size_t len)
-    {
-        if (writableBytes() < len) {
-            makeSpace(len);
-        }
-        assert(writableBytes() >= len);
-    }
-
-    char* beginWrite() { return begin() + writerIndex_; }
-    const char* beginWrite() const { return begin() + writerIndex_; }
-    void hasWritten(size_t len)
-    {
-        assert(len <= writableBytes());
-        writerIndex_ += len;
-    }
-
-    ssize_t readFd(int fd);
 
 private:
+    // getter
     char* begin() { return &*buffer_.begin(); }
     const char* begin() const { return &*buffer_.begin(); }
 
-    void makeSpace(size_t len)
-    {
-        if (writableBytes() + prependableBytes() < len + kCheapPrepend) {
-            // FIXME: move readable data
-            buffer_.resize(writerIndex_ + len);
-        } else {
-            // move readable data to the front, make space inside buffer
-            assert(kCheapPrepend < readerIndex_);
-            size_t readable = readableBytes();
-            std::copy(begin() + readerIndex_,
-                      begin() + writerIndex_,
-                      begin() + kCheapPrepend);
-            readerIndex_ = kCheapPrepend;
-            writerIndex_ = readerIndex_ + readable;
-            assert(readable == readableBytes());
-        }
-    }
+    void EnsureWritableBytes(int len);
+    void MakeSpace(int len);
 
     std::vector<char> buffer_;
-    size_t readerIndex_;
-    size_t writerIndex_;
+    int reader_index_;
+    int writer_index_;
 };
 
 }  // namespace net

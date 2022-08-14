@@ -66,6 +66,9 @@ TcpStreamSptr TcpListener::AsyncAccept()
 
                 loop->CancelWaiting(item);
                 continue;
+            } else {
+                LOG_ERROR << "AsyncAccept failed";
+                return TcpStreamSptr();
             }
         } else {
             return std::make_shared<TcpStream>(connfd, peeraddr);
@@ -110,6 +113,9 @@ TcpStreamSptr TcpListener::AsyncAccept(double ms)
                 } else {
                     LOG_FATAL << "can't happend";
                 }
+            } else {
+                LOG_ERROR << "AsyncAccept failed";
+                return TcpStreamSptr();
             }
         } else {
             return std::make_shared<TcpStream>(connfd, peeraddr);

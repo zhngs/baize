@@ -46,6 +46,7 @@ void discard_server()
     InetAddress clientaddr;
     while (1) {
         int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &clientaddr);
+        if (rn < 0) break;
         g_read_msg++;
         g_readbytes += rn;
     }
@@ -81,6 +82,7 @@ void discard_client()
     while (1) {
         int wn = stream->AsyncSendto(
             message.c_str(), static_cast<int>(message.size()), serveraddr);
+        if (wn != static_cast<int>(message.size())) break;
         g_sendbytes += wn;
         g_send_msg++;
     }

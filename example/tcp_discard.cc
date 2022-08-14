@@ -40,8 +40,8 @@ void discard_connection(TcpStreamSptr conn)
     g_last_time = Timestamp::Now();
     TimerId id = current_loop()->RunEvery(1, server_print);
     while (1) {
-        int rn = conn->AsyncReadOrDie(buf, sizeof(buf));
-        if (rn == 0) break;
+        int rn = conn->AsyncRead(buf, sizeof(buf));
+        if (rn <= 0) break;
         g_msg++;
         g_readbytes += rn;
     }
@@ -85,7 +85,8 @@ void discard_client()
     current_loop()->RunEvery(1, client_print);
     g_last_time = Timestamp::Now();
     while (1) {
-        int wn = stream->AsyncWriteOrDie(message.c_str(), message.size());
+        int wn = stream->AsyncWrite(message.c_str(), message.size());
+        if (wn != static_cast<int>(message.size())) break;
         g_sendbytes += wn;
     }
     LOG_INFO << "discard_client finish";

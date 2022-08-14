@@ -58,7 +58,6 @@ int Socket::Accept(InetAddress* peeraddr)
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (connfd < 0) {
         int savedErrno = errno;
-        LOG_SYSERR << "Socket::accept";
         switch (savedErrno) {
             case EAGAIN:
             case ECONNABORTED:
