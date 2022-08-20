@@ -28,7 +28,6 @@ public:
 
     // 若返回值与begin()相等，说明解析失败
     const char* ParseInt(int& num) const;
-    Result<int, const char*> ParseInt() const;
 
     bool StartsWith(const StringPiece& x) const;
 
@@ -42,6 +41,7 @@ public:
         length_ -= n;
     }
     void RemovePrefixUntil(const char* pos);
+    void RemoveSuffixUntil(const char* pos);
 
     // data() may return a pointer to a buffer with embedded NULs, and the
     // returned buffer may or may not be null terminated.  Therefore it is

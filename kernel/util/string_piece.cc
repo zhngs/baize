@@ -126,22 +126,6 @@ const char* StringPiece::ParseInt(int& num) const
     }
 }
 
-Result<int, const char*> StringPiece::ParseInt() const
-{
-    int number = 0;
-    const char* pos = begin();
-    while (pos != end()) {
-        if (isdigit(*pos)) {
-            int tmp = *pos - '0';
-            number = number * 10 + tmp;
-            pos++;
-        } else {
-            break;
-        }
-    }
-    return {number, pos};
-}
-
 bool StringPiece::StartsWith(const StringPiece& x) const
 {
     return ((length_ >= x.length_) && (memcmp(ptr_, x.ptr_, x.length_) == 0));
@@ -152,6 +136,13 @@ void StringPiece::RemovePrefixUntil(const char* pos)
     assert(begin() <= pos);
     assert(pos <= end());
     RemovePrefix(static_cast<int>(pos - begin()));
+}
+
+void StringPiece::RemoveSuffixUntil(const char* pos)
+{
+    assert(begin() <= pos);
+    assert(pos <= end());
+    RemoveSuffix(static_cast<int>(end() - pos));
 }
 
 void StringPiece::clear()

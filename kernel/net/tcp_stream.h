@@ -34,8 +34,8 @@ public:
     int AsyncRead(void* buf, size_t count);
     int AsyncRead(void* buf, size_t count, double ms, bool& timeout);
 
-    int AsyncRead();
-    int AsyncRead(double ms, bool& timeout);
+    int AsyncRead(Buffer& buf);
+    int AsyncRead(Buffer& buf, double ms, bool& timeout);
 
     // 返回值不等于count，说明出现异常错误
     int AsyncWrite(const void* buf, size_t count);
@@ -45,7 +45,6 @@ public:
     // getter
     int sockfd();
     string peer_ip_port();
-    Buffer* read_buffer();
 
     // setter
     void set_tcp_nodelay();
@@ -53,7 +52,6 @@ public:
 private:
     std::unique_ptr<Socket> conn_;
     InetAddress peeraddr_;
-    Buffer read_buffer_;
 };
 
 }  // namespace net

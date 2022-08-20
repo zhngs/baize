@@ -116,12 +116,12 @@ int TcpStream::AsyncRead(void* buf, size_t count, double ms, bool& timeout)
     }
 }
 
-int TcpStream::AsyncRead()
+int TcpStream::AsyncRead(Buffer& buf)
 {
     runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
         loop->CheckTicks();
-        int rn = read_buffer_.ReadFd(sockfd());
+        int rn = buf.ReadFd(sockfd());
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -148,12 +148,12 @@ int TcpStream::AsyncRead()
     }
 }
 
-int TcpStream::AsyncRead(double ms, bool& timeout)
+int TcpStream::AsyncRead(Buffer& buf, double ms, bool& timeout)
 {
     runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
         loop->CheckTicks();
-        int rn = read_buffer_.ReadFd(sockfd());
+        int rn = buf.ReadFd(sockfd());
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -242,7 +242,6 @@ int TcpStream::AsyncWrite(const void* buf, size_t count)
 
 int TcpStream::sockfd() { return conn_->sockfd(); }
 string TcpStream::peer_ip_port() { return peeraddr_.ip_port(); }
-Buffer* TcpStream::read_buffer() { return &read_buffer_; }
 
 TcpStreamSptr TcpStream::AsyncConnect(const char* ip, uint16_t port)
 {

@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+#include "log/logger.h"
+
 namespace baize
 {
 
@@ -67,18 +69,26 @@ const char* Buffer::Find(StringPiece slice) const
 void Buffer::Append(const StringPiece& str) { Append(str.data(), str.size()); }
 void Buffer::Append(const void* data, int len)
 {
-    EnsureWritableBytes(len);
-    memcpy(write_index(), data, len);
-    writer_index_ += len;
+    if (len > 0) {
+        EnsureWritableBytes(len);
+        memcpy(write_index(), data, len);
+        writer_index_ += len;
+    } else if (len < 0) {
+        LOG_ERROR << "len less than zero";
+    }
 }
 
 void Buffer::Take(int len)
 {
-    assert(len <= readable_bytes());
-    if (len < readable_bytes()) {
-        reader_index_ += len;
-    } else {
-        TakeAll();
+    if (len > 0) {
+        assert(len <= readable_bytes());
+        if (len < readable_bytes()) {
+            reader_index_ += len;
+        } else {
+            TakeAll();
+        }
+    } else if (len < 0) {
+        LOG_ERROR << "len less than zero";
     }
 }
 
@@ -95,7 +105,7 @@ void Buffer::TakeAll()
     writer_index_ = kCheapPrepend;
 }
 
-StringPiece Buffer::debug_string_piece()
+StringPiece Buffer::slice()
 {
     return StringPiece(read_index(), readable_bytes());
 }

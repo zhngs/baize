@@ -1,0 +1,2 @@
+add_executable(http_hello http_hello.cc)
+target_link_libraries(http_hello baize_http baize pthread boost_context)

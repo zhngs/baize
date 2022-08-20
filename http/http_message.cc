@@ -6,20 +6,32 @@ namespace baize
 namespace net
 {
 
-void HttpRequest::Reset()
+void HttpResponse::AppendResponseLine(StringPiece version,
+                                      StringPiece num,
+                                      StringPiece state)
 {
-    HttpRequest tmp;
-    swap(tmp);
+    content_.Append(version);
+    content_.Append(" ");
+    content_.Append(num);
+    content_.Append(" ");
+    content_.Append(state);
+    content_.Append("\r\n");
 }
 
-void HttpRequest::swap(HttpRequest& rhs)
+void HttpResponse::AppendHeader(StringPiece key, StringPiece value)
 {
-    method_.swap(rhs.method_);
-    path_.swap(rhs.path_);
-    query_.swap(rhs.query_);
-    version_.swap(rhs.version_);
-    headers_.swap(rhs.headers_);
-    body_.swap(rhs.body_);
+    content_.Append(key);
+    content_.Append(": ");
+    content_.Append(value);
+    content_.Append("\r\n");
+}
+
+void HttpResponse::AppendEmptyBody() { content_.Append("\r\n"); }
+
+void HttpResponse::AppendBody(StringPiece body)
+{
+    content_.Append("\r\n");
+    content_.Append(body);
 }
 
 }  // namespace net

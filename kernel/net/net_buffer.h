@@ -60,7 +60,7 @@ public:
     char* write_index() { return begin() + writer_index_; }
 
     // getter
-    StringPiece debug_string_piece();
+    StringPiece slice();
 
     void swap(Buffer& rhs)
     {

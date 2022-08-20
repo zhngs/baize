@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include "net/net_buffer.h"
 #include "util/string_piece.h"
 #include "util/types.h"
 
@@ -15,9 +16,6 @@ namespace net
 class HttpRequest  // copyable
 {
 public:
-    void Reset();
-    void swap(HttpRequest& rhs);
-
 public:
     StringPiece method_;
     StringPiece path_;
@@ -26,6 +24,23 @@ public:
     std::map<StringPiece, StringPiece> headers_;
     StringPiece body_;
     StringPiece all_data_;
+};
+
+class HttpResponse  // copyable
+{
+public:
+    void AppendResponseLine(StringPiece version,
+                            StringPiece num,
+                            StringPiece state);
+    void AppendHeader(StringPiece key, StringPiece value);
+    void AppendEmptyBody();
+    void AppendBody(StringPiece body);
+
+    // getter
+    StringPiece slice() { return content_.slice(); };
+
+private:
+    Buffer content_;
 };
 
 }  // namespace net

@@ -6,7 +6,7 @@ namespace baize
 namespace log
 {
 
-const int klogBufferLen = 4096;
+const int klogBufferLen = 65536;
 thread_local char g_logbuffer[klogBufferLen];
 
 log::LogStream::LogStream() : cur_(g_logbuffer) {}

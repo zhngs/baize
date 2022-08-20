@@ -1,25 +1,41 @@
-#include "http/http_tasklet.h"
+#include "http/http_server.h"
+
+#include "http/http_parser.h"
 #include "log/logger.h"
-#include "net/tcp_listener.h"
 #include "runtime/event_loop.h"
-#include "util/string_piece.h"
 
-using namespace baize;
-
-const char dummy_response[] =
-    "HTTP/1.1 200 OK\r\n"
-    "Content-Type: text/plain; charset=utf-8\r\n"
-    "Content-Length: 5\r\n"
-    "\r\n"
-    "hello";
-
-void http_connection(net::TcpStreamSptr stream)
+namespace baize
 {
-    net::Buffer* buf = stream->read_buffer();
-    net::HttpTasklet tasklet;
+
+namespace net
+{
+
+HttpServer::HttpServer(uint16_t port, HttpHandler handler)
+  : listener_(port), handler_(std::move(handler))
+{
+    LOG_INFO << "HttpServer listen in " << port;
+}
+
+HttpServer::~HttpServer() {}
+
+void HttpServer::Start()
+{
+    runtime::current_loop()->Do([this] {
+        listener_.Start();
+        while (1) {
+            net::TcpStreamSptr stream = listener_.AsyncAccept();
+            LOG_INFO << "connection " << stream->peer_ip_port() << " accept";
+            runtime::current_loop()->Do([this, stream] { TcpLayer(stream); });
+        }
+    });
+}
+
+void HttpServer::TcpLayer(TcpStreamSptr stream)
+{
+    Buffer read_buf, write_buf;
     while (1) {
         bool timeout = false;
-        int rn = stream->AsyncRead(10000, timeout);
+        int rn = stream->AsyncRead(read_buf, 1000 * 3, timeout);
         if (timeout) {
             LOG_INFO << "connection " << stream->peer_ip_port() << " timeout";
             break;
@@ -29,41 +45,45 @@ void http_connection(net::TcpStreamSptr stream)
                      << rn;
             break;
         }
-        LOG_INFO << "http content:\n{\n" << buf->debug_string_piece() << "}";
 
-        int err = tasklet.Parse(buf);
+        LOG_WARN << "tcp read " << rn;
+
+        // 进入Http层
+        int err = HttpLayer(read_buf, write_buf);
         if (err < 0) {
-            LOG_INFO << "http parse failed in connection "
-                     << stream->peer_ip_port();
             break;
-        } else if (err == 0) {
-            continue;
         }
 
-        auto req_vector = tasklet.moved_requests();
-        LOG_INFO << "get " << req_vector.size() << " http request from "
-                 << stream->peer_ip_port();
-        stream->AsyncWrite(dummy_response, sizeof(dummy_response));
+        if (write_buf.readable_bytes() > 0) {
+            stream->AsyncWrite(write_buf.read_index(),
+                               write_buf.readable_bytes());
+            write_buf.TakeAll();
+        }
     }
     LOG_INFO << "connection " << stream->peer_ip_port() << " close";
 }
 
-void http_server()
+int HttpServer::HttpLayer(Buffer& read_buf, Buffer& write_buf)
 {
-    net::TcpListener listener(6060);
-    listener.Start();
-    LOG_INFO << "http server start in port 6060";
     while (1) {
-        net::TcpStreamSptr stream = listener.AsyncAccept();
-        LOG_INFO << "connection " << stream->peer_ip_port() << " accept";
-        runtime::current_loop()->Do([stream] { http_connection(stream); });
+        HttpRequest req;
+        int parsed_len = HttpRequestParse(read_buf.slice(), req);
+        if (parsed_len < 0) {
+            LOG_ERROR << "http request parse failed";
+            return parsed_len;
+        } else if (parsed_len == 0) {
+            return parsed_len;
+        } else {
+            read_buf.Take(parsed_len);
+        }
+
+        HttpResponse rsp;
+        handler_(req, rsp);
+
+        write_buf.Append(rsp.slice());
     }
 }
 
-int main(int argc, char* argv[])
-{
-    log::Logger::set_loglevel(log::Logger::INFO);
-    runtime::EventLoop loop;
-    loop.Do(http_server);
-    loop.Start();
-}
+}  // namespace net
+
+}  // namespace baize

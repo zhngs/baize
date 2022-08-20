@@ -37,6 +37,8 @@ int main()
     }
 
     StringPiece slice7("12566hello");
-    auto res = slice7.ParseInt();
-    LOG_INFO << "parse int:" << res.ret;
+    int number = 0;
+    const char* pnum = slice7.ParseInt(number);
+    assert(pnum != slice7.begin());
+    LOG_INFO << "parse int:" << number;
 }

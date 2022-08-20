@@ -1,2 +1,4 @@
-add_executable(http_server http_server.cc http_message.cc http_tasklet.cc)
-target_link_libraries(http_server baize pthread boost_context)
+add_subdirectory(example)
+
+aux_source_directory(. http_SRCS)
+add_library(baize_http ${http_SRCS})
