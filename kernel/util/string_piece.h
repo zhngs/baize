@@ -25,6 +25,7 @@ public:
     void TrimSpace();
     std::vector<StringPiece> Split(char ch) const;
     std::vector<StringPiece> Split(StringPiece slice) const;
+    StringPiece SliceFragment(StringPiece first, StringPiece last);
 
     // 若返回值与begin()相等，说明解析失败
     const char* ParseInt(int& num) const;

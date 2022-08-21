@@ -105,6 +105,17 @@ std::vector<StringPiece> StringPiece::Split(StringPiece slice) const
     return std::move(split);
 }
 
+StringPiece StringPiece::SliceFragment(StringPiece first, StringPiece last)
+{
+    const char* pos_begin = Find(first);
+    if (pos_begin == end()) return StringPiece();
+    StringPiece fragment(pos_begin + first.size(), end());
+    const char* pos_end = fragment.Find(last);
+    if (pos_end == fragment.end()) return StringPiece();
+    fragment.RemoveSuffixUntil(pos_end);
+    return fragment;
+}
+
 const char* StringPiece::ParseInt(int& num) const
 {
     int number = 0;
