@@ -1,5 +1,9 @@
 # baize
 
+![](https://img.shields.io/github/forks/zhngs/baize)
+![](https://img.shields.io/github/stars/zhngs/baize)
+![](https://img.shields.io/github/license/zhngs/baize)
+
 ## :rainbow: 简介
 
 **baize 是 modern c++编写的基于协程的轻量级高性能网络库**
@@ -57,7 +61,6 @@ baize 的核心源代码再 kernel 下，分为如下目录：
 - script，脚本如生成火焰图，格式化代码风格
 - third_party，第三方依赖
 - example，简单的网络编程示例
-
 - http，简单的 http server
 - quic，quic 协议的示例程序
 - webrtc，支持中的最小的 webrtc sfu 协议栈
@@ -120,7 +123,7 @@ int main()
 
 ## :alarm_clock: 性能
 
-- 在我的云服务器上执行 tcp_discard 程序，这是一个模仿 muduo 的 netty_discard 的程序，可以看到测试结果为 214MiB/s，在 top 窗口看到两个程序的 cpu 使用率大致都为 70%
+在一台云服务器上执行 tcp_discard 程序，这是一个模仿 muduo 的 netty_discard 的程序，可以看到测试结果为 214MiB/s，在 top 窗口看到两个程序的 cpu 使用率大致都为 70%
 
 ```shell
 # 窗口a
@@ -130,7 +133,7 @@ INFO 20220717 13:46:56.245741 [ discard server read speed 214.054 MiB/s, 128791 
 $ tcp_discard -c
 ```
 
-- 执行 muduo 的 netty_discard 测试代码，测试数据为 105MiB/s，在 top 窗口看到两个程序使用率都为 70%
+执行 muduo 的 netty_discard 测试代码，测试数据为 105MiB/s，在 top 窗口看到两个程序使用率都为 70%
 
 ```shell
 # 窗口a
@@ -140,15 +143,17 @@ $ tcp_discard -c
 102.015 MiB/s 58.786 Ki Msgs/s 1777.01 bytes per msg
 ```
 
-- 结论：可以看到两者每条消息的长度一致，但是 baize 收到消息的数量大概是 muduo 的 2 倍，原因其实在于 baize 的协程模型上。baize 使用的是 epoll 的边沿触发，在协程执行中会尽可能地读或写，直到返回 eagain，muduo 的思路是在读之前会先 epoll 一次，然后读一次，相当于多了一次 epoll 的系统调用，吞吐量自然低了一些。muduo 这样的做法目的是兼顾公平性和吞吐量，但如果连接多的时候，muduo 和 baize 的差别就不大了
-- 思考：本机测试下，baize 的吞吐量数据非常接近数据传输的极限，muduo 则是因为多了一次系统调用导致吞吐量少了一半。baize 实现公平性的方法是`模仿操作系统的调度`，在一个协程执行的过程中，维护一个异步调用次数，每使用一次异步接口，该值减一，等减到 0 的时候挂起协程，等到合适的时机再调度回来，这样在省下系统调用的同时也满足了公平性，并且吞吐量得到了提高，这个思路其实类似于操作系统给进程一个时间片，等到时间片用完触发中断切换进程，计算机世界的技术是如此的相似和有意思:smile:！
+结论：可以看到两者每条消息的长度一致，但是 baize 收到消息的数量大概是 muduo 的 2 倍，原因其实在于 baize 的协程模型上。baize 使用的是 epoll 的边沿触发，在协程执行中会尽可能地读或写，直到返回 eagain，muduo 的思路是在读之前会先 epoll 一次，然后读一次，相当于多了一次 epoll 的系统调用，吞吐量自然低了一些。muduo 这样的做法目的是兼顾公平性和吞吐量，但如果连接多的时候，muduo 和 baize 的差别就不大了
+思考：本机测试下，baize 的吞吐量数据非常接近数据传输的极限，muduo 则是因为多了一次系统调用导致吞吐量少了一半。baize 实现公平性的方法是`模仿操作系统的调度`，在一个协程执行的过程中，维护一个异步调用次数，每使用一次异步接口，该值减一，等减到 0 的时候挂起协程，等到合适的时机再调度回来，这样在省下系统调用的同时也满足了公平性，并且吞吐量得到了提高，这个思路其实类似于操作系统给进程一个时间片，等到时间片用完触发中断切换进程，计算机世界的技术是如此的相似和有意思:smile:！
 
 ## :love_letter: 开发
 
-- baize 仍处于待开发状态，核心的协程和网络部分代码非常轻量，感兴趣的伙伴可以加入`qq群621642409`一起讨论编码技术
-- "东望山有兽，名曰白泽，能言语。王者有德，明照幽远则至。" ————白泽是古代的瑞兽，希望 baize 也能带来祥瑞
+baize 仍处于待开发状态，核心的协程和网络部分代码非常轻量，感兴趣的伙伴可以加入`qq群621642409`一起讨论编码技术
+
+"东望山有兽，名曰白泽，能言语。王者有德，明照幽远则至。" ————白泽是古代的瑞兽，希望 baize 也能带来祥瑞
 
 ## :partying_face: 致谢
 
-- 感谢陈硕大神能提供 muduo 这样优秀的网络库作为学习榜样
-- 感谢每一个为 baize 网络库 :star:star 的开发者，祝 coding 愉快:clinking_glasses:！
+感谢陈硕大神能提供 muduo 这样优秀的网络库作为学习榜样
+
+感谢每一个为 baize 网络库 :star:star 的开发者，祝 coding 愉快:clinking_glasses:！
