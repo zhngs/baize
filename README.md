@@ -6,7 +6,7 @@
 
 ## :rainbow: 简介
 
-**baize 是 modern c++编写的基于协程的轻量级高性能网络库**
+**baize 是 modern c++编写的基于协程的轻量级高性能网络库**:fire:
 
 - baize 的设计哲学是`尽可能简单高效，用更少的代码做更多的事`，如果使用 baize 和其他基于回调的网络库作对比，就能体会到 baize 的清爽与简洁:star:
 - baize 对协程的选型是经过考虑的，`不使用无栈`的协程，因为无栈的协程是编译器来管理，使用者无法对程序具有更好的掌控力，而有栈的协程可以自己管理上下文切换，并且无栈协程要更新到 c++20 才能使用，标准太新未必是件好事，想要使用无栈协程我推荐 rust 的网络库`tokio`:sparkles:,这是一个非常活跃的项目，有很多人去维护
@@ -24,8 +24,8 @@
 - [x] TCP/UDP
 - [ ] TLS/DTLS，正在支持中
 - [ ] 跨平台，目前只支持 linux
-- [ ] HTTP，目前 http 目录有一个简单的 http server，仅供学习
-- [ ] QUIC，quic 目录下有一个 discard 示例，仅供学习
+- [x] HTTP demo，目前 http 目录有一个简单的 http server，完全协程化的写法，无任何回调
+- [x] QUIC demo，quic 目录下有一个 discard 示例
 - [ ] WebRTC，目前 webrtc 目录下有简单的 sfu server，可以简单解析 sdp，rtp 和 rtcp 正在支持中
 
 ## :magic_wand: 编译

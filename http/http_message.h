@@ -13,10 +13,8 @@ namespace baize
 namespace net
 {
 
-class HttpRequest  // copyable
+struct HttpRequest  // copyable
 {
-public:
-public:
     StringPiece method_;
     StringPiece path_;
     std::map<StringPiece, StringPiece> query_;
@@ -26,7 +24,7 @@ public:
     StringPiece all_data_;
 };
 
-class HttpResponse  // copyable
+class HttpResponseBuilder  // copyable
 {
 public:
     void AppendResponseLine(StringPiece version,

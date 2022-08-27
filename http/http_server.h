@@ -10,24 +10,37 @@ namespace baize
 namespace net
 {
 
-using HttpHandler = std::function<void(const HttpRequest&, HttpResponse&)>;
+class HttpStream;
+using HttpStreamSptr = std::shared_ptr<HttpStream>;
 
-class HttpServer  // noncopyable
+class HttpListener  // noncopyable
 {
 public:
-    HttpServer(uint16_t port, HttpHandler handler);
-    ~HttpServer();
-    HttpServer(const HttpServer&) = delete;
-    HttpServer& operator=(const HttpServer&) = delete;
+    explicit HttpListener(uint16_t port);
+    ~HttpListener();
+    HttpListener(const HttpListener&) = delete;
+    HttpListener& operator=(const HttpListener&) = delete;
 
-    void Start();
+    HttpStreamSptr AsyncAccept();
 
 private:
-    void TcpLayer(TcpStreamSptr stream);
-    int HttpLayer(Buffer& read_buf, Buffer& write_buf);
-
     TcpListener listener_;
-    HttpHandler handler_;
+};
+
+class HttpStream  // noncopyable
+{
+public:
+    explicit HttpStream(TcpStreamSptr stream);
+    ~HttpStream();
+    HttpStream(const HttpStream&) = delete;
+    HttpStream& operator=(const HttpStream&) = delete;
+
+    int AsyncRead(HttpRequest& req);
+    int AsyncWrite(HttpResponseBuilder& rsp);
+
+private:
+    Buffer read_buf_;
+    TcpStreamSptr stream_;
 };
 
 }  // namespace net

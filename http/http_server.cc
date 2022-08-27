@@ -10,78 +10,60 @@ namespace baize
 namespace net
 {
 
-HttpServer::HttpServer(uint16_t port, HttpHandler handler)
-  : listener_(port), handler_(std::move(handler))
+HttpListener::HttpListener(uint16_t port) : listener_(port)
 {
     LOG_INFO << "HttpServer listen in " << port;
+    listener_.Start();
 }
 
-HttpServer::~HttpServer() {}
+HttpListener::~HttpListener() {}
 
-void HttpServer::Start()
+HttpStreamSptr HttpListener::AsyncAccept()
 {
-    runtime::current_loop()->Do([this] {
-        listener_.Start();
-        while (1) {
-            net::TcpStreamSptr stream = listener_.AsyncAccept();
-            LOG_INFO << "connection " << stream->peer_ip_port() << " accept";
-            runtime::current_loop()->Do([this, stream] { TcpLayer(stream); });
-        }
-    });
+    net::TcpStreamSptr stream = listener_.AsyncAccept();
+    LOG_INFO << "connection " << stream->peer_ip_port() << " accept";
+    return HttpStreamSptr(std::make_shared<HttpStream>(stream));
 }
 
-void HttpServer::TcpLayer(TcpStreamSptr stream)
-{
-    Buffer read_buf, write_buf;
-    while (1) {
-        bool timeout = false;
-        int rn = stream->AsyncRead(read_buf, 1000 * 3, timeout);
-        if (timeout) {
-            LOG_INFO << "connection " << stream->peer_ip_port() << " timeout";
-            break;
-        }
-        if (rn <= 0) {
-            LOG_INFO << "connection " << stream->peer_ip_port() << " read "
-                     << rn;
-            break;
-        }
+HttpStream::HttpStream(TcpStreamSptr stream) : stream_(stream) {}
 
-        LOG_WARN << "tcp read " << rn;
+HttpStream::~HttpStream() {}
 
-        // 进入Http层
-        int err = HttpLayer(read_buf, write_buf);
-        if (err < 0) {
-            break;
-        }
-
-        if (write_buf.readable_bytes() > 0) {
-            stream->AsyncWrite(write_buf.read_index(),
-                               write_buf.readable_bytes());
-            write_buf.TakeAll();
-        }
-    }
-    LOG_INFO << "connection " << stream->peer_ip_port() << " close";
-}
-
-int HttpServer::HttpLayer(Buffer& read_buf, Buffer& write_buf)
+int HttpStream::AsyncRead(HttpRequest& req)
 {
     while (1) {
-        HttpRequest req;
-        int parsed_len = HttpRequestParse(read_buf.slice(), req);
+        int parsed_len = HttpRequestParse(read_buf_.slice(), req);
         if (parsed_len < 0) {
             LOG_ERROR << "http request parse failed";
             return parsed_len;
         } else if (parsed_len == 0) {
-            return parsed_len;
+            bool timeout = false;
+            int rn = stream_->AsyncRead(read_buf_, 1000 * 3, timeout);
+            if (timeout) {
+                LOG_INFO << "connection " << stream_->peer_ip_port()
+                         << " timeout";
+                return -1;
+            }
+            if (rn <= 0) {
+                LOG_INFO << "connection " << stream_->peer_ip_port() << " read "
+                         << rn;
+                return rn;
+            }
         } else {
-            read_buf.Take(parsed_len);
+            read_buf_.Take(parsed_len);
+            return parsed_len;
         }
-
-        HttpResponse rsp;
-        handler_(req, rsp);
-
-        write_buf.Append(rsp.slice());
     }
+}
+
+int HttpStream::AsyncWrite(HttpResponseBuilder& rsp)
+{
+    StringPiece content = rsp.slice();
+    if (content.size() <= 0) {
+        return -1;
+    }
+
+    return stream_->AsyncWrite(content.data(), content.size());
 }
 
 }  // namespace net
