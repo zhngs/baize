@@ -13,6 +13,14 @@ link_directories(${PROJECT_SOURCE_DIR}/third_party/boost_1_66_0/stage/lib)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/quiche/quiche/include)
 link_directories(${PROJECT_SOURCE_DIR}/third_party/quiche/target/release)
 
+# openssl
+include_directories(${PROJECT_SOURCE_DIR}/third_party/openssl/include)
+link_directories(${PROJECT_SOURCE_DIR}/third_party/openssl/lib)
+
+# srtp 
+include_directories(${PROJECT_SOURCE_DIR}/third_party/libsrtp-2.4.2/include)
+link_directories(${PROJECT_SOURCE_DIR}/third_party/libsrtp-2.4.2)
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 add_compile_options(

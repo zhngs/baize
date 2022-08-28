@@ -30,11 +30,11 @@ void TakeOverSignal()
 
     struct sigaction sa_ignore;
     MemZero(&sa_ignore, sizeof(sa_ignore));
-    sa_user.sa_handler = SIG_IGN;
+    sa_ignore.sa_handler = SIG_IGN;
 
     struct sigaction sa_default;
     MemZero(&sa_default, sizeof(sa_default));
-    sa_user.sa_handler = SIG_DFL;
+    sa_default.sa_handler = SIG_DFL;
 
     sigaction(SIGUSR1, &sa_user, nullptr);
     sigaction(SIGUSR2, &sa_user, nullptr);

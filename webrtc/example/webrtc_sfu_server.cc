@@ -7,7 +7,7 @@
 using namespace baize;
 using namespace baize::net;
 
-void HttpEntry(const HttpRequest& req, HttpResponse& rsp)
+void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
 {
     if (req.path_ == "/") {
         FileReader reader("p2p.html");
@@ -40,13 +40,43 @@ void HttpEntry(const HttpRequest& req, HttpResponse& rsp)
     }
 }
 
+void HttpConnection(HttpStreamSptr http)
+{
+    while (1) {
+        HttpRequest req;
+        int rn = http->AsyncRead(req);
+        if (rn <= 0) {
+            LOG_ERROR << "http read failed";
+            break;
+        }
+
+        HttpResponseBuilder rsp;
+        HttpEntry(req, rsp);
+
+        int wn = http->AsyncWrite(rsp);
+        if (wn != rsp.slice().size()) {
+            LOG_ERROR << "http write failed";
+            break;
+        }
+    }
+}
+
+void HttpServer()
+{
+    HttpListener listener(6060);
+
+    while (1) {
+        HttpStreamSptr stream = listener.AsyncAccept();
+        runtime::current_loop()->Do([stream] { HttpConnection(stream); });
+    }
+}
+
 int main(int argc, char* argv[])
 {
     log::Logger::set_loglevel(log::Logger::INFO);
     runtime::EventLoop loop;
 
-    HttpServer server(6060, HttpEntry);
-    server.Start();
+    loop.Do(HttpServer);
 
     loop.Start();
 }
