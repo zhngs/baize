@@ -33,7 +33,9 @@ $ cd quiche
 $ cargo build --release --features ffi
 ```
 
-## 4.openssl(必需)
+## 4.openssl(非必需)
+
+如果不想编译加解密的部分，可以注释 kernel 目录下 CMakeLists.txt 文件中 crypto 的编译选项
 
 baize 支持加解密，需要使用 openssl，版本为 1.1.1，下载地址在https://www.openssl.org/source/old/1.1.1/，下载完后执行以下命令
 
@@ -41,8 +43,8 @@ baize 支持加解密，需要使用 openssl，版本为 1.1.1，下载地址在
 $ tar -xvf openssl-1.1.1p.tar.gz
 $ cd openssl-1.1.1p
 $ ./config \
---prefix=baize的绝对路径/third_party/openssl \
---openssldir=baize的绝对路径/third_party/openssl \
+--prefix={baize的绝对路径}/third_party/openssl \
+--openssldir={baize的绝对路径}/third_party/openssl \
 no-shared \
 -DOPENSSL_TLS_SECURITY_LEVEL=2 \
 enable-ec_nistp_64_gcc_128
@@ -50,7 +52,7 @@ $ make
 $ make install
 ```
 
-`make install`会将 openssl 编译出来的文件安装到 third_party/openssl 目录下，后面链接此目录下库文件的
+`make install`会将 openssl 编译出来的文件安装到 third_party/openssl 目录下，后面链接此目录下的库文件
 
 ## 5.libsrtp(非必需)
 

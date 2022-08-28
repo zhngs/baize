@@ -24,6 +24,8 @@ TlsStream::~TlsStream()
 
 TlsStreamSptr TlsStream::AsServer(SslConfig& config, TcpStreamSptr stream)
 {
+    if (!stream) return TlsStreamSptr();
+
     TlsStreamSptr tls_stream(std::make_shared<TlsStream>(stream));
     tls_stream->ctx_ = config.ssl_ctx();
     tls_stream->ssl_ = SSL_new(tls_stream->ctx_);

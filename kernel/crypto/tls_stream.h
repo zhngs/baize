@@ -29,6 +29,9 @@ public:
     int AsyncRead(void* buf, int len);
     int AsyncWrite(const void* buf, int count);
 
+    // getter
+    TcpStreamSptr stream() { return stream_; }
+
 private:
     TcpStreamSptr stream_;
 
