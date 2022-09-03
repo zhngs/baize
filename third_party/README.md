@@ -37,7 +37,9 @@ $ cargo build --release --features ffi
 
 如果不想编译加解密的部分，可以注释 kernel 目录下 CMakeLists.txt 文件中 crypto 的编译选项
 
-baize 支持加解密，需要使用 openssl，版本为 1.1.1，下载地址在https://www.openssl.org/source/old/1.1.1/，下载完后执行以下命令
+baize 支持加解密，需要使用 openssl，版本为 1.1.1，下载地址在https://www.openssl.org/source/old/1.1.1/
+
+下载结束后执行以下命令
 
 ```shell
 $ tar -xvf openssl-1.1.1p.tar.gz
@@ -65,6 +67,6 @@ baize 支持 webrtc 协议栈，需要使用 libsrtp，github 地址为 https://
 ```shell
 $ tar -xvf libsrtp-2.4.2.tar.gz
 $ cd libsrtp-2.4.2
-$ ./configure --enable-openssl --with-openssl-dir=/opt/openssl
+$ ./configure --enable-openssl --with-openssl-dir={编译出来的openssl路径}
 $ make
 ```
