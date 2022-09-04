@@ -16,8 +16,8 @@ public:
     StringPiece(const char* str);
     StringPiece(const unsigned char* str);
     StringPiece(const string& str);
-    StringPiece(const char* offset, int len);
-    StringPiece(const char* begin, const char* end);
+    StringPiece(const void* offset, int len);
+    StringPiece(const void* begin, const void* end);
 
     const char* Find(char ch) const;
     const char* Find(StringPiece slice) const;
@@ -53,6 +53,10 @@ public:
 
     // getter
     const char* data() const { return ptr_; }
+    const uint8_t* data_uint8() const
+    {
+        return reinterpret_cast<const uint8_t*>(ptr_);
+    }
     int size() const { return length_; }
     bool empty() const { return length_ == 0; }
     const char* begin() const { return ptr_; }

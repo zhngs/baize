@@ -1,5 +1,7 @@
 #include "log/log_stream.h"
 
+#include "stdarg.h"
+
 namespace baize
 {
 
@@ -8,6 +10,47 @@ namespace log
 
 const int klogBufferLen = 65536;
 thread_local char g_logbuffer[klogBufferLen];
+
+char g_extbuf[klogBufferLen];
+
+void StringAppend(string& s, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(g_extbuf, sizeof(g_extbuf), fmt, args);
+    va_end(args);
+    s += g_extbuf;
+    s += '\n';
+}
+
+string DumpHexFormat(StringPiece s)
+{
+    char* pos = g_extbuf;
+    const uint8_t* data = s.data_uint8();
+    for (int i = 0; i < s.size(); ++i) {
+        if (i % 16 == 0) {
+            *pos = '\n';
+            pos++;
+        } else if (i % 8 == 0) {
+            *pos = ' ';
+            pos++;
+        }
+        snprintf(pos, 4, "%.2x ", data[i]);
+        pos += 3;
+    }
+    *pos = 0;
+    return g_extbuf;
+}
+
+string DumpHex(StringPiece s)
+{
+    const uint8_t* data = s.data_uint8();
+    for (int i = 0; i < s.size(); ++i) {
+        // NOTE: n must be 3 because snprintf adds a \0 after printed chars.
+        snprintf(g_extbuf + (i * 2), 3, "%.2x", data[i]);
+    }
+    return g_extbuf;
+}
 
 log::LogStream::LogStream() : cur_(g_logbuffer) {}
 

@@ -57,6 +57,10 @@ private:
     char* cur_;
 };
 
+void StringAppend(string& s, const char* fmt, ...);
+string DumpHexFormat(StringPiece s);
+string DumpHex(StringPiece s);
+
 }  // namespace log
 
 }  // namespace baize

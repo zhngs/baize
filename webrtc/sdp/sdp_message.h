@@ -30,18 +30,24 @@ struct NetSdp  // copyable
     string finger_print_;
     string ice_option_;
     string setup_;
+    string ip_;
+    uint16_t port_;
 };
 
 class SdpMessage  // copyable
 {
 public:
+    // setter
+    int set_remote_sdp(StringPiece message);
+
+    // getter
+    string local_sdp();
+
 public:
     string cname_;
     std::vector<TrackSdp> tracks_;
     NetSdp net_;
 };
-
-int SdpParse(StringPiece message, SdpMessage& sdp);
 
 }  // namespace net
 

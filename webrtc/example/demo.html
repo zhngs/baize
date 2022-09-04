@@ -115,7 +115,7 @@
 			let stream;
 			try {
 				message.log('尝试调取本地摄像头/麦克风');
-				stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true});
+				stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false});
 				message.log('摄像头/麦克风获取成功！');
 				localVideo.srcObject = stream;
 			} catch {
@@ -141,26 +141,23 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({sdp:offer.sdp}),
+                body: offer.sdp,
             })
-            .then(response => response.json())
+            .then(response => response.text())
             .then(data => {
                 console.log('Success:', data);
+                message.log('接收到发送方SDP');
+                let desc = new RTCSessionDescription();
+                desc.sdp = data;
+                desc.type = 'answer';
+                peer.setRemoteDescription(desc);
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
             console.log(offer.sdp.length);
 
-				// message.log('接收到发送方SDP');
-				// await peer.setRemoteDescription(offerSdp);
-
-				// message.log('创建接收方（应答）SDP');
-				// const answer = await peer.createAnswer();
-                // console.log(answer.sdp);
-				// message.log(`传输接收方（应答）SDP`);
-				// socket.send(JSON.stringify(answer));
-				// await peer.setLocalDescription(answer);
+           
 		}
 	</script>
 </body>

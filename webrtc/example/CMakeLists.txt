@@ -1,2 +1,2 @@
 add_executable(webrtc_sfu_server webrtc_sfu_server.cc)
-target_link_libraries(webrtc_sfu_server baize_webrtc baize_http baize pthread boost_context)
+target_link_libraries(webrtc_sfu_server baize_webrtc baize_http baize pthread boost_context ssl crypto dl)

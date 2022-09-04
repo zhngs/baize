@@ -1,16 +1,21 @@
 #include "http/file_reader.h"
 #include "http/http_server.h"
 #include "log/logger.h"
+#include "net/udp_stream.h"
 #include "runtime/event_loop.h"
+#include "webrtc/ice/ice_server.h"
+#include "webrtc/ice/stun_packet.h"
 #include "webrtc/sdp/sdp_message.h"
 
 using namespace baize;
 using namespace baize::net;
 
+string g_password;
+
 void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
 {
     if (req.path_ == "/") {
-        FileReader reader("p2p.html");
+        FileReader reader("demo.html");
         StringPiece file = reader.ReadAll();
         string len = std::to_string(file.size());
 
@@ -29,11 +34,23 @@ void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
         // LOG_INFO << "body len : " << req.body_.size();
         LOG_INFO << "body : " << req.body_;
 
-        SdpMessage sdp;
-        SdpParse(req.body_, sdp);
+        SdpMessage remote_sdp;
+        remote_sdp.set_remote_sdp(req.body_);
+
+        g_password = remote_sdp.net_.ice_pwd_;
+
+        SdpMessage local_sdp;
+        local_sdp.net_.ip_ = "101.43.183.201";
+        local_sdp.net_.port_ = 6061;
+        local_sdp.net_.ice_ufrag_ = "2eaP";
+        local_sdp.net_.ice_pwd_ = "0HK9scLUJ8kv2TiuDAPHccjb";
+        local_sdp.net_.ice_option_ = "ice-lite";
+        local_sdp.net_.finger_print_ =
+            "D0:7C:21:96:77:95:8A:7B:BD:13:B3:84:FB:CB:80:03:0C:F5:5B:AD:DD:04:"
+            "1A:07:0E:44:C0:26:80:BB:D6:6A";
 
         rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
-        rsp.AppendBody(req.body_);
+        rsp.AppendBody(local_sdp.local_sdp());
     } else {
         rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
         rsp.AppendEmptyBody();
@@ -61,7 +78,7 @@ void HttpConnection(HttpStreamSptr http)
     }
 }
 
-void HttpServer()
+void SignalServer()
 {
     HttpListener listener(6060);
 
@@ -71,12 +88,39 @@ void HttpServer()
     }
 }
 
+void MediaServer()
+{
+    char buf[1500];
+    InetAddress addr;
+    UdpStreamSptr stream = UdpStream::AsServer(6061);
+    while (1) {
+        int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &addr);
+        if (rn < 0) {
+            LOG_ERROR << "mediaserver read failed";
+            break;
+        }
+        LOG_INFO << "recvfrom " << addr.ip_port() << " " << rn << " bytes";
+        LOG_INFO << log::DumpHexFormat(StringPiece(buf, rn));
+        if (StunPacket::IsStun(StringPiece(buf, rn))) {
+            StunPacket stun_packet;
+            int err = stun_packet.Parse(StringPiece(buf, rn));
+            if (!err) {
+                stun_packet.dump();
+                ProcessStunPacket(stun_packet, stream, addr, g_password);
+            } else {
+                LOG_ERROR << "stun packet parse failed";
+            }
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
     log::Logger::set_loglevel(log::Logger::INFO);
     runtime::EventLoop loop;
 
-    loop.Do(HttpServer);
+    loop.Do(SignalServer);
+    loop.Do(MediaServer);
 
     loop.Start();
 }

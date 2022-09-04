@@ -21,13 +21,14 @@ StringPiece::StringPiece(const string& str)
 {
 }
 
-StringPiece::StringPiece(const char* offset, int len)
-  : ptr_(offset), length_(len)
+StringPiece::StringPiece(const void* offset, int len)
+  : ptr_(reinterpret_cast<const char*>(offset)), length_(len)
 {
 }
 
-StringPiece::StringPiece(const char* begin, const char* end)
-  : ptr_(begin), length_(static_cast<int>(end - begin))
+StringPiece::StringPiece(const void* begin, const void* end)
+  : ptr_(reinterpret_cast<const char*>(begin)),
+    length_(static_cast<int>(reinterpret_cast<const char*>(end) - ptr_))
 {
     assert(length_ >= 0);
 }

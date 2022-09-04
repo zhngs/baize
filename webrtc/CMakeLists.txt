@@ -4,4 +4,5 @@ add_subdirectory(example)
 # add_library(baize_webrtc ${webrtc_SRCS})
 
 aux_source_directory(./sdp sdp_SRCS)
-add_library(baize_webrtc ${sdp_SRCS})
+aux_source_directory(./ice ice_SRCS)
+add_library(baize_webrtc ${sdp_SRCS} ${ice_SRCS})

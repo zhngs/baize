@@ -37,6 +37,10 @@ public:
     // append
     void Append(const StringPiece& str);
     void Append(const void* data, int len);
+    void Append(uint8_t v) { Append(&v, sizeof(v)); }
+    void Append(uint16_t v) { Append(&v, sizeof(v)); }
+    void Append(uint32_t v) { Append(&v, sizeof(v)); }
+    void Append(uint64_t v) { Append(&v, sizeof(v)); }
 
     // take
     void Take(int len);
