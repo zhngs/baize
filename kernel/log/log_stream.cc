@@ -10,8 +10,7 @@ namespace log
 
 const int klogBufferLen = 65536;
 thread_local char g_logbuffer[klogBufferLen];
-
-char g_extbuf[klogBufferLen];
+thread_local char g_extbuf[klogBufferLen];
 
 void StringAppend(string& s, const char* fmt, ...)
 {
@@ -21,6 +20,15 @@ void StringAppend(string& s, const char* fmt, ...)
     va_end(args);
     s += g_extbuf;
     s += '\n';
+}
+
+const char* TempFmt(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(g_extbuf, sizeof(g_extbuf), fmt, args);
+    va_end(args);
+    return g_extbuf;
 }
 
 string DumpHexFormat(StringPiece s)

@@ -80,7 +80,7 @@ TimerId TimerQueue::AddTimer(TimerCallback cb, Timestamp when, double interval)
 
 void TimerQueue::RemoveTimer(TimerId id)
 {
-    assert(timers_.find(id) != timers_.end());
+    if (timers_.find(id) == timers_.end()) return;
     TimerOrder order(timers_[id]->expiration(), id);
     assert(ordered_timers_.find(order) != ordered_timers_.end());
 

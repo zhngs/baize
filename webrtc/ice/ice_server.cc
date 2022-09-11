@@ -8,11 +8,26 @@ namespace baize
 namespace net
 {
 
-void ProcessStunPacket(StunPacket& packet,
-                       UdpStreamSptr stream,
-                       InetAddress& addr,
-                       string password)
+IceServer::Uptr IceServer::New(string password,
+                               UdpStreamSptr stream,
+                               InetAddress addr)
 {
+    return std::make_unique<IceServer>(password, stream, addr);
+}
+
+IceServer::~IceServer() {}
+
+void IceServer::ProcessStunPacket(StringPiece stun_packet)
+{
+    StunPacket packet;
+    int err = packet.Parse(stun_packet);
+    if (!err) {
+        packet.dump();
+    } else {
+        LOG_ERROR << "stun packet parse failed";
+        return;
+    }
+
     if (packet.method() != StunPacket::Method::BINDING) {
         return;
     }
@@ -38,16 +53,20 @@ void ProcessStunPacket(StunPacket& packet,
             }
 
             StunPacket rsp;
-            Buffer send_buf;
             rsp.set_class(StunPacket::Class::SUCCESS_RESPONSE);
             rsp.set_method(StunPacket::Method::BINDING);
             rsp.set_transaction_id(packet.transaction_id());
-            rsp.set_xor_mapped_address(addr);
-            rsp.set_password(password);
-            rsp.Pack(send_buf);
+            rsp.set_xor_mapped_address(dest_addr_);
+            rsp.set_password(ice_password_);
 
-            stream->AsyncSendto(
-                send_buf.read_index(), send_buf.readable_bytes(), addr);
+            send_buf_.TakeAll();
+            rsp.Pack(send_buf_);
+
+            stream_->AsyncSendto(
+                send_buf_.read_index(), send_buf_.readable_bytes(), dest_addr_);
+
+            if (packet.has_use_candidate()) state_ = IceState::CONNECTED;
+
             break;
         }
 

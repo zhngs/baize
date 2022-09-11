@@ -49,6 +49,32 @@ int SslConfig::set_tls_client()
     return 0;
 }
 
+int SslConfig::set_dtls(string cert, string key)
+{
+    ctx_ = SSL_CTX_new(DTLS_method());
+    if (!ctx_) {
+        LOG_SYSERR << "Unable to create SSL server context";
+        return -1;
+    }
+
+    /* Set the key and cert */
+    if (SSL_CTX_use_certificate_file(ctx_, cert.c_str(), SSL_FILETYPE_PEM) <=
+        0) {
+        LOG_SYSERR << "DTLS set cert failed";
+        return -1;
+    }
+    if (SSL_CTX_use_PrivateKey_file(ctx_, key.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        LOG_SYSERR << "DTLS set key failed";
+        return -1;
+    }
+    if (SSL_CTX_check_private_key(ctx_) == 0) {
+        LOG_SYSERR << "DTLS check key failed";
+        return -1;
+    }
+
+    return 0;
+}
+
 }  // namespace net
 
 }  // namespace baize

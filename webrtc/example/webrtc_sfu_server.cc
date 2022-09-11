@@ -3,14 +3,11 @@
 #include "log/logger.h"
 #include "net/udp_stream.h"
 #include "runtime/event_loop.h"
-#include "webrtc/ice/ice_server.h"
-#include "webrtc/ice/stun_packet.h"
-#include "webrtc/sdp/sdp_message.h"
+#include "webrtc/pc/peer_connection.h"
+#include "webrtc/pc/webrtc_settings.h"
 
 using namespace baize;
 using namespace baize::net;
-
-string g_password;
 
 void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
 {
@@ -23,34 +20,12 @@ void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
         rsp.AppendHeader("Content-Length", len);
         rsp.AppendBody(file);
     } else if (req.path_.Find("sdp") != req.path_.end()) {
-        // LOG_INFO << req.all_data_;
-        // LOG_INFO << "method: " << req.method_;
-        // LOG_INFO << "path: " << req.path_;
-        // LOG_INFO << "version: " << req.version_;
-        // for (auto& head : req.headers_) {
-        //     LOG_INFO << "header: {" << head.first << ":" << head.second <<
-        //     "}";
-        // }
-        // LOG_INFO << "body len : " << req.body_.size();
         LOG_INFO << "body : " << req.body_;
-
         SdpMessage remote_sdp;
         remote_sdp.set_remote_sdp(req.body_);
 
-        g_password = remote_sdp.net_.ice_pwd_;
-
-        SdpMessage local_sdp;
-        local_sdp.net_.ip_ = "101.43.183.201";
-        local_sdp.net_.port_ = 6061;
-        local_sdp.net_.ice_ufrag_ = "2eaP";
-        local_sdp.net_.ice_pwd_ = "0HK9scLUJ8kv2TiuDAPHccjb";
-        local_sdp.net_.ice_option_ = "ice-lite";
-        local_sdp.net_.finger_print_ =
-            "D0:7C:21:96:77:95:8A:7B:BD:13:B3:84:FB:CB:80:03:0C:F5:5B:AD:DD:04:"
-            "1A:07:0E:44:C0:26:80:BB:D6:6A";
-
         rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
-        rsp.AppendBody(local_sdp.local_sdp());
+        rsp.AppendBody(WebRTCSettings::local_sdp());
     } else {
         rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
         rsp.AppendEmptyBody();
@@ -93,6 +68,12 @@ void MediaServer()
     char buf[1500];
     InetAddress addr;
     UdpStreamSptr stream = UdpStream::AsServer(6061);
+
+    bool only_once = false;
+    PeerConnection::Sptr pc;
+
+    WebRTCSettings::Initialize();
+
     while (1) {
         int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &addr);
         if (rn < 0) {
@@ -100,16 +81,16 @@ void MediaServer()
             break;
         }
         LOG_INFO << "recvfrom " << addr.ip_port() << " " << rn << " bytes";
-        LOG_INFO << log::DumpHexFormat(StringPiece(buf, rn));
-        if (StunPacket::IsStun(StringPiece(buf, rn))) {
-            StunPacket stun_packet;
-            int err = stun_packet.Parse(StringPiece(buf, rn));
-            if (!err) {
-                stun_packet.dump();
-                ProcessStunPacket(stun_packet, stream, addr, g_password);
-            } else {
-                LOG_ERROR << "stun packet parse failed";
-            }
+
+        if (!only_once) {
+            pc = PeerConnection::New(stream, addr);
+            only_once = true;
+        }
+
+        int err = pc->ProcessPacket(StringPiece(buf, rn));
+        if (err < 0) {
+            LOG_ERROR << "peerconnection process failed";
+            break;
         }
     }
 }

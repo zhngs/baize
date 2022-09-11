@@ -10,10 +10,35 @@ namespace baize
 namespace net
 {
 
-void ProcessStunPacket(StunPacket& packet,
-                       UdpStreamSptr stream,
-                       InetAddress& addr,
-                       string password);
+class IceServer  // noncopyable
+{
+public:
+    using Uptr = std::unique_ptr<IceServer>;
+    enum class IceState { NEW = 1, CONNECTED };
+
+    static Uptr New(string password, UdpStreamSptr stream, InetAddress addr);
+
+    IceServer(string password, UdpStreamSptr stream, InetAddress addr)
+      : ice_password_(password), stream_(stream), dest_addr_(addr)
+    {
+    }
+    ~IceServer();
+    IceServer(const IceServer&) = delete;
+    IceServer& operator=(const IceServer&) = delete;
+
+    void ProcessStunPacket(StringPiece stun_packet);
+
+    // getter
+    bool is_connected() { return state_ == IceState::CONNECTED; }
+
+private:
+    IceState state_ = IceState::NEW;
+    string ice_password_;
+
+    UdpStreamSptr stream_;
+    InetAddress dest_addr_;
+    Buffer send_buf_;
+};
 
 }  // namespace net
 

@@ -19,8 +19,9 @@ public:
     SslConfig& operator=(const SslConfig&) = delete;
 
     // setter
-    int set_tls_server(string cert, string key);
+    int set_tls_server(string cert_path, string key_path);
     int set_tls_client();
+    int set_dtls(string cert_path, string key_path);
 
     // getter
     SSL_CTX* ssl_ctx() { return ctx_; }

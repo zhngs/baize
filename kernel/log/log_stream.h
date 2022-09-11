@@ -58,6 +58,7 @@ private:
 };
 
 void StringAppend(string& s, const char* fmt, ...);
+const char* TempFmt(const char* fmt, ...);
 string DumpHexFormat(StringPiece s);
 string DumpHex(StringPiece s);
 
