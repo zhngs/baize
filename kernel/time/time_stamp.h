@@ -20,6 +20,17 @@ public:
     Timestamp() : us_(0) {}
     explicit Timestamp(int64_t us) : us_(us) {}
 
+    Timestamp AddUs(int64_t us)
+    {
+        us_ += us;
+        return Timestamp(us_);
+    }
+    Timestamp AddMs(int64_t ms)
+    {
+        us_ += (1000 * ms);
+        return Timestamp(us_);
+    }
+
     // getter
     string date() const;
     int64_t us() const { return us_; }

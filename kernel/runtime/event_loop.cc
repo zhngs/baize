@@ -13,7 +13,7 @@ namespace runtime
 {
 
 thread_local EventLoop* tg_loop = nullptr;
-const int kEpollTimeout = 10000;
+const int kEpollTimeout = 1;
 const int kEpollEventSize = 16;
 
 EventLoop* current_loop()
@@ -26,7 +26,8 @@ EventLoop::EventLoop(int routinesize)
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
     routine_pool_(std::make_unique<RoutinePool>(routinesize)),
     events_(kEpollEventSize),
-    timerqueue_(std::make_unique<time::TimerQueue>())
+    timerqueue_(std::make_unique<time::TimerQueue>()),
+    time_wheel_(time::TimeWheel::New())
 {
     if (tg_loop) {
         LOG_FATAL << "another loop exists";
@@ -97,7 +98,9 @@ void EventLoop::Start()
             }
         }
 
-        routine_pool_->Refresh();
+        if (epolltime > 0) {
+            time_wheel_->TurnWheel();
+        }
     }
 }
 

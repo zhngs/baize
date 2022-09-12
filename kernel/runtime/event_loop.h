@@ -10,6 +10,7 @@
 
 #include "runtime/routine_pool.h"
 #include "runtime/wait_request.h"
+#include "time/time_wheel.h"
 #include "time/timer_queue.h"
 #include "util/types.h"
 
@@ -60,6 +61,10 @@ public:
     time::TimerId RunEvery(double interval, time::TimerCallback cb);
     void CancelTimer(time::TimerId timerId);
 
+    // time wheel
+    void AddTimer(time::Timer* timer) { time_wheel_->AddTimer(timer); }
+    void DelTimer(time::Timer* timer) { time_wheel_->DelTimer(timer); }
+
     // getter
     int epollfd() { return epollfd_; }
 
@@ -87,6 +92,9 @@ private:
 
     // timerqueue
     std::unique_ptr<time::TimerQueue> timerqueue_;
+
+    // timewheel
+    time::TimeWheelUptr time_wheel_;
 };
 
 }  // namespace runtime

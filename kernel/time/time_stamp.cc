@@ -12,6 +12,7 @@ namespace time
 Timestamp Timestamp::Now()
 {
     struct timeval tv;
+    MemZero(&tv, sizeof(tv));
     gettimeofday(&tv, NULL);
     int64_t seconds = tv.tv_sec;
     return Timestamp(seconds * kUsPerSec + tv.tv_usec);
