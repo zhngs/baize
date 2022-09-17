@@ -127,7 +127,7 @@ void DtlsTransport::OnSslInfo(int where, int ret)
 }
 
 DtlsTransport::DtlsTransport(SSL_CTX* ctx, UdpStreamSptr stream)
-  : ctx_(ctx), stream_(stream)
+  : ctx_(ctx), stream_(stream), timer_([this] { return HandleTimeout(); })
 {
 }
 
@@ -200,7 +200,7 @@ bool DtlsTransport::CheckStatus(int ret)
 
     if (HandshakeDone_ && !ExtractSrtpKey_) {
         ExtractSrtpKey_ = true;
-        runtime::current_loop()->CancelTimer(timer_);
+        timer_.Stop();
         // todo: checkout fingerprint
         return ExtractSrtpKey();
     } else if (((SSL_get_shutdown(ssl_) & SSL_RECEIVED_SHUTDOWN) != 0) ||
@@ -320,10 +320,7 @@ bool DtlsTransport::UpdateTimeout()
         HandleTimeout();
         return true;
     } else if (timeout_ms < 5000) {
-        runtime::current_loop()->CancelTimer(timer_);
-        timer_ = runtime::current_loop()->RunAfter(
-            static_cast<double>(timeout_ms) / 1000,
-            [this] { HandleTimeout(); });
+        timer_.Start(timeout_ms);
         return true;
     } else {
         LOG_WARN << "DTLS timeout too high, " << timeout_ms << " ms";
@@ -332,9 +329,9 @@ bool DtlsTransport::UpdateTimeout()
     }
 }
 
-void DtlsTransport::HandleTimeout()
+int DtlsTransport::HandleTimeout()
 {
-    if (HandshakeDone_) return;
+    if (HandshakeDone_) return time::kTimerStop;
 
     // DTLSv1_handle_timeout is called when a DTLS handshake timeout expires.
     // If no timeout had expired, it returns 0. Otherwise, it retransmits the
@@ -348,6 +345,8 @@ void DtlsTransport::HandleTimeout()
         LOG_ERROR << "DTLSv1_handle_timeout() failed";
         state_ = DtlsState::FAILED;
     }
+
+    return time::kTimerStop;
 }
 
 bool DtlsTransport::is_running()

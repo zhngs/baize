@@ -33,10 +33,10 @@ public:
     ssize_t Write(const void* buf, size_t count);
 
     int AsyncRead(void* buf, size_t count);
-    // int AsyncRead(void* buf, size_t count, double ms, bool& timeout);
+    int AsyncRead(void* buf, size_t count, int ms, bool& timeout);
 
     int AsyncRead(Buffer& buf);
-    // int AsyncRead(Buffer& buf, double ms, bool& timeout);
+    int AsyncRead(Buffer& buf, int ms, bool& timeout);
 
     // 返回值不等于count，说明出现异常错误
     int AsyncWrite(const void* buf, size_t count);

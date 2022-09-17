@@ -44,7 +44,7 @@ public:
 private:
     void SendBioData();
     bool UpdateTimeout();
-    void HandleTimeout();
+    int HandleTimeout();
     bool CheckStatus(int ret);
     bool ExtractSrtpKey();
 
@@ -65,7 +65,7 @@ private:
     uint8_t srtp_remote_master_[64] = {};
     int srtp_master_len_ = 0;
 
-    time::TimerId timer_ = 0;
+    time::Timer timer_;
 };
 
 }  // namespace net

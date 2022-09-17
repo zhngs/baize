@@ -90,10 +90,9 @@ void TimeWheel::TurnWheel()
         Timer* head = &time_wheel_[0][index];
         while (head->next_ != nullptr) {
             Timer* timer = head->next_;
+            DelTimer(timer);
             if (timer->Run()) {
                 AddTimer(timer);
-            } else {
-                DelTimer(timer);
             }
         }
     }
