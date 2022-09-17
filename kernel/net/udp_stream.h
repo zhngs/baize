@@ -5,6 +5,7 @@
 
 #include "net/inet_address.h"
 #include "net/socket.h"
+#include "runtime/event_loop.h"
 
 namespace baize
 {
@@ -35,8 +36,8 @@ public:
 
     int AsyncSendto(const void* buf, int len, const InetAddress& addr);
     int AsyncRecvFrom(void* buf, int len, InetAddress* addr);
-    int AsyncRecvFrom(
-        void* buf, int count, InetAddress* addr, double ms, bool& timeout);
+    // int AsyncRecvFrom(
+    //     void* buf, int count, InetAddress* addr, double ms, bool& timeout);
 
     // getter
     InetAddress localaddr();
@@ -44,6 +45,7 @@ public:
 private:
     InetAddress bindaddr_;
     std::unique_ptr<Socket> conn_;
+    runtime::AsyncPark async_park_;
 };
 
 }  // namespace net

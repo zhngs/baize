@@ -15,19 +15,17 @@ namespace runtime
 
 class RoutinePool  // noncopyable
 {
-public:
+public:  // special fucntion
     RoutinePool(int poolsize);
     ~RoutinePool();
     RoutinePool(const RoutinePool&) = delete;
     RoutinePool& operator=(const RoutinePool&) = delete;
 
+public:  // normal function
     void Start(RoutineCallBack func);
-    void Call(RoutineId routineid);
 
-    void Refresh();
-
-    // getter
-    Routine& routine(RoutineId routineid);
+private:  // private normal function
+    void RoutineProcess();
 
 private:
     std::map<RoutineId, std::unique_ptr<Routine>> free_list_;

@@ -1,7 +1,6 @@
 #include "crypto/tls_stream.h"
 
 #include "log/logger.h"
-#include "runtime/event_loop.h"
 
 namespace baize
 {
@@ -10,7 +9,7 @@ namespace net
 {
 
 TlsStream::TlsStream(TcpStreamSptr stream)
-  : stream_(stream), ctx_(nullptr), ssl_(nullptr)
+  : stream_(stream), async_park_(stream->sockfd()), ctx_(nullptr), ssl_(nullptr)
 {
 }
 
@@ -34,24 +33,14 @@ TlsStreamSptr TlsStream::AsServer(SslConfig& config, TcpStreamSptr stream)
     }
     SSL_set_fd(tls_stream->ssl_, stream->sockfd());
 
-    runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
-        loop->CheckTicks();
+        tls_stream->async_park_.CheckTicks();
         errno = 0;
         int err = SSL_accept(tls_stream->ssl_);
         if (err <= 0) {
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                runtime::WaitRequest item =
-                    loop->WaitReadable(stream->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "tls AsServer scheduleinfo = "
-                          << info.debug_string();
-
-                loop->CancelWaiting(item);
+                tls_stream->async_park_.WaitRead();
                 continue;
             } else {
                 LOG_SYSERR << "tls AsServer failed, SSL_get_errno="
@@ -76,24 +65,14 @@ TlsStreamSptr TlsStream::AsClient(SslConfig& config, TcpStreamSptr stream)
     }
     SSL_set_fd(tls_stream->ssl_, stream->sockfd());
 
-    runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
-        loop->CheckTicks();
+        tls_stream->async_park_.CheckTicks();
         errno = 0;
         int err = SSL_connect(tls_stream->ssl_);
         if (err <= 0) {
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                runtime::WaitRequest item =
-                    loop->WaitReadable(stream->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "tls AsClient scheduleinfo = "
-                          << info.debug_string();
-
-                loop->CancelWaiting(item);
+                tls_stream->async_park_.WaitRead();
                 continue;
             } else {
                 LOG_SYSERR << "tls AsClient failed, SSL_get_errno="
@@ -110,27 +89,15 @@ TlsStreamSptr TlsStream::AsClient(SslConfig& config, TcpStreamSptr stream)
 
 int TlsStream::AsyncRead(void* buf, int count)
 {
-    runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
-        loop->CheckTicks();
+        async_park_.CheckTicks();
         int rn = SSL_read(ssl_, buf, count);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                auto req = loop->WaitReadable(stream_->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "AsyncRead scheduleinfo = " << info.debug_string();
-
-                if (info.selected_) {
-                    loop->CancelWaiting(req);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
+                async_park_.WaitRead();
+                continue;
             } else {
                 LOG_SYSERR << "async read failed";
             }
@@ -142,30 +109,17 @@ int TlsStream::AsyncRead(void* buf, int count)
 
 int TlsStream::AsyncWrite(const void* buf, int count)
 {
-    runtime::EventLoop* loop = runtime::current_loop();
     ssize_t ret = 0;
     while (1) {
-        loop->CheckTicks();
+        async_park_.CheckTicks();
         errno = 0;
         int wn = SSL_write(ssl_, buf, count);
         if (wn <= 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                auto req = loop->WaitWritable(stream_->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "AsyncWrite scheduleinfo = "
-                          << info.debug_string();
-
-                if (info.selected_) {
-                    loop->CancelWaiting(req);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
+                async_park_.WatiWrite();
+                continue;
             } else {
                 LOG_SYSERR << "async write failed";
             }

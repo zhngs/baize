@@ -14,7 +14,6 @@ TimeWheel::TimeWheel()
 {
     MemZero(time_wheel_, sizeof(time_wheel_));
     last_ms_ = Timestamp::Now().ms();
-    assert(last_ms_ > 0);
 }
 
 TimeWheel::~TimeWheel() {}
@@ -24,10 +23,7 @@ void TimeWheel::AddTimer(Timer* timer)
     DelTimer(timer);
 
     Timer* head = FindHead(timer);
-    if (!head) {
-        LOG_ERROR << "add timer failed";
-        return;
-    }
+    if (!head) return;
 
     if (head->next_) {
         timer->next_ = head->next_;
@@ -72,38 +68,32 @@ static inline uint8_t CalcTime(int64_t ms, int wheel_index)
 void TimeWheel::TurnWheel()
 {
     int64_t now = Timestamp::Now().ms();
-    assert(now > 0);
-    if (now < last_ms_) return;
 
     int64_t update_times = now - last_ms_;
     for (int i = 0; i < update_times; i++) {
         last_ms_++;
-        for (int j = 0; j < kWheelNum; j++) {
-            uint8_t index = CalcTime(last_ms_, j);
 
-            LOG_DEBUG << log::TempFmt(
-                "CalcTime %#lx time_wheel_[%d][%d]", last_ms_, j, index);
-
-            Timer* head = &time_wheel_[j][index];
-            while (head->next_ != nullptr) {
-                Timer* timer = head->next_;
-                if (j == 0) {
-                    timer->Run();
-                    if (timer->repeat()) {
-                        timer->Restart();
-                    } else {
-                        timer->Stop();
-                    }
-                } else {
-                    timer->Stop();
-                    timer->Start();
-                }
+        uint8_t index = CalcTime(last_ms_, 0);
+        LOG_DEBUG << log::TempFmt(
+            "CalcTime %#lx time_wheel_[0][%d]", last_ms_, index);
+        if (index == 0) {
+            for (int j = 1; j < kWheelNum; j++) {
+                uint8_t moved_index = CalcTime(last_ms_, 1);
+                LOG_DEBUG << log::TempFmt(
+                    "CalcTime %#lx time_wheel_[%d][%d]", last_ms_, j, index);
+                Timer* head = &time_wheel_[j][moved_index];
+                MoveTimerList(head);
+                if (moved_index != 0) break;
             }
+        }
 
-            if (index == 0) {
-                continue;
+        Timer* head = &time_wheel_[0][index];
+        while (head->next_ != nullptr) {
+            Timer* timer = head->next_;
+            if (timer->Run()) {
+                AddTimer(timer);
             } else {
-                break;
+                DelTimer(timer);
             }
         }
     }
@@ -112,8 +102,9 @@ void TimeWheel::TurnWheel()
 Timer* TimeWheel::FindHead(Timer* timer)
 {
     int64_t diff = timer->expiration().ms() - last_ms_;
-    if (diff <= 0) {
-        diff = 1;
+    if (diff < 0) {
+        LOG_ERROR << "timer's expiration invalid";
+        return nullptr;
     }
 
     for (int i = 0; i < kWheelNum; i++) {
@@ -125,7 +116,26 @@ Timer* TimeWheel::FindHead(Timer* timer)
         }
     }
 
+    LOG_ERROR << "diff too large";
     return nullptr;
+}
+
+void TimeWheel::MoveTimerList(Timer* head)
+{
+    if (head->next_ == nullptr) return;
+
+    Timer* timer_list_head = head->next_;
+    head->next_ = nullptr;
+
+    Timer* move_to_head = FindHead(timer_list_head);
+    assert(move_to_head != nullptr);
+
+    Timer* move_to_tail = move_to_head;
+    while (move_to_tail->next_ != nullptr) {
+        move_to_tail = move_to_tail->next_;
+    }
+    move_to_tail->next_ = timer_list_head;
+    timer_list_head->prev_ = move_to_tail;
 }
 
 }  // namespace time

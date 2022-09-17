@@ -21,7 +21,7 @@ int64_t g_read_msg = 0;
 
 Timestamp g_last_time;
 
-void server_print()
+int server_print()
 {
     Timestamp current_time(Timestamp::Now());
     double sec = ElapsedInSecond(current_time, g_last_time);
@@ -35,13 +35,17 @@ void server_print()
     g_readbytes_last = g_readbytes;
     g_last_time = current_time;
     g_read_msg = 0;
+
+    return kTimer1S;
 }
 
 void discard_server()
 {
     char buf[4096];
+    Timer timer(server_print);
+    timer.Start(1000);
     g_last_time = Timestamp::Now();
-    current_loop()->RunEvery(1, server_print);
+
     UdpStreamSptr stream = UdpStream::AsServer(6060);
     InetAddress clientaddr;
     while (1) {
@@ -53,7 +57,7 @@ void discard_server()
     LOG_INFO << "discard_connection finish";
 }
 
-void client_print()
+int client_print()
 {
     Timestamp current_time(Timestamp::Now());
     double sec = ElapsedInSecond(current_time, g_last_time);
@@ -67,6 +71,8 @@ void client_print()
     g_sendbytes_last = g_sendbytes;
     g_last_time = current_time;
     g_send_msg = 0;
+
+    return kTimer1S;
 }
 
 void discard_client()
@@ -74,9 +80,10 @@ void discard_client()
     string message(1024, 'z');
     UdpStreamSptr stream = UdpStream::AsClient();
 
-    current_loop()->RunEvery(1, client_print);
-
+    Timer timer(client_print);
+    timer.Start(1000);
     g_last_time = Timestamp::Now();
+
     InetAddress serveraddr("127.0.0.1", 6060);
     LOG_INFO << "discard_client start";
     while (1) {

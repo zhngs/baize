@@ -5,21 +5,41 @@ using namespace baize;
 using namespace baize::time;
 using namespace baize::runtime;
 
-void test2() { LOG_INFO << "test2"; }
+int test2()
+{
+    LOG_INFO << "test2";
+    return kTimer1S;
+}
 
-void test() { LOG_INFO << "test"; }
+int test3()
+{
+    static int times = 0;
+    LOG_INFO << "test3";
+    times++;
+    if (times == 10) {
+        return kTimerStop;
+    } else {
+        return kTimer1MS * 200;
+    }
+}
+
+int test()
+{
+    LOG_INFO << "test";
+    return kTimerStop;
+}
 
 void timer()
 {
     LOG_INFO << "timer start";
-    Timer timer1(1000, false, test);
-    Timer timer2(1000, true, test2);
-    Timer timer3(9000, false, [&] { timer2.Stop(); });
+    Timer timer1(test);
+    Timer timer2(test2);
+    Timer timer3(test3);
 
-    timer1.Start();
-    timer2.Start();
-    timer3.Start();
-    Return();
+    timer1.Start(kTimer1S);
+    timer2.Start(kTimer1S * 2);
+    timer3.Start(kTimer1S * 3);
+    current_routine()->Return();
 }
 
 int main()

@@ -1,18 +1,21 @@
 #include "runtime/routine.h"
 
 #include "log/logger.h"
+#include "runtime/event_loop.h"
 
 using namespace baize;
 using namespace baize::runtime;
 
 int main()
 {
+    EventLoop loop;
+
     int a;
     Routine routine1([&a] {
         a = 0;
         int b = 1;
         for (;;) {
-            Return();
+            current_routine()->Return();
             int next = a + b;
             a = b;
             b = next;
@@ -20,6 +23,6 @@ int main()
     });
     for (int i = 0; i < 10; i++) {
         routine1.Call();
-        LOG_DEBUG << "a = " << a;
+        LOG_INFO << "a = " << a;
     }
 }

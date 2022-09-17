@@ -22,7 +22,7 @@ const char* log_level_name[Logger::NUM_LOG_LEVELS] = {
     "ERROR ",
     "FATAL ",
 };
-Logger::LogLevel Logger::loglevel_ = Logger::TRACE;
+Logger::LogLevel Logger::loglevel_ = Logger::INFO;
 
 // default output and flush
 void defaultOutput(const char* msg, int len)

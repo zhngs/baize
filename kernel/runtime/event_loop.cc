@@ -1,7 +1,5 @@
 #include "runtime/event_loop.h"
 
-#include <signal.h>
-
 #include "log/logger.h"
 #include "process/signal.h"
 #include "runtime/routine.h"
@@ -12,21 +10,23 @@ namespace baize
 namespace runtime
 {
 
+/**
+ * function declaration
+ */
+void EpollControl(int epollfd, int op, int fd, epoll_event* ev);
+
+/**
+ * global variable
+ */
 thread_local EventLoop* tg_loop = nullptr;
-const int kEpollTimeout = 1;
-const int kEpollEventSize = 16;
 
-EventLoop* current_loop()
-{
-    assert(tg_loop != nullptr);
-    return tg_loop;
-}
-
+/**
+ * class function
+ */
 EventLoop::EventLoop(int routinesize)
   : epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
     routine_pool_(std::make_unique<RoutinePool>(routinesize)),
     events_(kEpollEventSize),
-    timerqueue_(std::make_unique<time::TimerQueue>()),
     time_wheel_(time::TimeWheel::New())
 {
     if (tg_loop) {
@@ -35,7 +35,6 @@ EventLoop::EventLoop(int routinesize)
     tg_loop = this;
 
     process::TakeOverSignal();
-    timerqueue_->Start();
 }
 
 EventLoop::~EventLoop() {}
@@ -44,6 +43,7 @@ void EventLoop::Start()
 {
     std::vector<FunctionCallBack> functions;
 
+    const int kEpollTimeout = 1;
     while (1) {
         int epolltime = kEpollTimeout;
 
@@ -73,19 +73,8 @@ void EventLoop::Start()
                 events_.resize(events_.size() * 2);
             }
             for (int i = 0; i < num_events; i++) {
-                int fd = events_[i].data.fd;
-                int events = events_[i].events;
-                LOG_TRACE << "fd " << fd << " epoll event is ["
-                          << epoll_event_string(events) << "]";
-                if (events &
-                    (EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-                    WaitRequest req(fd, kWaitReadable);
-                    ScheduleRoutine(req, events);
-                }
-                if (events & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
-                    WaitRequest req(fd, kWaitWritable);
-                    ScheduleRoutine(req, events);
-                }
+                AsyncPark* park = static_cast<AsyncPark*>(events_[i].data.ptr);
+                park->Schedule(events_[i].events);
             }
         } else if (num_events == 0) {
             LOG_TRACE << "nothing happened";
@@ -98,9 +87,8 @@ void EventLoop::Start()
             }
         }
 
-        if (epolltime > 0) {
-            time_wheel_->TurnWheel();
-        }
+        // todo: this may be called many times in 1ms
+        time_wheel_->TurnWheel();
     }
 }
 
@@ -109,106 +97,19 @@ void EventLoop::Do(RoutineCallBack func)
     RunInLoop([this, func] { routine_pool_->Start(func); });
 }
 
-void EventLoop::Call(RoutineId id)
-{
-    RunInLoop([this, id] { routine_pool_->Call(id); });
-}
-
-WaitRequest EventLoop::WaitReadable(int fd, ScheduleInfo* info)
-{
-    assert(!is_main_routine());
-    WaitRequest req(fd, kWaitReadable);
-    LOG_DEBUG << "add WaitReadable " << req.debug_string() << ":"
-              << info->debug_string();
-
-    assert(wait_requests_.find(req) == wait_requests_.end());
-    wait_requests_[req] = info;
-
-    return req;
-}
-
-WaitRequest EventLoop::WaitWritable(int fd, ScheduleInfo* info)
-{
-    assert(!is_main_routine());
-    WaitRequest req(fd, kWaitWritable);
-    LOG_DEBUG << "add WaitWritable " << req.debug_string() << ":"
-              << info->debug_string();
-
-    assert(wait_requests_.find(req) == wait_requests_.end());
-    wait_requests_[req] = info;
-
-    return req;
-}
-
-void EventLoop::CancelWaiting(WaitRequest request)
-{
-    if (wait_requests_.find(request) != wait_requests_.end()) {
-        wait_requests_.erase(request);
-    } else {
-        LOG_ERROR << "there is no request " << request.debug_string();
-    }
-}
-
-void EventLoop::CheckTicks()
-{
-    assert(!is_main_routine());
-    RoutineId id = current_routineid();
-    auto& routine = routine_pool_->routine(id);
-    if (routine.is_ticks_end()) {
-        routine.set_ticks(kRoutineTicks);
-        Call(id);
-        Return();
-    } else {
-        routine.set_ticks_down();
-    }
-}
-
-void EventLoop::EnablePoll(int fd)
+void EventLoop::EnablePoll(AsyncPark* park)
 {
     epoll_event ev;
     ev.events = (EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLRDHUP | EPOLLET);
-    ev.data.fd = fd;
-    EpollControl(EPOLL_CTL_ADD, fd, &ev);
+    ev.data.ptr = park;
+    EpollControl(epollfd_, EPOLL_CTL_ADD, park->fd(), &ev);
 }
 
-void EventLoop::DisablePoll(int fd)
+void EventLoop::DisablePoll(AsyncPark* park)
 {
     epoll_event ev;
     MemZero(&ev, sizeof(ev));
-    EpollControl(EPOLL_CTL_DEL, fd, &ev);
-}
-
-time::TimerId EventLoop::RunAt(time::Timestamp time, time::TimerCallback cb)
-{
-    return timerqueue_->AddTimer(cb, time, 0);
-}
-
-time::TimerId EventLoop::RunAfter(double delay, time::TimerCallback cb)
-{
-    time::Timestamp when(time::AddTime(time::Timestamp::Now(), delay));
-    return RunAt(when, cb);
-}
-
-time::TimerId EventLoop::RunEvery(double interval, time::TimerCallback cb)
-{
-    time::Timestamp when(time::AddTime(time::Timestamp::Now(), interval));
-    return timerqueue_->AddTimer(cb, when, interval);
-}
-
-void EventLoop::CancelTimer(time::TimerId timerid)
-{
-    timerqueue_->RemoveTimer(timerid);
-}
-
-void EventLoop::ScheduleRoutine(WaitRequest req, int events)
-{
-    if (wait_requests_.find(req) != wait_requests_.end()) {
-        ScheduleInfo* info = wait_requests_[req];
-        info->epoll_revents_ = events;
-        info->selected_ = 1;
-
-        routine_pool_->Call(info->routineid_);
-    }
+    EpollControl(epollfd_, EPOLL_CTL_DEL, park->fd(), &ev);
 }
 
 void EventLoop::RunInLoop(FunctionCallBack func)
@@ -220,32 +121,24 @@ void EventLoop::RunInLoop(FunctionCallBack func)
     }
 }
 
-void EventLoop::EpollControl(int op, int fd, epoll_event* ev)
+/**
+ * free function
+ */
+EventLoop* current_loop()
 {
-    if (::epoll_ctl(epollfd_, op, fd, ev) < 0) {
+    assert(tg_loop != nullptr);
+    return tg_loop;
+}
+
+void EpollControl(int epollfd, int op, int fd, epoll_event* ev)
+{
+    if (::epoll_ctl(epollfd, op, fd, ev) < 0) {
         if (op == EPOLL_CTL_DEL) {
             LOG_SYSERR << "epoll_ctl op=" << op << " fd=" << fd;
         } else {
             LOG_SYSFATAL << "epoll_ctl op=" << op << " fd=" << fd;
         }
     }
-}
-
-string epoll_event_string(int events)
-{
-    string s;
-    if (events & EPOLLIN) s += " EPOLLIN";
-    if (events & EPOLLOUT) s += " EPOLLOUT";
-    if (events & EPOLLPRI) s += " EPOLLPRI";
-    if (events & EPOLLRDHUP) s += " EPOLLRDHUP";
-    if (events & EPOLLHUP) s += " EPOLLHUP";
-    if (events & EPOLLERR) s += " EPOLLERR";
-    if (s.empty()) {
-        s = " EMPTY ";
-    } else {
-        s += " ";
-    }
-    return s;
 }
 
 }  // namespace runtime

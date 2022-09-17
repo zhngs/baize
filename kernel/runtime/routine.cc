@@ -12,24 +12,20 @@ namespace baize
 namespace runtime
 {
 
-thread_local boost::context::continuation main_routine;
-thread_local uint64_t g_current_routineid = Routine::kMainRoutineId;
-thread_local uint64_t g_routineid = Routine::kMainRoutineId + 1;
+/**
+ * global variable
+ */
+thread_local boost::context::continuation tg_main_routine;
+thread_local uint64_t tg_current_routineid = Routine::kMainRoutineId;
+thread_local Routine* tg_current_routine = nullptr;
+thread_local uint64_t tg_routineid = Routine::kMainRoutineId + 1;
 
-uint64_t current_routineid() { return g_current_routineid; }
-bool is_main_routine()
-{
-    return g_current_routineid == Routine::kMainRoutineId;
-}
-
-class Routine::Impl
+class Routine::RoutineImpl
 {
 public:
-    Impl(RoutineCallBack func, int stacksize)
-      : routineid_(g_routineid++), finished_(false), cb_(std::move(func))
+    RoutineImpl(RoutineCallBack func, int stacksize)
+      : finished_(false), cb_(std::move(func))
     {
-        LOG_TRACE << "create routine" << routineid_;
-
         // boost-context的堆栈是动态增长的，并不会一开始就分配完
         boost::context::fixedsize_stack salloc(stacksize);
         // boost::context::protected_fixedsize_stack salloc(stacksize);
@@ -39,26 +35,20 @@ public:
             std::allocator_arg,
             salloc,
             [this](boost::context::continuation&& routine) {
-                main_routine = routine.resume();
-                g_current_routineid = routineid_;
+                tg_main_routine = routine.resume();  // return to main routine
 
                 cb_();
                 // 提前释放function内存储的资源
                 cb_ = RoutineCallBack();
 
                 finished_ = true;
-                LOG_TRACE << "routine" << routineid_ << " finish";
-                g_current_routineid = kMainRoutineId;
-                return std::move(main_routine);
+                tg_current_routineid = kMainRoutineId;
+                return std::move(tg_main_routine);
             });
     }
 
-    ~Impl() { LOG_TRACE << "destory routine" << routineid_; }
-
     void Call()
     {
-        LOG_TRACE << "call routine" << routineid_;
-        g_current_routineid = routineid_;
         if (finished_) {
             LOG_ERROR << "Routine has finished";
             return;
@@ -66,42 +56,85 @@ public:
         routine_ = routine_.resume();
     }
 
-    int64_t routineid() { return routineid_; }
-
 public:
-    uint64_t routineid_;
     bool finished_;
     RoutineCallBack cb_;
     boost::context::continuation routine_;
 };
 
 Routine::Routine(RoutineCallBack func, int stacksize)
-  : impl_(std::make_unique<Impl>(func, stacksize)), ticks_(kRoutineTicks)
+  : routine_impl_(std::make_unique<RoutineImpl>(func, stacksize)),
+    routineid_(tg_routineid++),
+    timer_([this] { return OnTimer(); })
 {
+    LOG_TRACE << "create routine" << routineid_;
 }
 
-Routine::~Routine() {}
+Routine::~Routine() { LOG_TRACE << "routine" << routineid_ << " finish"; }
 
-RoutineId Routine::routineid() { return impl_->routineid(); }
+bool Routine::Tick()
+{
+    ticks_now_++;
+    if (ticks_now_ >= ticks_max_) {
+        ticks_now_ = 0;
+        return true;
+    } else {
+        return false;
+    }
+}
 
 void Routine::Call()
 {
     if (!is_main_routine()) {
         LOG_FATAL << "Routine::call must be called by main routine";
     }
-    impl_->Call();
+    LOG_TRACE << "<<<<<<<<<< call routine" << routineid_;
+
+    tg_current_routineid = routineid_;
+    tg_current_routine = this;
+
+    routine_impl_->Call();
 }
 
-bool Routine::is_routine_end() { return impl_->finished_; }
-
-void Return()
+void Routine::Return()
 {
     if (is_main_routine()) {
         LOG_FATAL << "Return can't be called by main routine";
     }
-    LOG_TRACE << "exit routine" << g_current_routineid;
-    g_current_routineid = Routine::kMainRoutineId;
-    main_routine = main_routine.resume();
+    LOG_TRACE << ">>>>>>>>>> exit routine" << tg_current_routineid;
+
+    tg_current_routine = nullptr;
+    tg_current_routineid = Routine::kMainRoutineId;
+
+    tg_main_routine = tg_main_routine.resume();
+}
+
+void Routine::Return(int ms, bool& timeout)
+{
+    timeout_ = false;
+    timer_.Start(ms);
+    Return();
+    timer_.Stop();
+    timeout = timeout_;
+}
+
+int Routine::OnTimer()
+{
+    timeout_ = true;
+    Call();
+    return time::kTimerStop;
+}
+
+/**
+ * free function
+ */
+uint64_t current_routineid() { return tg_current_routineid; }
+
+Routine* current_routine() { return tg_current_routine; }
+
+bool is_main_routine()
+{
+    return tg_current_routineid == Routine::kMainRoutineId;
 }
 
 }  // namespace runtime

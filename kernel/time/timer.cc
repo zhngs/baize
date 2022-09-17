@@ -8,52 +8,24 @@ namespace baize
 namespace time
 {
 
-thread_local uint64_t g_timerid = 1;
+Timer::~Timer() { Stop(); }
 
-Timer::Timer(int64_t timer_ms, bool repeat, TimerCallback cb)
-  : cb_(cb),
-    expiration_(Timestamp::Now().AddMs(timer_ms)),
-    timer_ms_(timer_ms),
-    repeat_(repeat)
+void Timer::Start(int64_t ms)
 {
-}
-
-Timer::Timer(TimerCallback cb, Timestamp when, double interval)
-  : cb_(std::move(cb)),
-    expiration_(when),
-    repeat_(interval > 0),
-    interval_(interval),
-    id_(g_timerid++)
-{
-}
-
-Timer::~Timer() {}
-
-void Timer::Start()
-{
-    if (!expiration_.valid()) return;
+    expiration_ = Timestamp::Now().AddMs(ms);
     runtime::current_loop()->AddTimer(this);
 }
 
 void Timer::Stop() { runtime::current_loop()->DelTimer(this); }
 
-void Timer::Restart()
+bool Timer::Run()
 {
-    Stop();
-    if (repeat_) {
-        expiration_.AddMs(timer_ms_);
+    int next_ms = cb_();
+    if (next_ms <= 0) {
+        return false;
     } else {
-        expiration_ = Timestamp::Now().AddMs(timer_ms_);
-    }
-    Start();
-}
-
-void Timer::Restart(Timestamp now)
-{
-    if (repeat()) {
-        expiration_ = AddTime(now, interval_);
-    } else {
-        expiration_ = Timestamp();
+        expiration_.AddMs(next_ms);
+        return true;
     }
 }
 

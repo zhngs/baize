@@ -18,7 +18,7 @@ int64_t g_msg = 0;
 
 Timestamp g_last_time;
 
-void server_print()
+int server_print()
 {
     Timestamp current_time(Timestamp::Now());
     double sec = ElapsedInSecond(current_time, g_last_time);
@@ -32,21 +32,25 @@ void server_print()
     g_readbytes_last = g_readbytes;
     g_last_time = current_time;
     g_msg = 0;
+
+    return kTimer1S;
 }
 
 void discard_connection(TcpStreamSptr conn)
 {
     char buf[65536];
+    Timer timer(server_print);
+    timer.Start(1000);
     g_last_time = Timestamp::Now();
-    TimerId id = current_loop()->RunEvery(1, server_print);
+
     while (1) {
         int rn = conn->AsyncRead(buf, sizeof(buf));
         if (rn <= 0) break;
         g_msg++;
         g_readbytes += rn;
     }
+
     LOG_INFO << "discard_connection finish";
-    current_loop()->CancelTimer(id);
 }
 
 void discard_server()
@@ -62,7 +66,7 @@ void discard_server()
     }
 }
 
-void client_print()
+int client_print()
 {
     Timestamp current_time(Timestamp::Now());
     double sec = ElapsedInSecond(current_time, g_last_time);
@@ -73,6 +77,8 @@ void client_print()
 
     g_sendbytes_last = g_sendbytes;
     g_last_time = current_time;
+
+    return kTimer1S;
 }
 
 void discard_client()
@@ -82,8 +88,10 @@ void discard_client()
     if (!stream) return;
     stream->set_tcp_nodelay();
 
-    current_loop()->RunEvery(1, client_print);
+    Timer timer(client_print);
+    timer.Start(1000);
     g_last_time = Timestamp::Now();
+
     while (1) {
         int wn = stream->AsyncWrite(message.c_str(), message.size());
         if (wn != static_cast<int>(message.size())) break;

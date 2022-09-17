@@ -2,7 +2,6 @@
 
 #include "log/logger.h"
 #include "net/inet_address.h"
-#include "runtime/event_loop.h"
 
 namespace baize
 {
@@ -11,17 +10,13 @@ namespace net
 {
 
 TcpStream::TcpStream(int fd, InetAddress peeraddr)
-  : conn_(std::make_unique<Socket>(fd)), peeraddr_(peeraddr)
+  : conn_(std::make_unique<Socket>(fd)),
+    peeraddr_(peeraddr),
+    async_park_(conn_->sockfd())
 {
-    runtime::EventLoop* loop = runtime::current_loop();
-    loop->EnablePoll(conn_->sockfd());
 }
 
-TcpStream::~TcpStream()
-{
-    runtime::EventLoop* loop = runtime::current_loop();
-    loop->DisablePoll(conn_->sockfd());
-}
+TcpStream::~TcpStream() {}
 
 ssize_t TcpStream::Read(void* buf, size_t count)
 {
@@ -39,27 +34,15 @@ void TcpStream::set_tcp_nodelay() { conn_->set_tcp_nodelay(true); }
 
 int TcpStream::AsyncRead(void* buf, size_t count)
 {
-    runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
-        loop->CheckTicks();
+        async_park_.CheckTicks();
         ssize_t rn = conn_->Read(buf, count);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                auto req = loop->WaitReadable(conn_->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "AsyncRead scheduleinfo = " << info.debug_string();
-
-                if (info.selected_) {
-                    loop->CancelWaiting(req);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
+                async_park_.WaitRead();
+                continue;
             } else {
                 LOG_SYSERR << "async read failed";
             }
@@ -69,76 +52,64 @@ int TcpStream::AsyncRead(void* buf, size_t count)
     }
 }
 
-int TcpStream::AsyncRead(void* buf, size_t count, double ms, bool& timeout)
-{
-    runtime::EventLoop* loop = runtime::current_loop();
-    while (1) {
-        loop->CheckTicks();
-        ssize_t rn = conn_->Read(buf, count);
-        if (rn < 0) {
-            int saveErrno = errno;
-            if (errno == EINTR) continue;
-            if (errno == EAGAIN) {
-                runtime::ScheduleInfo read_info;
-                runtime::WaitRequest item =
-                    loop->WaitReadable(conn_->sockfd(), &read_info);
+// int TcpStream::AsyncRead(void* buf, size_t count, double ms, bool& timeout)
+// {
+//     runtime::EventLoop* loop = runtime::current_loop();
+//     while (1) {
+//         async_park_.CheckTicks();
+//         ssize_t rn = conn_->Read(buf, count);
+//         if (rn < 0) {
+//             int saveErrno = errno;
+//             if (errno == EINTR) continue;
+//             if (errno == EAGAIN) {
+//                 runtime::ScheduleInfo read_info;
+//                 runtime::WaitRequest item =
+//                     loop->WaitReadable(conn_->sockfd(), &read_info);
 
-                runtime::ScheduleInfo timer_info;
-                time::TimerId timer_id =
-                    loop->RunAfter(ms / 1000, [&timer_info, &item] {
-                        timer_info.selected_ = 1;
-                        runtime::current_loop()->CancelWaiting(item);
-                        runtime::current_loop()->Call(timer_info.routineid_);
-                    });
+//                 runtime::ScheduleInfo timer_info;
+//                 time::TimerId timer_id =
+//                     loop->RunAfter(ms / 1000, [&timer_info, &item] {
+//                         timer_info.selected_ = 1;
+//                         runtime::current_loop()->CancelWaiting(item);
+//                         runtime::current_loop()->Call(timer_info.routineid_);
+//                     });
 
-                runtime::Return();
+//                 runtime::Return();
 
-                LOG_DEBUG << "AsyncRead timer scheduleinfo = "
-                          << timer_info.debug_string()
-                          << ", read info = " << read_info.debug_string();
+//                 LOG_DEBUG << "AsyncRead timer scheduleinfo = "
+//                           << timer_info.debug_string()
+//                           << ", read info = " << read_info.debug_string();
 
-                if (timer_info.selected_) {
-                    timeout = true;
-                } else if (read_info.selected_) {
-                    loop->CancelTimer(timer_id);
-                    loop->CancelWaiting(item);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
-            } else {
-                LOG_SYSERR << "async read failed";
-            }
+//                 if (timer_info.selected_) {
+//                     timeout = true;
+//                 } else if (read_info.selected_) {
+//                     loop->CancelTimer(timer_id);
+//                     loop->CancelWaiting(item);
+//                     continue;
+//                 } else {
+//                     LOG_FATAL << "can't happen";
+//                 }
+//             } else {
+//                 LOG_SYSERR << "async read failed";
+//             }
 
-            errno = saveErrno;
-        }
-        return static_cast<int>(rn);
-    }
-}
+//             errno = saveErrno;
+//         }
+//         return static_cast<int>(rn);
+//     }
+// }
 
 int TcpStream::AsyncRead(Buffer& buf)
 {
-    runtime::EventLoop* loop = runtime::current_loop();
     while (1) {
-        loop->CheckTicks();
+        async_park_.CheckTicks();
         int rn = buf.ReadFd(sockfd());
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                auto req = loop->WaitReadable(conn_->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "AsyncRead scheduleinfo = " << info.debug_string();
-
-                if (info.selected_) {
-                    loop->CancelWaiting(req);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
+                async_park_.WaitRead();
+                continue;
             } else {
                 LOG_SYSERR << "async read failed";
             }
@@ -148,79 +119,66 @@ int TcpStream::AsyncRead(Buffer& buf)
     }
 }
 
-int TcpStream::AsyncRead(Buffer& buf, double ms, bool& timeout)
-{
-    runtime::EventLoop* loop = runtime::current_loop();
-    while (1) {
-        loop->CheckTicks();
-        int rn = buf.ReadFd(sockfd());
-        if (rn < 0) {
-            int saveErrno = errno;
-            if (errno == EINTR) continue;
-            if (errno == EAGAIN) {
-                runtime::ScheduleInfo read_info;
-                runtime::WaitRequest item =
-                    loop->WaitReadable(conn_->sockfd(), &read_info);
+// int TcpStream::AsyncRead(Buffer& buf, double ms, bool& timeout)
+// {
+//     runtime::EventLoop* loop = runtime::current_loop();
+//     while (1) {
+//         async_park_.CheckTicks();
+//         int rn = buf.ReadFd(sockfd());
+//         if (rn < 0) {
+//             int saveErrno = errno;
+//             if (errno == EINTR) continue;
+//             if (errno == EAGAIN) {
+//                 runtime::ScheduleInfo read_info;
+//                 runtime::WaitRequest item =
+//                     loop->WaitReadable(conn_->sockfd(), &read_info);
 
-                runtime::ScheduleInfo timer_info;
-                time::TimerId timer_id =
-                    loop->RunAfter(ms / 1000, [&timer_info, &item] {
-                        timer_info.selected_ = 1;
-                        runtime::current_loop()->CancelWaiting(item);
-                        runtime::current_loop()->Call(timer_info.routineid_);
-                    });
+//                 runtime::ScheduleInfo timer_info;
+//                 time::TimerId timer_id =
+//                     loop->RunAfter(ms / 1000, [&timer_info, &item] {
+//                         timer_info.selected_ = 1;
+//                         runtime::current_loop()->CancelWaiting(item);
+//                         runtime::current_loop()->Call(timer_info.routineid_);
+//                     });
 
-                runtime::Return();
+//                 runtime::Return();
 
-                LOG_DEBUG << "AsyncRead timer scheduleinfo = "
-                          << timer_info.debug_string()
-                          << ", read info = " << read_info.debug_string();
+//                 LOG_DEBUG << "AsyncRead timer scheduleinfo = "
+//                           << timer_info.debug_string()
+//                           << ", read info = " << read_info.debug_string();
 
-                if (timer_info.selected_) {
-                    timeout = true;
-                } else if (read_info.selected_) {
-                    loop->CancelTimer(timer_id);
-                    loop->CancelWaiting(item);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
-            } else {
-                LOG_SYSERR << "async read failed";
-            }
+//                 if (timer_info.selected_) {
+//                     timeout = true;
+//                 } else if (read_info.selected_) {
+//                     loop->CancelTimer(timer_id);
+//                     loop->CancelWaiting(item);
+//                     continue;
+//                 } else {
+//                     LOG_FATAL << "can't happen";
+//                 }
+//             } else {
+//                 LOG_SYSERR << "async read failed";
+//             }
 
-            errno = saveErrno;
-        }
-        return rn;
-    }
-}
+//             errno = saveErrno;
+//         }
+//         return rn;
+//     }
+// }
 
 int TcpStream::AsyncWrite(const void* buf, size_t count)
 {
-    runtime::EventLoop* loop = runtime::current_loop();
     ssize_t ret = 0;
     while (1) {
-        loop->CheckTicks();
+        async_park_.CheckTicks();
         errno = 0;
         ssize_t wn = conn_->Write(buf, count);
         if (wn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
             if (errno == EAGAIN) {
-                runtime::ScheduleInfo info;
-                auto req = loop->WaitWritable(conn_->sockfd(), &info);
-
-                runtime::Return();
-
-                LOG_DEBUG << "AsyncWrite scheduleinfo = "
-                          << info.debug_string();
-
-                if (info.selected_) {
-                    loop->CancelWaiting(req);
-                    continue;
-                } else {
-                    LOG_FATAL << "can't happen";
-                }
+                async_park_.WatiWrite();
+                continue;
             } else {
                 LOG_SYSERR << "async write failed";
             }
@@ -245,26 +203,13 @@ string TcpStream::peer_ip_port() { return peeraddr_.ip_port(); }
 
 TcpStreamSptr TcpStream::AsyncConnect(const char* ip, uint16_t port)
 {
-    runtime::EventLoop* loop = runtime::current_loop();
     InetAddress serveraddr(ip, port);
     int fd = CreatTcpSocket(serveraddr.family());
     TcpStreamSptr stream(std::make_shared<TcpStream>(fd, serveraddr));
     int ret = stream->conn_->Connect(serveraddr);
     if (ret < 0) {
         if (errno == EINPROGRESS) {
-            runtime::ScheduleInfo info;
-            auto req = loop->WaitWritable(fd, &info);
-
-            runtime::Return();
-
-            LOG_DEBUG << "AsyncConnect scheduleinfo = " << info.debug_string();
-
-            if (info.selected_) {
-                loop->CancelWaiting(req);
-            } else {
-                LOG_FATAL << "can't happen";
-            }
-
+            stream->async_park_.WatiWrite();
             int err = stream->conn_->socket_error();
             if (err) {
                 LOG_ERROR << "AsyncConnect SO_ERROR = " << err << " "

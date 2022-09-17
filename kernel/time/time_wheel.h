@@ -42,6 +42,7 @@ public:  // normal function
 
 private:  // private function
     Timer* FindHead(Timer* timer);
+    void MoveTimerList(Timer* head);
 
 private:
     int64_t last_ms_;

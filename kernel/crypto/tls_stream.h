@@ -4,6 +4,7 @@
 #include "crypto/ssl_config.h"
 #include "net/tcp_stream.h"
 #include "openssl/ssl.h"
+#include "runtime/event_loop.h"
 
 namespace baize
 {
@@ -34,6 +35,7 @@ public:
 
 private:
     TcpStreamSptr stream_;
+    runtime::AsyncPark async_park_;
 
     SSL_CTX* ctx_;
     SSL* ssl_;

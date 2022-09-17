@@ -6,6 +6,7 @@
 #include "net/inet_address.h"
 #include "net/socket.h"
 #include "net/tcp_stream.h"
+#include "runtime/event_loop.h"
 
 namespace baize
 {
@@ -25,19 +26,16 @@ public:
     void Start();
     TcpStreamSptr Accept();
 
-    // 必定返回可用的stream
     TcpStreamSptr AsyncAccept();
-
-    // 若超时，返回空的stream
-    TcpStreamSptr AsyncAccept(double ms);
+    TcpStreamSptr AsyncAccept(int ms);
 
     // getter
     int sockfd();
 
 private:
-    bool started_;
     InetAddress listenaddr_;
     std::unique_ptr<Socket> sock_;
+    runtime::AsyncPark async_park_;
 };
 
 }  // namespace net
