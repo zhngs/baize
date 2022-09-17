@@ -8,15 +8,15 @@ namespace baize
 namespace net
 {
 
-UdpStream::UdpStream()
-  : conn_(std::make_unique<Socket>(CreatUdpSocket(AF_INET))),
+UdpStream::UdpStream(bool ipv6)
+  : conn_(Socket::NewUdp(ipv6 ? AF_INET6 : AF_INET)),
     async_park_(conn_->sockfd())
 {
 }
 
 UdpStream::UdpStream(uint16_t port)
   : bindaddr_(port),
-    conn_(std::make_unique<Socket>(CreatUdpSocket(bindaddr_.family()))),
+    conn_(Socket::NewUdp(bindaddr_.family())),
     async_park_(conn_->sockfd())
 {
     conn_->BindAddress(bindaddr_);
@@ -86,7 +86,7 @@ int UdpStream::AsyncRecvFrom(void* buf, int len, InetAddress* addr)
 }
 
 int UdpStream::AsyncRecvFrom(
-    void* buf, int len, InetAddress* addr, double ms, bool& timeout)
+    void* buf, int len, InetAddress* addr, int ms, bool& timeout)
 {
     MemZero(addr, sizeof(InetAddress));
     while (1) {

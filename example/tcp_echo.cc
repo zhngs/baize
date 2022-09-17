@@ -29,7 +29,6 @@ void echo_connection(TcpStreamSptr stream)
 void echo_server()
 {
     TcpListener listener(6060);
-    listener.Start();
 
     while (1) {
         TcpStreamSptr stream = listener.AsyncAccept();

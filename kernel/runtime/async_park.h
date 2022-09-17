@@ -27,14 +27,7 @@ public:  // normal function
 
     // getter
     int fd() { return fd_; }
-    Routine* read_routine() { return read_routine_; }
-    Routine* write_routine() { return write_routine_; }
     uint32_t epoll_events() { return events_; }
-
-    // setter
-    void set_read_routine(Routine* routine) { read_routine_ = routine; }
-    void set_write_routine(Routine* routine) { write_routine_ = routine; }
-    void set_epoll_events(uint32_t events) { events_ = events; }
 
 private:
     int fd_;

@@ -12,6 +12,16 @@ namespace baize
 namespace net
 {
 
+SocketUptr Socket::NewTcp(sa_family_t family)
+{
+    return std::make_unique<Socket>(CreateTcpSocket(family));
+}
+
+SocketUptr Socket::NewUdp(sa_family_t family)
+{
+    return std::make_unique<Socket>(CreateUdpSocket(family));
+}
+
 Socket::~Socket()
 {
     if (::close(sockfd_) < 0) {
@@ -22,17 +32,12 @@ Socket::~Socket()
 
 int Socket::Connect(const InetAddress& peeraddr)
 {
-    // todo: now is too simple
-    return ::connect(sockfd_,
-                     peeraddr.sockaddr(),
-                     static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
+    return ::connect(sockfd_, peeraddr.sockaddr(), peeraddr.socklen());
 }
 
 void Socket::BindAddress(const InetAddress& localaddr)
 {
-    int ret = ::bind(sockfd_,
-                     localaddr.sockaddr(),
-                     static_cast<socklen_t>(sizeof(struct sockaddr_in6)));
+    int ret = ::bind(sockfd_, localaddr.sockaddr(), localaddr.socklen());
     if (ret < 0) {
         LOG_SYSFATAL << "Socket::bindAddress";
     }
@@ -86,7 +91,7 @@ int Socket::Accept(InetAddress* peeraddr)
     }
 
     if (connfd >= 0) {
-        peeraddr->set_sockaddr_in6(addr);
+        *peeraddr = InetAddress(addr);
     }
     return connfd;
 }
@@ -110,8 +115,7 @@ ssize_t Socket::Write(const void* buf, size_t count)
 
 ssize_t Socket::SendTo(const void* buf, size_t count, const InetAddress& addr)
 {
-    return ::sendto(
-        sockfd_, buf, count, 0, addr.sockaddr(), sizeof(sockaddr_in6));
+    return ::sendto(sockfd_, buf, count, 0, addr.sockaddr(), addr.socklen());
 }
 
 ssize_t Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
@@ -122,7 +126,7 @@ ssize_t Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
     ssize_t rn = ::recvfrom(
         sockfd_, buf, count, 0, reinterpret_cast<sockaddr*>(&addr6), &len);
     if (rn > 0) {
-        addr->set_sockaddr_in6(addr6);
+        *addr = InetAddress(addr6);
     }
     return rn;
 }
@@ -244,7 +248,7 @@ bool Socket::is_self_connect()
     }
 }
 
-int CreatTcpSocket(sa_family_t family)
+int CreateTcpSocket(sa_family_t family)
 {
     int sockfd = ::socket(
         family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP);
@@ -254,7 +258,7 @@ int CreatTcpSocket(sa_family_t family)
     return sockfd;
 }
 
-int CreatUdpSocket(sa_family_t family)
+int CreateUdpSocket(sa_family_t family)
 {
     int sockfd = ::socket(
         family, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_UDP);

@@ -10,30 +10,15 @@ namespace net
 
 TcpListener::TcpListener(uint16_t port)
   : listenaddr_(port),
-    sock_(std::make_unique<Socket>(CreatTcpSocket((listenaddr_.family())))),
+    sock_(Socket::NewTcp(listenaddr_.family())),
     async_park_(sock_->sockfd())
 {
     sock_->set_reuse_addr(true);
-}
-
-TcpListener::~TcpListener() {}
-
-void TcpListener::Start()
-{
     sock_->BindAddress(listenaddr_);
     sock_->Listen();
 }
 
-TcpStreamSptr TcpListener::Accept()
-{
-    InetAddress peeraddr;
-    int connfd = sock_->Accept(&peeraddr);
-    if (connfd < 0) {
-        return TcpStreamSptr();
-    } else {
-        return std::make_shared<TcpStream>(connfd, peeraddr);
-    }
-}
+TcpListener::~TcpListener() {}
 
 TcpStreamSptr TcpListener::AsyncAccept()
 {

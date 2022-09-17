@@ -51,7 +51,7 @@ public:
     void set_tcp_nodelay();
 
 private:
-    std::unique_ptr<Socket> conn_;
+    SocketUptr conn_;
     InetAddress peeraddr_;
     runtime::AsyncPark async_park_;
 };

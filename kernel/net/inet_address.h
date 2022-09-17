@@ -34,14 +34,7 @@ public:
     {
         return reinterpret_cast<const struct sockaddr*>(&addr6_);
     }
-    struct sockaddr* sockaddr()
-    {
-        return reinterpret_cast<struct sockaddr*>(&addr6_);
-    }
     socklen_t socklen() const;
-
-    // setter
-    void set_sockaddr_in6(const struct sockaddr_in6& addr) { addr6_ = addr; }
 
 private:
     union {

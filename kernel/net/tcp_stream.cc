@@ -156,7 +156,7 @@ string TcpStream::peer_ip_port() { return peeraddr_.ip_port(); }
 TcpStreamSptr TcpStream::AsyncConnect(const char* ip, uint16_t port)
 {
     InetAddress serveraddr(ip, port);
-    int fd = CreatTcpSocket(serveraddr.family());
+    int fd = CreateTcpSocket(serveraddr.family());
     TcpStreamSptr stream(std::make_shared<TcpStream>(fd, serveraddr));
     int ret = stream->conn_->Connect(serveraddr);
     if (ret < 0) {

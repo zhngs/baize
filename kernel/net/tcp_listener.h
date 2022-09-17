@@ -23,9 +23,6 @@ public:
     TcpListener(const TcpListener&) = delete;
     TcpListener& operator=(const TcpListener&) = delete;
 
-    void Start();
-    TcpStreamSptr Accept();
-
     TcpStreamSptr AsyncAccept();
     TcpStreamSptr AsyncAccept(int ms);
 
@@ -34,7 +31,7 @@ public:
 
 private:
     InetAddress listenaddr_;
-    std::unique_ptr<Socket> sock_;
+    SocketUptr sock_;
     runtime::AsyncPark async_park_;
 };
 

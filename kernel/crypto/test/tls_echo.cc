@@ -36,7 +36,6 @@ void tls_echo_connection(TcpStreamSptr stream, SslConfig& config)
 void tls_echo_server()
 {
     TcpListener listener(6060);
-    listener.Start();
 
     SslConfig config;
     config.set_tls_server("./cert.crt", "./cert.key");

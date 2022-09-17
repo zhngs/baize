@@ -56,7 +56,6 @@ void discard_connection(TcpStreamSptr conn)
 void discard_server()
 {
     TcpListener listener(6070);
-    listener.Start();
 
     while (1) {
         TcpStreamSptr stream = listener.AsyncAccept();

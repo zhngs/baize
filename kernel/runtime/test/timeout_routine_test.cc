@@ -11,7 +11,6 @@ using namespace baize::time;
 void routine_test_timeout()
 {
     TcpListener listener(6060);
-    listener.Start();
 
     LOG_INFO << "routine start";
     TcpStreamSptr stream = listener.AsyncAccept(3000);

@@ -4,6 +4,8 @@
 
 #include <netinet/in.h>
 
+#include <memory>
+
 #include "net/inet_address.h"
 #include "util/types.h"
 
@@ -13,18 +15,22 @@ namespace baize
 namespace net
 {
 
-int CreatTcpSocket(sa_family_t family);
-int CreatUdpSocket(sa_family_t family);
+class Socket;
+using SocketUptr = std::unique_ptr<Socket>;
 
 class Socket  // noncopyable
 {
-public:
+public:  // factory
+    static SocketUptr NewTcp(sa_family_t family);
+    static SocketUptr NewUdp(sa_family_t family);
+
+public:  // special function
     explicit Socket(int fd) : sockfd_(fd) {}
     ~Socket();
-
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
 
+public:  // normal function
     int Connect(const InetAddress& peeraddr);
     void BindAddress(const InetAddress& localaddr);
     void Listen();
@@ -52,6 +58,9 @@ public:
 private:
     const int sockfd_;
 };
+
+int CreateTcpSocket(sa_family_t family);
+int CreateUdpSocket(sa_family_t family);
 
 }  // namespace net
 

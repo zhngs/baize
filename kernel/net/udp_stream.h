@@ -24,7 +24,7 @@ public:
     static UdpStreamSptr AsClient();
 
     // for client
-    UdpStream();
+    UdpStream(bool ipv6 = false);
     // for server
     explicit UdpStream(uint16_t port);
     ~UdpStream();
@@ -37,14 +37,14 @@ public:
     int AsyncSendto(const void* buf, int len, const InetAddress& addr);
     int AsyncRecvFrom(void* buf, int len, InetAddress* addr);
     int AsyncRecvFrom(
-        void* buf, int count, InetAddress* addr, double ms, bool& timeout);
+        void* buf, int count, InetAddress* addr, int ms, bool& timeout);
 
     // getter
     InetAddress localaddr();
 
 private:
     InetAddress bindaddr_;
-    std::unique_ptr<Socket> conn_;
+    SocketUptr conn_;
     runtime::AsyncPark async_park_;
 };
 
