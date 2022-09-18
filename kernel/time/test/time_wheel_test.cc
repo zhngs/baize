@@ -44,7 +44,6 @@ void timer()
 
 int main()
 {
-    log::Logger::set_loglevel(log::Logger::INFO);
     EventLoop loop(10);
     loop.Do(timer);
     loop.Start();

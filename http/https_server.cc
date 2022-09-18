@@ -13,7 +13,6 @@ namespace net
 HttpsListener::HttpsListener(uint16_t port) : listener_(port)
 {
     LOG_INFO << "HttpServer listen in " << port;
-    listener_.Start();
 }
 
 HttpsListener::~HttpsListener() {}

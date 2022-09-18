@@ -39,7 +39,6 @@ void echo_server()
 
 int main()
 {
-    log::Logger::set_loglevel(log::Logger::INFO);
     EventLoop loop(10);
     loop.Do(echo_server);
     loop.Start();

@@ -10,7 +10,7 @@ template <int SIZE>
 class FixedBuffer  // noncopyable
 {
 public:
-    FixedBuffer() : data_(), cur_(data_) {}
+    FixedBuffer() : data_(), cur_(data_) { bzero(); }
     FixedBuffer(const FixedBuffer&) = delete;
     FixedBuffer& operator=(const FixedBuffer&) = delete;
 
@@ -22,8 +22,9 @@ public:
         }
     }
 
-    const char* data() const { return data_; }
+    char* data() { return data_; }
     int length() const { return static_cast<int>(cur_ - data_); }
+    int capacity() { return static_cast<int>(sizeof(data_)); }
 
     char* current() { return cur_; }
     int avail() const { return static_cast<int>(end() - cur_); }
@@ -32,7 +33,7 @@ public:
     void reset() { cur_ = data_; }
     void bzero() { MemZero(data_, sizeof(data_)); }
 
-    string toString() const { return string(data_, length()); }
+    string AsString() const { return string(data_, length()); }
 
 private:
     const char* end() const { return data_ + sizeof(data_); }

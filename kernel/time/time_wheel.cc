@@ -74,13 +74,17 @@ void TimeWheel::TurnWheel()
         last_ms_++;
 
         uint8_t index = CalcTime(last_ms_, 0);
-        LOG_DEBUG << log::TempFmt(
-            "CalcTime %#lx time_wheel_[0][%d]", last_ms_, index);
+
+        // LOG_DEBUG << log::TempFmt(
+        //     "CalcTime %#lx time_wheel_[0][%d]", last_ms_, index);
+
         if (index == 0) {
             for (int j = 1; j < kWheelNum; j++) {
                 uint8_t moved_index = CalcTime(last_ms_, 1);
-                LOG_DEBUG << log::TempFmt(
-                    "CalcTime %#lx time_wheel_[%d][%d]", last_ms_, j, index);
+
+                // LOG_DEBUG << log::TempFmt(
+                //     "CalcTime %#lx time_wheel_[%d][%d]", last_ms_, j, index);
+
                 Timer* head = &time_wheel_[j][moved_index];
                 MoveTimerList(head);
                 if (moved_index != 0) break;
@@ -109,8 +113,10 @@ Timer* TimeWheel::FindHead(Timer* timer)
     for (int i = 0; i < kWheelNum; i++) {
         if (diff < MaxTime(i)) {
             uint8_t index = CalcTime(timer->expiration().ms(), i);
-            LOG_DEBUG << "time wheel FindHead &time_wheel_[" << i << "]["
-                      << index << "]";
+
+            // LOG_DEBUG << "time wheel FindHead &time_wheel_[" << i << "]["
+            //           << index << "]";
+
             return &time_wheel_[i][index];
         }
     }

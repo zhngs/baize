@@ -21,6 +21,7 @@ void routine_test_timeout()
 
 int main()
 {
+    set_log_trace();
     EventLoop loop(2);
     loop.Do(routine_test_timeout);
     loop.Start();

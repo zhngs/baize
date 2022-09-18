@@ -21,12 +21,14 @@ namespace net
 /// 0      <=      readerIndex   <=   writerIndex    <=     size
 class Buffer  // copyable
 {
-public:
+public:  // types and constant
     static const int kCheapPrepend = 8;
     static const int kInitialSize = 1024;
 
+public:  // special function
     explicit Buffer(int initialSize = kInitialSize);
 
+public:  // normal function
     int ReadFd(int fd);
 
     // find
@@ -73,14 +75,15 @@ public:
         std::swap(writer_index_, rhs.writer_index_);
     }
 
-private:
+private:  // private normal function
+    void EnsureWritableBytes(int len);
+    void MakeSpace(int len);
+
     // getter
     char* begin() { return &*buffer_.begin(); }
     const char* begin() const { return &*buffer_.begin(); }
 
-    void EnsureWritableBytes(int len);
-    void MakeSpace(int len);
-
+private:
     std::vector<char> buffer_;
     int reader_index_;
     int writer_index_;

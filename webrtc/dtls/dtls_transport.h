@@ -15,6 +15,9 @@ namespace baize
 namespace net
 {
 
+class DtlsTransport;
+using DtlsTransportUptr = std::unique_ptr<DtlsTransport>;
+
 class DtlsTransport  // noncopyable
 {
 public:

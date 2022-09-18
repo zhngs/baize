@@ -3,8 +3,7 @@
 #include "log/logger.h"
 #include "net/udp_stream.h"
 #include "runtime/event_loop.h"
-#include "webrtc/pc/peer_connection.h"
-#include "webrtc/pc/webrtc_settings.h"
+#include "webrtc/pc/webrtc_server.h"
 
 using namespace baize;
 using namespace baize::net;
@@ -63,41 +62,57 @@ void SignalServer()
     }
 }
 
+void PeerConn(PeerConnectionSptr pc)
+{
+    LOG_INFO << "peerconnection start";
+    while (1) {
+        auto packet = pc->AsyncRead();
+        LOG_INFO << "peerconnection read " << packet->length() << " bytes";
+        pc->ProcessPacket(StringPiece(packet->data(), packet->length()));
+    }
+}
+
 void MediaServer()
 {
-    char buf[1500];
-    InetAddress addr;
-    UdpStreamSptr stream = UdpStream::AsServer(6061);
+    // char buf[1500];
+    // InetAddress addr;
+    // UdpStreamSptr stream = UdpStream::AsServer(6061);
 
-    bool only_once = false;
-    PeerConnection::Sptr pc;
+    // bool only_once = false;
+    // PeerConnection::Sptr pc;
 
-    WebRTCSettings::Initialize();
+    // WebRTCSettings::Initialize();
 
+    // while (1) {
+    //     int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &addr);
+    //     if (rn < 0) {
+    //         LOG_ERROR << "mediaserver read failed";
+    //         break;
+    //     }
+    //     LOG_INFO << "recvfrom " << addr.ip_port() << " " << rn << " bytes";
+
+    //     if (!only_once) {
+    //         pc = PeerConnection::New(stream, addr);
+    //         only_once = true;
+    //     }
+
+    //     int err = pc->ProcessPacket(StringPiece(buf, rn));
+    //     if (err < 0) {
+    //         LOG_ERROR << "peerconnection process failed";
+    //         break;
+    //     }
+    // }
+
+    WebRTCServer server(6061);
     while (1) {
-        int rn = stream->AsyncRecvFrom(buf, sizeof(buf), &addr);
-        if (rn < 0) {
-            LOG_ERROR << "mediaserver read failed";
-            break;
-        }
-        LOG_INFO << "recvfrom " << addr.ip_port() << " " << rn << " bytes";
-
-        if (!only_once) {
-            pc = PeerConnection::New(stream, addr);
-            only_once = true;
-        }
-
-        int err = pc->ProcessPacket(StringPiece(buf, rn));
-        if (err < 0) {
-            LOG_ERROR << "peerconnection process failed";
-            break;
-        }
+        PeerConnectionSptr pc = server.Accept();
+        runtime::current_loop()->Do([pc] { PeerConn(pc); });
     }
 }
 
 int main(int argc, char* argv[])
 {
-    log::Logger::set_loglevel(log::Logger::INFO);
+    set_log_trace();
     runtime::EventLoop loop;
 
     loop.Do(SignalServer);

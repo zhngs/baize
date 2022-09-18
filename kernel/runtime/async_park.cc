@@ -18,9 +18,15 @@ string epoll_event_string(int events);
 /**
  * class function
  */
-AsyncPark::AsyncPark(int fd) : fd_(fd) { current_loop()->EnablePoll(this); }
+AsyncPark::AsyncPark(int fd) : fd_(fd)
+{
+    if (fd_ >= 0) current_loop()->EnablePoll(this);
+}
 
-AsyncPark::~AsyncPark() { current_loop()->DisablePoll(this); }
+AsyncPark::~AsyncPark()
+{
+    if (fd_ >= 0) current_loop()->DisablePoll(this);
+}
 
 void AsyncPark::WaitRead()
 {
@@ -68,11 +74,23 @@ void AsyncPark::Schedule(uint32_t events)
               << epoll_event_string(events) << "]";
 
     if (events & (EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-        if (read_routine_ != nullptr) read_routine_->Call();
+        ScheduleRead();
     }
     if (events & (EPOLLOUT | EPOLLHUP | EPOLLERR)) {
-        if (write_routine_ != nullptr) write_routine_->Call();
+        ScheduleWrite();
     }
+}
+
+void AsyncPark::ScheduleRead()
+{
+    if (read_routine_ != nullptr)
+        current_loop()->RunInLoop([this] { read_routine_->Call(); });
+}
+
+void AsyncPark::ScheduleWrite()
+{
+    if (write_routine_ != nullptr)
+        current_loop()->RunInLoop([this] { write_routine_->Call(); });
 }
 
 /**

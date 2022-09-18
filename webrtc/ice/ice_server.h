@@ -10,6 +10,9 @@ namespace baize
 namespace net
 {
 
+class IceServer;
+using IceServerUptr = std::unique_ptr<IceServer>;
+
 class IceServer  // noncopyable
 {
 public:

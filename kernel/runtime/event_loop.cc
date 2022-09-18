@@ -77,7 +77,7 @@ void EventLoop::Start()
                 park->Schedule(events_[i].events);
             }
         } else if (num_events == 0) {
-            LOG_TRACE << "nothing happened";
+            // LOG_TRACE << "nothing happened";
         } else {
             LOG_TRACE << "epoll error happened";
             // error happens, log uncommon ones

@@ -101,7 +101,6 @@ void discard_client()
 
 int main(int argc, char* argv[])
 {
-    log::Logger::set_loglevel(log::Logger::INFO);
     EventLoop loop(10);
     if (argc != 2) {
         LOG_INFO << "usage: " << argv[0] << " [-s|-c]";

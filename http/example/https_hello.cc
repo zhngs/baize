@@ -58,7 +58,6 @@ void HttpsServer()
 
 int main(int argc, char* argv[])
 {
-    log::Logger::set_loglevel(log::Logger::INFO);
     runtime::EventLoop loop;
 
     loop.Do(HttpsServer);

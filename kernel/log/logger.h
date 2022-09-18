@@ -82,6 +82,11 @@ private:
     log::Logger(__FILE__, __LINE__, __func__, log::Logger::FATAL, errno) \
         .stream()
 
+inline void set_log_trace() { log::Logger::set_loglevel(log::Logger::TRACE); }
+inline void set_log_debug() { log::Logger::set_loglevel(log::Logger::DEBUG); }
+inline void set_log_info() { log::Logger::set_loglevel(log::Logger::INFO); }
+inline void set_log_warn() { log::Logger::set_loglevel(log::Logger::WARN); }
+
 }  // namespace baize
 
 #endif  // BAIZE_LOGGER_H

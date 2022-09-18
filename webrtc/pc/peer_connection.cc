@@ -25,6 +25,19 @@ PeerConnection::PeerConnection(UdpStreamSptr stream, InetAddress addr)
 
 PeerConnection::~PeerConnection() {}
 
+PeerConnection::Packet PeerConnection::AsyncRead()
+{
+    while (1) {
+        if (packets_.empty()) {
+            async_park_.WaitRead();
+            continue;
+        }
+        Packet packet = std::move(packets_.back());
+        packets_.pop_back();
+        return std::move(packet);
+    }
+}
+
 int PeerConnection::ProcessPacket(StringPiece packet)
 {
     /**
