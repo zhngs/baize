@@ -44,11 +44,20 @@ PeerConnectionSptr WebRTCServer::Accept()
             }
             continue;
         } else {
-            PeerConnectionSptr pc = PeerConnection::New(stream_, peeraddr);
+            PeerConnectionSptr pc(
+                new PeerConnection(stream_, peeraddr),
+                [this](PeerConnection* p) { PeerConnectionDelete(p); });
             connections_[remote] = pc;
             return pc;
         }
     }
+}
+
+void WebRTCServer::PeerConnectionDelete(PeerConnection* pc)
+{
+    string remote = pc->addr_.ip_port();
+    connections_.erase(remote);
+    delete pc;
 }
 
 }  // namespace net

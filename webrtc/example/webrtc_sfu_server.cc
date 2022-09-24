@@ -1,5 +1,5 @@
 #include "http/file_reader.h"
-#include "http/http_server.h"
+#include "http/http_stream.h"
 #include "log/logger.h"
 #include "net/udp_stream.h"
 #include "runtime/event_loop.h"
@@ -31,11 +31,12 @@ void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
     }
 }
 
-void HttpConnection(HttpStreamSptr http)
+void HttpConnection(TcpStreamSptr stream)
 {
+    HttpStream http(stream);
     while (1) {
         HttpRequest req;
-        int rn = http->AsyncRead(req);
+        int rn = http.AsyncRead(req);
         if (rn <= 0) {
             LOG_ERROR << "http read failed";
             break;
@@ -44,7 +45,7 @@ void HttpConnection(HttpStreamSptr http)
         HttpResponseBuilder rsp;
         HttpEntry(req, rsp);
 
-        int wn = http->AsyncWrite(rsp);
+        int wn = http.AsyncWrite(rsp);
         if (wn != rsp.slice().size()) {
             LOG_ERROR << "http write failed";
             break;
@@ -54,10 +55,10 @@ void HttpConnection(HttpStreamSptr http)
 
 void SignalServer()
 {
-    HttpListener listener(6060);
+    TcpListener listener(6060);
 
     while (1) {
-        HttpStreamSptr stream = listener.AsyncAccept();
+        auto stream = listener.AsyncAccept();
         runtime::current_loop()->Do([stream] { HttpConnection(stream); });
     }
 }

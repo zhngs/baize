@@ -1,18 +1,18 @@
-#include "http/https_server.h"
+#include "http/http_stream.h"
 #include "log/logger.h"
 #include "runtime/event_loop.h"
 
 using namespace baize;
 using namespace baize::net;
 
-void HttpsConnection(HttpsStreamSptr https)
+void HttpsConnection(HttpStreamSptr stream, SslConfig& config)
 {
-    int err = https->TlsHandshake();
+    int err = stream->UpgradeHttps(config);
     if (err < 0) return;
 
     while (1) {
         HttpRequest req;
-        int rn = https->AsyncRead(req);
+        int rn = stream->AsyncRead(req);
         if (rn <= 0) {
             LOG_ERROR << "http read failed";
             break;
@@ -33,7 +33,7 @@ void HttpsConnection(HttpsStreamSptr https)
         rsp.AppendHeader("Content-Length", "5");
         rsp.AppendBody("hello");
 
-        int wn = https->AsyncWrite(rsp);
+        int wn = stream->AsyncWrite(rsp);
         if (wn != rsp.slice().size()) {
             LOG_ERROR << "http write failed";
             break;
@@ -43,16 +43,19 @@ void HttpsConnection(HttpsStreamSptr https)
 
 void HttpsServer()
 {
-    HttpsListener listener(6060);
-    int err = listener.set_cert_key("./cert.crt", "./cert.key");
+    TcpListener listener(6060);
+    SslConfig config;
+    int err = config.set_tls_server("./cert.crt", "./cert.key");
     if (err < 0) {
         LOG_ERROR << "set cert key failed";
         return;
     }
 
     while (1) {
-        HttpsStreamSptr stream = listener.AsyncAccept();
-        runtime::current_loop()->Do([stream] { HttpsConnection(stream); });
+        TcpStreamSptr stream = listener.AsyncAccept();
+        runtime::current_loop()->Do([stream, &config] {
+            HttpsConnection(HttpStream::New(stream), config);
+        });
     }
 }
 

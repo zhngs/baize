@@ -24,6 +24,9 @@ public:  // special function
 public:  // normal function
     PeerConnectionSptr Accept();
 
+private:  // private normal function
+    void PeerConnectionDelete(PeerConnection* pc);
+
 private:
     UdpStreamSptr stream_;
     std::map<string, PeerConnectionWptr> connections_;

@@ -35,7 +35,6 @@ public:
 
 private:
     TcpStreamSptr stream_;
-    runtime::AsyncPark async_park_;
 
     SSL_CTX* ctx_;
     SSL* ssl_;

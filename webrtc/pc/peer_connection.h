@@ -22,12 +22,7 @@ class PeerConnection  // noncopyable
 {
 public:  // types and constant
     friend class WebRTCServer;
-
-    using Sptr = std::shared_ptr<PeerConnection>;
     using Packet = MTUBufferPool::PacketUptr;
-
-public:  // factory
-    static Sptr New(UdpStreamSptr stream, InetAddress& addr);
 
 public:  // special function
     PeerConnection(UdpStreamSptr stream, InetAddress addr);

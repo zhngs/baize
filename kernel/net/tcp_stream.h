@@ -46,6 +46,7 @@ public:
     // getter
     int sockfd();
     string peer_ip_port();
+    runtime::AsyncPark& async_park() { return async_park_; }
 
     // setter
     void set_tcp_nodelay();
