@@ -27,11 +27,12 @@ public:
 
     int UpgradeHttps(SslConfig& config);
 
-    int AsyncRead(HttpRequest& req);
-    int AsyncWrite(HttpResponseBuilder& rsp);
+    int AsyncRead(HttpMessage& message);
+    int AsyncWrite(HttpMessage& message);
 
 private:
     Buffer read_buf_;
+    Buffer write_buf_;
     TcpStreamSptr tcp_stream_;
     TlsStreamSptr tls_stream_;
 };

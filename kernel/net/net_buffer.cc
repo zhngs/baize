@@ -12,7 +12,6 @@ namespace baize
 namespace net
 {
 
-// 全局变量是为了尽量让栈小一些
 char g_extrabuf[65536];
 
 Buffer::Buffer(int initialSize)
@@ -49,21 +48,6 @@ int Buffer::ReadFd(int fd)
         Append(g_extrabuf, rn - writable);
     }
     return static_cast<int>(n);
-}
-
-const char* Buffer::FindCRLF() const { return Find("\r\n"); }
-
-const char* Buffer::Find(char ch) const
-{
-    const char* pos = std::find(read_index(), write_index(), ch);
-    return pos == write_index() ? nullptr : pos;
-}
-
-const char* Buffer::Find(StringPiece slice) const
-{
-    const char* pos =
-        std::search(read_index(), write_index(), slice.data(), slice.end());
-    return pos == write_index() ? nullptr : pos;
 }
 
 void Buffer::Append(const StringPiece& str) { Append(str.data(), str.size()); }

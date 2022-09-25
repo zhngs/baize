@@ -31,11 +31,6 @@ public:  // special function
 public:  // normal function
     int ReadFd(int fd);
 
-    // find
-    const char* FindCRLF() const;
-    const char* Find(char ch) const;
-    const char* Find(StringPiece slice) const;
-
     // append
     void Append(const StringPiece& str);
     void Append(const void* data, int len);

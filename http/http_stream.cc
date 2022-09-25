@@ -1,6 +1,5 @@
 #include "http/http_stream.h"
 
-#include "http/http_parser.h"
 #include "log/logger.h"
 #include "runtime/event_loop.h"
 
@@ -29,16 +28,16 @@ int HttpStream::UpgradeHttps(SslConfig& config)
     }
 }
 
-int HttpStream::AsyncRead(HttpRequest& req)
+int HttpStream::AsyncRead(HttpMessage& message)
 {
     while (1) {
-        int parsed_len = HttpRequestParse(read_buf_.slice(), req);
+        int parsed_len = message.Decode(read_buf_);
         if (parsed_len < 0) {
             LOG_ERROR << "http request parse failed";
             return parsed_len;
         } else if (parsed_len == 0) {
             if (tls_stream_) {  // https
-                // fixme: 这里多了一次拷贝，并且不支持超时
+                // fix me: 这里多了一次拷贝，并且不支持超时
                 char buf[1024];
                 int rn = tls_stream_->AsyncRead(buf, sizeof(buf));
                 if (rn <= 0) {
@@ -62,24 +61,25 @@ int HttpStream::AsyncRead(HttpRequest& req)
                 }
             }
         } else {
-            read_buf_.Take(parsed_len);
             return parsed_len;
         }
     }
 }
 
-int HttpStream::AsyncWrite(HttpResponseBuilder& rsp)
+int HttpStream::AsyncWrite(HttpMessage& message)
 {
-    StringPiece content = rsp.slice();
-    if (content.size() <= 0) {
-        return -1;
-    }
-
+    message.Encode(write_buf_);
     if (tls_stream_) {
-        return tls_stream_->AsyncWrite(content.data(), content.size());
+        int len = tls_stream_->AsyncWrite(write_buf_.read_index(),
+                                          write_buf_.readable_bytes());
+        if (len != write_buf_.readable_bytes()) return -1;
     } else {
-        return tcp_stream_->AsyncWrite(content.data(), content.size());
+        int len = tcp_stream_->AsyncWrite(write_buf_.read_index(),
+                                          write_buf_.readable_bytes());
+        if (len != write_buf_.readable_bytes()) return -1;
     }
+    write_buf_.TakeAll();
+    return 0;
 }
 
 }  // namespace net

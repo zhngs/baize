@@ -8,30 +8,35 @@ using namespace baize::net;
 void HttpConnection(HttpStreamSptr stream)
 {
     while (1) {
-        HttpRequest req;
+        HttpMessage req;
         int rn = stream->AsyncRead(req);
         if (rn <= 0) {
             LOG_ERROR << "http read failed";
             break;
         }
 
-        LOG_INFO << req.all_data_;
-        LOG_INFO << "method: " << req.method_;
-        LOG_INFO << "path: " << req.path_;
-        LOG_INFO << "version: " << req.version_;
+        auto req_line = req.request_line();
+
+        LOG_INFO << req.first_line_;
         for (auto& head : req.headers_) {
             LOG_INFO << "header: {" << head.first << ":" << head.second << "}";
         }
         LOG_INFO << "body: " << req.body_;
 
-        HttpResponseBuilder rsp;
-        rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
-        rsp.AppendHeader("Content-Type", "text/plain; charset=utf-8");
-        rsp.AppendHeader("Content-Length", "5");
-        rsp.AppendBody("hello");
+        HttpMessage::ResponseLine rsp_line = {
+            HttpMessage::Version::kHttp11,
+            HttpMessage::StatusCode::k200,
+            HttpMessage::StatusDescription::kOK};
+        string rsp_line_string = HttpMessage::MakeResponseLine(rsp_line);
+
+        HttpMessage rsp;
+        rsp.set_response_line(rsp_line_string);
+        rsp.set_headers("Content-Type", "text/plain; charset=utf-8");
+        rsp.set_headers("Content-Length", "5");
+        rsp.set_body("hello");
 
         int wn = stream->AsyncWrite(rsp);
-        if (wn != rsp.slice().size()) {
+        if (wn < 0) {
             LOG_ERROR << "http write failed";
             break;
         }

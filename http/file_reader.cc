@@ -32,6 +32,10 @@ StringPiece FileReader::ReadAll()
         return StringPiece();
     }
 
+    if (!buf_.slice().empty()) {
+        return buf_.slice();
+    }
+
     while (1) {
         int rn = buf_.ReadFd(fd_);
         if (rn == 0) {

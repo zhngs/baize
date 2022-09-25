@@ -8,26 +8,32 @@
 using namespace baize;
 using namespace baize::net;
 
-void HttpEntry(const HttpRequest& req, HttpResponseBuilder& rsp)
+void HttpEntry(HttpMessage& req, HttpMessage& rsp)
 {
-    if (req.path_ == "/") {
+    auto req_line = req.request_line();
+
+    HttpMessage::ResponseLine rsp_line = {HttpMessage::Version::kHttp11,
+                                          HttpMessage::StatusCode::k200,
+                                          HttpMessage::StatusDescription::kOK};
+    string rsp_line_string = HttpMessage::MakeResponseLine(rsp_line);
+
+    if (req_line.url == "/") {
         FileReader reader("demo.html");
         StringPiece file = reader.ReadAll();
         string len = std::to_string(file.size());
 
-        rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
-        rsp.AppendHeader("Content-Length", len);
-        rsp.AppendBody(file);
-    } else if (req.path_.Find("sdp") != req.path_.end()) {
+        rsp.set_response_line(rsp_line_string);
+        rsp.set_headers("Content-Length", len);
+        rsp.set_body(file);
+    } else if (req_line.url.Find("sdp") != req_line.url.end()) {
         LOG_INFO << "body : " << req.body_;
         SdpMessage remote_sdp;
         remote_sdp.set_remote_sdp(req.body_);
 
-        rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
-        rsp.AppendBody(WebRTCSettings::local_sdp());
+        rsp.set_response_line(rsp_line_string);
+        rsp.set_body(WebRTCSettings::local_sdp());
     } else {
-        rsp.AppendResponseLine("HTTP/1.1", "200", "OK");
-        rsp.AppendEmptyBody();
+        rsp.set_response_line(rsp_line_string);
     }
 }
 
@@ -35,18 +41,18 @@ void HttpConnection(TcpStreamSptr stream)
 {
     HttpStream http(stream);
     while (1) {
-        HttpRequest req;
+        HttpMessage req;
         int rn = http.AsyncRead(req);
         if (rn <= 0) {
             LOG_ERROR << "http read failed";
             break;
         }
 
-        HttpResponseBuilder rsp;
+        HttpMessage rsp;
         HttpEntry(req, rsp);
 
         int wn = http.AsyncWrite(rsp);
-        if (wn != rsp.slice().size()) {
+        if (wn < 0) {
             LOG_ERROR << "http write failed";
             break;
         }

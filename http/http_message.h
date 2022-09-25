@@ -13,32 +13,50 @@ namespace baize
 namespace net
 {
 
-struct HttpRequest  // copyable
+class HttpMessage  // copyable
 {
-    StringPiece method_;
-    StringPiece path_;
-    std::map<StringPiece, StringPiece> query_;
-    StringPiece version_;
-    std::map<StringPiece, StringPiece> headers_;
-    StringPiece body_;
-    StringPiece all_data_;
-};
+public:  // types
+    enum class Type { kNone, kRequest, kResponse };
+    enum class Method { kNone, kGet, kPost };
+    enum class Version { kNone, kHttp11 };
+    enum class StatusCode { kNone, k200 };
+    enum class StatusDescription { kNone, kOK };
 
-class HttpResponseBuilder  // copyable
-{
-public:
-    void AppendResponseLine(StringPiece version,
-                            StringPiece num,
-                            StringPiece state);
-    void AppendHeader(StringPiece key, StringPiece value);
-    void AppendEmptyBody();
-    void AppendBody(StringPiece body);
+    struct RequestLine {
+        Method method = Method::kNone;
+        StringPiece url;
+        std::map<StringPiece, StringPiece> query;
+        Version version = Version::kNone;
+    };
+
+    struct ResponseLine {
+        Version version = Version::kNone;
+        StatusCode code = StatusCode::kNone;
+        StatusDescription description = StatusDescription::kNone;
+    };
+
+public:  // static function
+    static string MakeRequestLine(RequestLine& req);
+    static string MakeResponseLine(ResponseLine& rsp);
+
+public:  // normal function
+    int Decode(Buffer& message);
+    int Encode(Buffer& message);
 
     // getter
-    StringPiece slice() { return content_.slice(); };
+    RequestLine request_line();
+    ResponseLine response_line();
 
-private:
-    Buffer content_;
+    // setter
+    void set_request_line(StringPiece line);
+    void set_response_line(StringPiece line);
+    void set_headers(StringPiece key, StringPiece value);
+    void set_body(StringPiece body);
+
+public:
+    StringPiece first_line_;
+    std::map<StringPiece, StringPiece> headers_;
+    StringPiece body_;
 };
 
 }  // namespace net
