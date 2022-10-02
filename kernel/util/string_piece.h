@@ -53,10 +53,17 @@ public:
 
     // getter
     const char* data() const { return ptr_; }
+    char* data() { return const_cast<char*>(ptr_); }
     const uint8_t* data_uint8() const
     {
         return reinterpret_cast<const uint8_t*>(ptr_);
     }
+    uint8_t* data_uint8()
+    {
+        return const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(ptr_));
+    }
+
+    // getter
     int size() const { return length_; }
     bool empty() const { return length_ == 0; }
     const char* begin() const { return ptr_; }

@@ -202,7 +202,11 @@ bool DtlsTransport::CheckStatus(int ret)
         ExtractSrtpKey_ = true;
         timer_.Stop();
         // todo: checkout fingerprint
-        return ExtractSrtpKey();
+        bool err_key = ExtractSrtpKey();
+        if (!err_key) {
+            LOG_ERROR << "extract srtp key err";
+        }
+        return err_key;
     } else if (((SSL_get_shutdown(ssl_) & SSL_RECEIVED_SHUTDOWN) != 0) ||
                err == SSL_ERROR_SSL || err == SSL_ERROR_SYSCALL) {
         if (state_ == DtlsState::CONNECTED) {
@@ -219,24 +223,27 @@ bool DtlsTransport::CheckStatus(int ret)
 bool DtlsTransport::ExtractSrtpKey()
 {
     SRTP_PROTECTION_PROFILE* use_srtp = SSL_get_selected_srtp_profile(ssl_);
-    if (!use_srtp) return false;
-
+    if (!use_srtp) {
+        LOG_ERROR << "use srtp is null";
+        return false;
+    }
     int srtp_key_len = 0;
     int srtp_salt_len = 0;
-    string use_srtp_str = use_srtp->name;
-    if (use_srtp_str == "SRTP_AEAD_AES_128_GCM") {
+    use_srtp_ = use_srtp->name;
+    if (use_srtp_ == "SRTP_AEAD_AES_128_GCM") {
         srtp_key_len = 16;
         srtp_salt_len = 12;
         srtp_master_len_ = srtp_key_len + srtp_salt_len;
-    } else if (use_srtp_str == "SRTP_AES128_CM_SHA1_80") {
+    } else if (use_srtp_ == "SRTP_AES128_CM_SHA1_80") {
         srtp_key_len = 16;
         srtp_salt_len = 14;
         srtp_master_len_ = srtp_key_len + srtp_salt_len;
     } else {
+        LOG_ERROR << "unkown use_srtp";
         return false;
     }
 
-    uint8_t srtp_material[64];
+    uint8_t srtp_material[64] = {};
     int ret = SSL_export_keying_material(ssl_,
                                          srtp_material,
                                          srtp_master_len_ * 2,
@@ -245,7 +252,10 @@ bool DtlsTransport::ExtractSrtpKey()
                                          nullptr,
                                          0,
                                          0);
-    if (ret != 0) return false;
+    if (ret != 1) {
+        LOG_ERROR << "SSL_export_keying_material err";
+        return false;
+    }
 
     uint8_t* srtp_local_key = nullptr;
     uint8_t* srtp_local_salt = nullptr;
@@ -267,6 +277,7 @@ bool DtlsTransport::ExtractSrtpKey()
             break;
         }
         default: {
+            LOG_ERROR << "unkown role";
             return false;
         }
     }
@@ -367,7 +378,7 @@ bool DtlsTransport::is_running()
 
 bool DtlsTransport::is_connected() { return state_ == DtlsState::CONNECTED; }
 
-StringPiece DtlsTransport::srtp_loacl_master()
+StringPiece DtlsTransport::srtp_local_master()
 {
     return StringPiece(srtp_local_master_, srtp_master_len_);
 }

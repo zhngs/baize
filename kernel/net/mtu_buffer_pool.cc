@@ -15,9 +15,9 @@ MTUBufferPool::MTUBufferPool(int list_size)
 
 MTUBufferPool::~MTUBufferPool() {}
 
-MTUBufferPool::PacketUptr MTUBufferPool::PacketBuffer()
+MTUBufferPool::PacketUptr MTUBufferPool::AllocMTUBuffer()
 {
-    auto del = [this](MTUBuffer* buffer) { ViewDelete(buffer); };
+    auto del = [this](MTUBuffer* buffer) { MTUBufferDelete(buffer); };
     if (!buffers_.empty()) {
         MTUBufferUptr& buf = buffers_.back();
         MTUBuffer* ptr = buf.release();
@@ -29,7 +29,7 @@ MTUBufferPool::PacketUptr MTUBufferPool::PacketBuffer()
     }
 }
 
-void MTUBufferPool::ViewDelete(MTUBuffer* buffer)
+void MTUBufferPool::MTUBufferDelete(MTUBuffer* buffer)
 {
     buffer->reset();
     buffers_.emplace_back(MTUBufferUptr(buffer));

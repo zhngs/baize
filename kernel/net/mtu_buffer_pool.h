@@ -30,11 +30,11 @@ public:  // special function
     MTUBufferPool& operator=(const MTUBufferPool&) = delete;
 
 public:  // normal function
-    PacketUptr PacketBuffer();
+    PacketUptr AllocMTUBuffer();
     int size() { return static_cast<int>(buffers_.size()); }
 
 private:  // private normal function
-    void ViewDelete(MTUBuffer* buffer);
+    void MTUBufferDelete(MTUBuffer* buffer);
 
 private:
     MTUBufferVector buffers_;

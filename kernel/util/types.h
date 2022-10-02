@@ -12,6 +12,12 @@
 namespace baize
 {
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define BAIZE_LITTLE_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define BAIZE_BIG_ENDIAN
+#endif
+
 using std::string;
 
 inline void MemZero(void* p, size_t n) { memset(p, 0, n); }

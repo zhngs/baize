@@ -22,7 +22,7 @@ PeerConnectionSptr WebRTCServer::Accept()
     while (1) {
         LOG_INFO << "MTUBufferPool size:" << buffers_.size();
 
-        auto buf = buffers_.PacketBuffer();
+        auto buf = buffers_.AllocMTUBuffer();
         int rn =
             stream_->AsyncRecvFrom(buf->data(), buf->capacity(), &peeraddr);
 

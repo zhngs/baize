@@ -17,7 +17,7 @@ StringPiece::StringPiece(const unsigned char* str)
 }
 
 StringPiece::StringPiece(const string& str)
-  : ptr_(str.data()), length_(static_cast<int>(str.size()))
+  : ptr_(str.c_str()), length_(static_cast<int>(str.size()))
 {
 }
 

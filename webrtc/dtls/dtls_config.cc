@@ -55,7 +55,7 @@ DtlsConfig::Uptr DtlsConfig::New(string cert_path, string key_path)
     SSL_CTX_set_ecdh_auto(DtlsTransport::sslCtx, 1);
 
     err = SSL_CTX_set_tlsext_use_srtp(
-        ctx, "SRTP_AEAD_AES_128_GCM:SRTP_AES128_CM_SHA1_80");
+        ctx, "SRTP_AES128_CM_SHA1_80:SRTP_AEAD_AES_128_GCM");
     if (err != 0) {
         LOG_ERROR << "SSL_CTX_set_tlsext_use_srtp() failed";
         return Uptr();

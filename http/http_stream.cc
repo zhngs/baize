@@ -48,7 +48,7 @@ int HttpStream::AsyncRead(HttpMessage& message)
                 read_buf_.Append(buf, rn);
             } else {  // http
                 bool timeout = false;
-                int rn = tcp_stream_->AsyncRead(read_buf_, 1000 * 3, timeout);
+                int rn = tcp_stream_->AsyncRead(read_buf_, 1000 * 10, timeout);
                 if (timeout) {
                     LOG_INFO << "connection " << tcp_stream_->peer_ip_port()
                              << " timeout";

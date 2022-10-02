@@ -6,6 +6,8 @@
 #include "runtime/event_loop.h"
 #include "webrtc/dtls/dtls_transport.h"
 #include "webrtc/ice/ice_server.h"
+#include "webrtc/rtp/rtcp_packet.h"
+#include "webrtc/rtp/srtp_session.h"
 #include "webrtc/sdp/sdp_message.h"
 
 namespace baize
@@ -41,6 +43,9 @@ private:
 
     IceServerUptr ice_;
     DtlsTransportUptr dtls_;
+    SrtpSessionUptr srtp_send_session_;
+    SrtpSessionUptr srtp_recv_session_;
+
     runtime::AsyncPark async_park_;
 };
 

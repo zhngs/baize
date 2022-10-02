@@ -41,8 +41,9 @@ public:
     // getter
     bool is_running();
     bool is_connected();
-    StringPiece srtp_loacl_master();
+    StringPiece srtp_local_master();
     StringPiece srtp_remote_master();
+    StringPiece use_srtp() { return use_srtp_; }
 
 private:
     void SendBioData();
@@ -64,6 +65,7 @@ private:
     bool HandshakeDone_ = false;
     bool ExtractSrtpKey_ = false;
 
+    string use_srtp_;
     uint8_t srtp_local_master_[64] = {};
     uint8_t srtp_remote_master_[64] = {};
     int srtp_master_len_ = 0;

@@ -141,7 +141,7 @@ HttpMessage::RequestLine HttpMessage::request_line()
     StringPiece method = slice_vector[0];
     if (method == "GET") {
         req.method = Method::kGet;
-    } else if (method == "post") {
+    } else if (method == "POST") {
         req.method = Method::kPost;
     } else {
         req.method = Method::kNone;

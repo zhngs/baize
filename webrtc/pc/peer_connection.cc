@@ -68,13 +68,42 @@ int PeerConnection::ProcessPacket(StringPiece packet)
     if (!dtls_->is_running()) {
         return -1;
     } else if (!dtls_->is_connected()) {
-        LOG_INFO << "dtls connected";
+        LOG_INFO << "dtls not connected";
         return 0;
     }
 
     /**
-     * handle rtp
+     * handle rtp and rtcp
      */
+    if (!srtp_send_session_) {
+        srtp_send_session_ = SrtpSession::New(SrtpSession::Type::kOutBound,
+                                              dtls_->use_srtp(),
+                                              dtls_->srtp_local_master());
+        if (!srtp_send_session_) {
+            LOG_ERROR << "srtp_send_session err";
+            // return -1;
+        }
+    }
+
+    if (!srtp_recv_session_) {
+        srtp_recv_session_ = SrtpSession::New(SrtpSession::Type::kInBound,
+                                              dtls_->use_srtp(),
+                                              dtls_->srtp_remote_master());
+        if (!srtp_recv_session_) {
+            LOG_ERROR << "srtp_recv_session err";
+            // return -1;
+        }
+    }
+
+    if (RtcpPacket::IsRtcp(packet)) {
+        // bool err = srtp_recv_session_->DecryptRtcp(packet);
+        // if (!err) {
+        //     LOG_ERROR << "decrypt rtcp err";
+        //     return -1;
+        // }
+        auto rtcp_group = RtcpPacket::Parse(packet);
+    }
+
     return 0;
 }
 
