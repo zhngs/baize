@@ -81,7 +81,7 @@ int PeerConnection::ProcessPacket(StringPiece packet)
                                               dtls_->srtp_local_master());
         if (!srtp_send_session_) {
             LOG_ERROR << "srtp_send_session err";
-            // return -1;
+            return -1;
         }
     }
 
@@ -91,17 +91,48 @@ int PeerConnection::ProcessPacket(StringPiece packet)
                                               dtls_->srtp_remote_master());
         if (!srtp_recv_session_) {
             LOG_ERROR << "srtp_recv_session err";
-            // return -1;
+            return -1;
         }
     }
 
     if (RtcpPacket::IsRtcp(packet)) {
-        // bool err = srtp_recv_session_->DecryptRtcp(packet);
-        // if (!err) {
-        //     LOG_ERROR << "decrypt rtcp err";
-        //     return -1;
-        // }
+        bool err = srtp_recv_session_->DecryptRtcp(packet);
+        if (!err) {
+            LOG_ERROR << "decrypt rtcp err";
+            return -1;
+        }
         auto rtcp_group = RtcpPacket::Parse(packet);
+        LOG_INFO << "rtcp group: " << rtcp_group.size();
+
+        return 0;
+    }
+
+    if (RtpPacket::IsRtp(packet)) {
+        bool err = srtp_recv_session_->DecryptRtp(packet);
+        if (!err) {
+            LOG_ERROR << "decrypt rtcp err";
+            return -1;
+        }
+
+        RtpPacketUptr rtp_packet = RtpPacket::Parse(packet);
+        if (!rtp_packet) {
+            LOG_ERROR << "handle rtp err";
+            return 0;
+        }
+
+        LOG_INFO << "handle rtp";
+        // 黑魔法
+        auto header = rtp_packet->header();
+        header->ssrc = HostToNetwork32(1234);
+
+        err = srtp_send_session_->EncryptRtp(packet);
+        if (!err) {
+            LOG_ERROR << "decrypt rtcp err";
+            return -1;
+        }
+        stream_->AsyncSendto(packet.data(), packet.size(), addr_);
+
+        return 0;
     }
 
     return 0;

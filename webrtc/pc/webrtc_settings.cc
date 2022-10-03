@@ -30,6 +30,8 @@ void WebRTCSettings::Initialize()
     if (!gt_dtls_config) {
         LOG_FATAL << "dtls config init failed";
     }
+
+    srtp_init();
 }
 
 string WebRTCSettings::ice_password() { return gt_sdp.net_.ice_pwd_; }

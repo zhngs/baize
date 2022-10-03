@@ -7,6 +7,7 @@
 #include "webrtc/dtls/dtls_transport.h"
 #include "webrtc/ice/ice_server.h"
 #include "webrtc/rtp/rtcp_packet.h"
+#include "webrtc/rtp/rtp_packet.h"
 #include "webrtc/rtp/srtp_session.h"
 #include "webrtc/sdp/sdp_message.h"
 

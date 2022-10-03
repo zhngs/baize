@@ -14,8 +14,10 @@ SrtpSessionUptr SrtpSession::New(Type type,
 {
     SrtpSessionUptr srtp_session = std::make_unique<SrtpSession>();
 
+    LOG_INFO << "use_srtp:" << use_srtp << ", key: " << log::DumpHexFormat(key);
+
     srtp_policy_t policy;
-    MemZero(&policy, sizeof(srtp_policy_t));
+    MemZero(&policy, sizeof(policy));
 
     if (use_srtp == "SRTP_AEAD_AES_128_GCM") {
         srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);

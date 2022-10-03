@@ -61,7 +61,13 @@ void AsyncPark::CheckTicks()
     assert(!is_main_routine());
     if (current_routine()->Tick()) {
         Routine* routine = current_routine();
-        current_loop()->RunInLoop([routine] { routine->Call(); });
+        current_loop()->RunInLoop([routine] {
+            if (routine == nullptr) {
+                LOG_FATAL << "routine is null";
+            }
+            LOG_TRACE << "call by CheckTicks";
+            routine->Call();
+        });
         current_routine()->Return();
     }
 }
@@ -83,14 +89,32 @@ void AsyncPark::Schedule(uint32_t events)
 
 void AsyncPark::ScheduleRead()
 {
-    if (read_routine_ != nullptr)
-        current_loop()->RunInLoop([this] { read_routine_->Call(); });
+    if (read_routine_ != nullptr) {
+        auto routine = read_routine_;
+        read_routine_ = nullptr;
+        current_loop()->RunInLoop([routine] {
+            if (routine == nullptr) {
+                LOG_FATAL << "routine is null";
+            }
+            LOG_TRACE << "call by ScheduleRead";
+            routine->Call();
+        });
+    }
 }
 
 void AsyncPark::ScheduleWrite()
 {
-    if (write_routine_ != nullptr)
-        current_loop()->RunInLoop([this] { write_routine_->Call(); });
+    if (write_routine_ != nullptr) {
+        auto routine = write_routine_;
+        write_routine_ = nullptr;
+        current_loop()->RunInLoop([routine] {
+            if (routine == nullptr) {
+                LOG_FATAL << "routine is null";
+            }
+            LOG_TRACE << "call by ScheduleWrite";
+            routine->Call();
+        });
+    }
 }
 
 /**

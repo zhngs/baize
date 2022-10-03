@@ -9,15 +9,18 @@
 using namespace baize;
 using namespace baize::net;
 
-void HttpConnection(TcpStreamSptr stream)
+void HttpConnection(TcpStreamSptr stream, SslConfig& config)
 {
     HttpStream http(stream);
+    int err = http.UpgradeHttps(config);
+    if (err < 0) return;
 
     FileReader reader("demo.html");
     StringPiece demo_file = reader.ReadAll();
     string demo_file_len = std::to_string(demo_file.size());
 
     string local_sdp = WebRTCSettings::local_sdp();
+    string local_sdp_len = std::to_string(local_sdp.size());
 
     HttpMessage::ResponseLine success_rsp_line = {
         HttpMessage::Version::kHttp11,
@@ -50,6 +53,7 @@ void HttpConnection(TcpStreamSptr stream)
             remote_sdp.set_remote_sdp(req.body_);
 
             rsp.set_response_line(sucess_rsp_line_string);
+            rsp.set_headers("Content-Length", local_sdp_len);
             rsp.set_body(local_sdp);
             LOG_INFO << "body: " << rsp.body_;
 
@@ -68,10 +72,17 @@ void HttpConnection(TcpStreamSptr stream)
 void SignalServer()
 {
     TcpListener listener(6060);
+    SslConfig config;
+    int err = config.set_tls_server("./cert.crt", "./cert.key");
+    if (err < 0) {
+        LOG_ERROR << "set cert key failed";
+        return;
+    }
 
     while (1) {
         auto stream = listener.AsyncAccept();
-        runtime::current_loop()->Do([stream] { HttpConnection(stream); });
+        runtime::current_loop()->Do(
+            [stream, &config] { HttpConnection(stream, config); });
     }
 }
 
