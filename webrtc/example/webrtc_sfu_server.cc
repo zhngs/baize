@@ -49,8 +49,7 @@ void HttpConnection(TcpStreamSptr stream, SslConfig& config)
             rsp.set_body(demo_file);
         } else if (req_line.url.Find("sdp") != req_line.url.end()) {
             LOG_INFO << "body : " << req.body_;
-            SdpMessage remote_sdp;
-            remote_sdp.set_remote_sdp(req.body_);
+            current_remote_sdp().set_remote_sdp(req.body_);
 
             rsp.set_response_line(sucess_rsp_line_string);
             rsp.set_headers("Content-Length", local_sdp_len);
@@ -91,7 +90,7 @@ void HandlePeerConnection(PeerConnectionSptr pc)
     LOG_INFO << "peerconnection start";
     while (1) {
         auto packet = pc->AsyncRead();
-        LOG_INFO << "peerconnection read " << packet->length() << " bytes";
+        LOG_DEBUG << "peerconnection read " << packet->length() << " bytes";
         int err =
             pc->ProcessPacket(StringPiece(packet->data(), packet->length()));
         if (err < 0) {

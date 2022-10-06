@@ -29,10 +29,10 @@ public:
     SrtpSession();
     ~SrtpSession();
 
-    bool EncryptRtp(StringPiece packet);
-    bool DecryptRtp(StringPiece packet);
-    bool EncryptRtcp(StringPiece packet);
-    bool DecryptRtcp(StringPiece packet);
+    bool EncryptRtp(StringPiece& packet);
+    bool DecryptRtp(StringPiece& packet);
+    bool EncryptRtcp(StringPiece& packet);
+    bool DecryptRtcp(StringPiece& packet);
 
 private:
     srtp_t session_ = nullptr;

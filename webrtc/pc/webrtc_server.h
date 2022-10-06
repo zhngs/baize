@@ -15,6 +15,9 @@ namespace net
 
 class WebRTCServer  // noncopyable
 {
+public:  // type
+    using RoomMap = std::map<string, PeerConnectionWptr>;
+
 public:  // special function
     WebRTCServer(uint16_t port);
     ~WebRTCServer();
@@ -24,12 +27,15 @@ public:  // special function
 public:  // normal function
     PeerConnectionSptr Accept();
 
+    // getter
+    RoomMap& room() { return connections_; }
+
 private:  // private normal function
     void PeerConnectionDelete(PeerConnection* pc);
 
 private:
     UdpStreamSptr stream_;
-    std::map<string, PeerConnectionWptr> connections_;
+    RoomMap connections_;
     MTUBufferPool buffers_;
 };
 

@@ -66,18 +66,21 @@ SrtpSession::SrtpSession() {}
 
 SrtpSession::~SrtpSession() {}
 
-bool SrtpSession::EncryptRtp(StringPiece packet)
+bool SrtpSession::EncryptRtp(StringPiece& packet)
 {
     uint8_t* data = packet.data_uint8();
     int size = packet.size();
+
     srtp_err_status_t err = srtp_protect(session_, data, &size);
     if (err != srtp_err_status_ok || size <= 0) {
         return false;
     }
+    packet.set(data, size);
+
     return true;
 }
 
-bool SrtpSession::DecryptRtp(StringPiece packet)
+bool SrtpSession::DecryptRtp(StringPiece& packet)
 {
     uint8_t* data = packet.data_uint8();
     int size = packet.size();
@@ -85,10 +88,12 @@ bool SrtpSession::DecryptRtp(StringPiece packet)
     if (err != srtp_err_status_ok || size <= 0) {
         return false;
     }
+    packet.set(data, size);
+
     return true;
 }
 
-bool SrtpSession::EncryptRtcp(StringPiece packet)
+bool SrtpSession::EncryptRtcp(StringPiece& packet)
 {
     uint8_t* data = packet.data_uint8();
     int size = packet.size();
@@ -96,10 +101,12 @@ bool SrtpSession::EncryptRtcp(StringPiece packet)
     if (err != srtp_err_status_ok || size <= 0) {
         return false;
     }
+    packet.set(data, size);
+
     return true;
 }
 
-bool SrtpSession::DecryptRtcp(StringPiece packet)
+bool SrtpSession::DecryptRtcp(StringPiece& packet)
 {
     uint8_t* data = packet.data_uint8();
     int size = packet.size();
@@ -107,6 +114,8 @@ bool SrtpSession::DecryptRtcp(StringPiece packet)
     if (err != srtp_err_status_ok || size <= 0) {
         return false;
     }
+    packet.set(data, size);
+
     return true;
 }
 

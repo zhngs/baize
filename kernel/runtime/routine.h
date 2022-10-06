@@ -23,7 +23,7 @@ class Routine  // noncopyable
 public:  // types and constant
     static const uint64_t kMainRoutineId = 0;
     static const int kRoutineTicks = 10;
-    static const int kStackSize = 256 * 1024;
+    static const int kStackSize = 128 * 1024;
 
 public:  // special function
     // routine cannot be nested

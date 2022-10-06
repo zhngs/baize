@@ -8,6 +8,9 @@ namespace baize
 namespace net
 {
 
+thread_local SdpMessage gt_remote_sdp;
+SdpMessage& current_remote_sdp() { return gt_remote_sdp; }
+
 int SdpMessage::set_remote_sdp(StringPiece message)
 {
     StringPiece ice_ufrag = message.SliceFragment("ice-ufrag:", "\r\n");
@@ -103,18 +106,16 @@ string SdpMessage::local_sdp()
              "a=ice-ufrag:%s\r\n"
              "a=ice-pwd:%s\r\n"
              "a=fingerprint:sha-256 %s\r\n"
+             "a=msid:baize baizev0\r\n"
              "a=ssrc:%d cname:baizevideo\r\n"
              "a=ssrc:%d msid:baize baizev0\r\n"
-             "a=ssrc:%d mslabel:baize\r\n"
-             "a=ssrc:%d label:baizev0\r\n"
              "a=candidate:1 1 udp 1 %s %d typ host\r\n"
-             "a=rtcp-mux\r\n",
+             "a=rtcp-mux\r\n"
+             "a=rtcp-rsize\r\n",
              net_.ice_option_.c_str(),
              net_.ice_ufrag_.c_str(),
              net_.ice_pwd_.c_str(),
              net_.finger_print_.c_str(),
-             ssrc,
-             ssrc,
              ssrc,
              ssrc,
              net_.ip_.c_str(),

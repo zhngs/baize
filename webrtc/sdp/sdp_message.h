@@ -49,6 +49,9 @@ public:
     NetSdp net_;
 };
 
+// dummy func
+SdpMessage& current_remote_sdp();
+
 }  // namespace net
 
 }  // namespace baize

@@ -62,7 +62,6 @@ public:  // type
         uint8_t len;
         uint8_t value[0];
     };
-
 #pragma pack()
 
 public:  // static method

@@ -1,6 +1,7 @@
 #include "webrtc/pc/peer_connection.h"
 
 #include "log/logger.h"
+#include "webrtc/pc/webrtc_server.h"
 #include "webrtc/pc/webrtc_settings.h"
 
 namespace baize
@@ -9,8 +10,10 @@ namespace baize
 namespace net
 {
 
-PeerConnection::PeerConnection(UdpStreamSptr stream, InetAddress addr)
-  : stream_(stream), addr_(addr)
+PeerConnection::PeerConnection(UdpStreamSptr stream,
+                               InetAddress addr,
+                               void* arg)
+  : stream_(stream), addr_(addr), ext_arg_(arg)
 {
 }
 
@@ -29,17 +32,22 @@ PeerConnection::Packet PeerConnection::AsyncRead()
     }
 }
 
+int PeerConnection::AsyncWrite(StringPiece packet)
+{
+    return stream_->AsyncSendto(packet.data(), packet.size(), addr_);
+}
+
 int PeerConnection::ProcessPacket(StringPiece packet)
 {
     /**
      * handle ice
      */
-    if (StunPacket::IsStun(packet)) {
-        if (!ice_) {
-            ice_ =
-                IceServer::New(WebRTCSettings::ice_password(), stream_, addr_);
-        }
 
+    if (!ice_) {
+        ice_ = IceServer::New(WebRTCSettings::ice_password(), stream_, addr_);
+    }
+
+    if (StunPacket::IsStun(packet)) {
         LOG_INFO << "process stun";
         ice_->ProcessStunPacket(packet);
         return 0;
@@ -53,13 +61,12 @@ int PeerConnection::ProcessPacket(StringPiece packet)
      * handle dtls
      */
 
-    if (DtlsTransport::IsDtls(packet)) {
-        if (!dtls_) {
-            dtls_ =
-                DtlsTransport::New(WebRTCSettings::dtls_ctx(), stream_, addr_);
-            dtls_->Initialize(DtlsTransport::Role::SERVER);
-        }
+    if (!dtls_) {
+        dtls_ = DtlsTransport::New(WebRTCSettings::dtls_ctx(), stream_, addr_);
+        dtls_->Initialize(DtlsTransport::Role::SERVER);
+    }
 
+    if (DtlsTransport::IsDtls(packet)) {
         LOG_INFO << "process dtls";
         dtls_->ProcessDtlsPacket(packet);
         return 0;
@@ -95,16 +102,38 @@ int PeerConnection::ProcessPacket(StringPiece packet)
         }
     }
 
+    // static int only_once = 0;
+    // only_once++;
+    // if (only_once % 100 == 0) {
+    //     PliPsFb pli;
+    //     pli.comm_header.version = 2;
+    //     pli.comm_header.padding = 0;
+    //     pli.comm_header.count = 1;
+    //     pli.comm_header.type = 206;
+    //     pli.comm_header.length = 2;
+    //     pli.fb_header.sender_ssrc = 1234;
+    //     string media_ssrc = current_remote_sdp().tracks_[0].ssrc_group_[0];
+    //     pli.fb_header.media_ssrc = atoi(media_ssrc.c_str());
+
+    //     LOG_INFO << "send to peer" << pli.Dump();
+
+    //     char buf[1500] = "";
+    //     StringPiece pli_packet(buf, 1500);
+    //     pli.Encode(pli_packet);
+
+    //     srtp_send_session_->EncryptRtcp(pli_packet);
+    //     AsyncWrite(pli_packet);
+
+    //     // only_once = false;
+    // }
+
     if (RtcpPacket::IsRtcp(packet)) {
         bool err = srtp_recv_session_->DecryptRtcp(packet);
         if (!err) {
             LOG_ERROR << "decrypt rtcp err";
             return -1;
         }
-        auto rtcp_group = RtcpPacket::Parse(packet);
-        LOG_INFO << "rtcp group: " << rtcp_group.size();
-
-        return 0;
+        return ProcessRtcp(packet);
     }
 
     if (RtpPacket::IsRtp(packet)) {
@@ -120,19 +149,124 @@ int PeerConnection::ProcessPacket(StringPiece packet)
             return 0;
         }
 
-        LOG_INFO << "handle rtp";
-        // 黑魔法
         auto header = rtp_packet->header();
         header->ssrc = HostToNetwork32(1234);
 
-        err = srtp_send_session_->EncryptRtp(packet);
-        if (!err) {
-            LOG_ERROR << "decrypt rtcp err";
-            return -1;
+        // err = srtp_send_session_->EncryptRtp(packet);
+        // if (!err) {
+        //     LOG_ERROR << "decrypt rtcp err";
+        //     return -1;
+        // }
+        // AsyncWrite(packet);
+
+        WebRTCServer* server = reinterpret_cast<WebRTCServer*>(ext_arg_);
+        auto room = server->room();
+        string selfkey = addr_.ip_port();
+        for (auto& item : room) {
+            if (item.first == selfkey) continue;
+            auto pc_sptr = item.second.lock();
+            if (pc_sptr && pc_sptr->srtp_send_session_) {
+                err = pc_sptr->srtp_send_session_->EncryptRtp(packet);
+                if (!err) {
+                    LOG_ERROR << "decrypt rtcp err";
+                    return -1;
+                }
+                pc_sptr->AsyncWrite(packet);
+            }
         }
-        stream_->AsyncSendto(packet.data(), packet.size(), addr_);
 
         return 0;
+    }
+
+    return 0;
+}
+
+int PeerConnection::ProcessRtcp(StringPiece packet)
+{
+    uint8_t* data = packet.data_uint8();
+    int len = packet.size();
+
+    while (len > 0) {
+        if (!RtcpPacket::IsRtcp(packet)) {
+            LOG_ERROR << "data is not a RTCP packet";
+            return -1;
+        }
+
+        RtcpPacket::CommonHeader* header =
+            reinterpret_cast<RtcpPacket::CommonHeader*>(data);
+        int packet_len =
+            static_cast<int>(NetworkToHost16(header->length) + 1) * 4;
+
+        if (len < packet_len) {
+            LOG_ERROR << "rtcp packet len error";
+            return -1;
+        }
+
+        switch (RtcpPacket::Type(header->type)) {
+            case RtcpPacket::Type::SR: {
+                LOG_INFO << "RTCP packet type: SR";
+                SrPacket sr;
+                sr.Decode(packet);
+                LOG_INFO << sr.Dump();
+
+                break;
+            }
+            case RtcpPacket::Type::RR: {
+                LOG_INFO << "RTCP packet type: RR";
+                RrPacket rr;
+                rr.Decode(packet);
+                LOG_INFO << rr.Dump();
+                break;
+            }
+            case RtcpPacket::Type::SDES: {
+                LOG_INFO << "RTCP packet type: SDES";
+                SdesPacket sdes;
+                sdes.Decode(packet);
+                LOG_INFO << sdes.Dump();
+                break;
+            }
+            case RtcpPacket::Type::BYE: {
+                LOG_INFO << "RTCP packet type: BYE";
+                break;
+            }
+            case RtcpPacket::Type::APP: {
+                LOG_INFO << "RTCP packet type: APP";
+                break;
+            }
+            case RtcpPacket::Type::RTPFB: {
+                LOG_INFO << "RTCP packet type: RTPFB";
+                break;
+            }
+            case RtcpPacket::Type::PSFB: {
+                LOG_INFO << "RTCP packet type: PSFB";
+
+                switch (RtcpFeedback::PsType(header->count)) {
+                    case RtcpFeedback::PsType::PLI: {
+                        LOG_INFO << "RTCP PS Feedback PLI received";
+                        PliPsFb pli;
+                        pli.Decode(packet);
+                        LOG_INFO << pli.Dump();
+                        break;
+                    }
+                    default: {
+                        LOG_ERROR << "unknown RTCP PS Feedback message type "
+                                  << header->count;
+                    }
+                }
+
+                break;
+            }
+            case RtcpPacket::Type::XR: {
+                LOG_INFO << "RTCP packet type: XR";
+                break;
+            }
+            default: {
+                LOG_ERROR << "unknown RTCP packet type: " << header->type;
+            }
+        }
+
+        data += packet_len;
+        len -= packet_len;
     }
 
     return 0;

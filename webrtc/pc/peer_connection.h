@@ -28,18 +28,23 @@ public:  // types and constant
     using Packet = MTUBufferPool::PacketUptr;
 
 public:  // special function
-    PeerConnection(UdpStreamSptr stream, InetAddress addr);
+    PeerConnection(UdpStreamSptr stream, InetAddress addr, void* arg = nullptr);
     ~PeerConnection();
     PeerConnection(const PeerConnection&) = delete;
     PeerConnection& operator=(const PeerConnection&) = delete;
 
 public:  // normal function
     Packet AsyncRead();
+    int AsyncWrite(StringPiece packet);
     int ProcessPacket(StringPiece packet);
+
+private:  // private normal function
+    int ProcessRtcp(StringPiece packet);
 
 private:
     UdpStreamSptr stream_;
     InetAddress addr_;
+    void* ext_arg_;
     std::vector<Packet> packets_;
 
     IceServerUptr ice_;
