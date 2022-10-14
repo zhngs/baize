@@ -38,12 +38,16 @@ public:  // type
         uint16_t sequence_number;
         uint32_t timestamp;
         uint32_t ssrc;
+
+        Header() { MemZero(this, sizeof(*this)); }
     };
 
     struct HeaderExtension {
         uint16_t profile;
         uint16_t length;
         uint8_t value[0];
+
+        HeaderExtension() { MemZero(this, sizeof(*this)); }
     };
 
     struct OneByteExtension {
@@ -55,30 +59,55 @@ public:  // type
         uint8_t len : 4;
 #endif
         uint8_t value[0];
+
+        OneByteExtension() { MemZero(this, sizeof(*this)); }
     };
 
     struct TwoBytesExtension {
         uint8_t id;
         uint8_t len;
         uint8_t value[0];
+
+        TwoBytesExtension() { MemZero(this, sizeof(*this)); }
     };
 #pragma pack()
+
+    struct RtpOneByteExtension {
+        OneByteExtension ext_header;
+        string value;
+    };
+
+    struct RtpTwoBytesExtension {
+        TwoBytesExtension ext_header;
+        string value;
+    };
+
+    struct RtpExtension {
+        HeaderExtension header;
+        std::vector<RtpOneByteExtension> one_byte_ext;
+        std::vector<RtpTwoBytesExtension> two_bytes_ext;
+
+        bool is_one_byte_ext() { return header.profile == 0xbede; }
+        bool is_two_bytes_ext()
+        {
+            return (header.profile & 0b1111111111110000) == 0b0001000000000000;
+        }
+    };
 
 public:  // static method
     static const int kHeaderSize = 12;
     static bool IsRtp(StringPiece packet);
 
-    static RtpPacketUptr Parse(StringPiece packet);
-
 public:
-    RtpPacket();
-    ~RtpPacket();
+    int Decode(StringPiece packet);
 
-public:  // getter and setter
-    Header* header() { return header_; };
+    string Dump();
 
 private:
-    Header* header_;
+    Header rtp_header;
+    std::vector<uint32_t> csrcs;
+    RtpExtension extension;
+    string payload;
 };
 
 }  // namespace net

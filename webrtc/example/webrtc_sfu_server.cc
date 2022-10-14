@@ -47,15 +47,17 @@ void HttpConnection(TcpStreamSptr stream, SslConfig& config)
             rsp.set_headers("Content-Type", "text/html; charset=utf-8");
             rsp.set_headers("Content-Length", demo_file_len);
             rsp.set_body(demo_file);
-        } else if (req_line.url.Find("sdp") != req_line.url.end()) {
-            LOG_INFO << "body : " << req.body_;
-            current_remote_sdp().set_remote_sdp(req.body_);
+        } else if (req_line.url.Find("pub") != req_line.url.end()) {
+            LOG_INFO << "pub body : " << req.body_;
+            current_pub_sdp().set_remote_sdp(req.body_);
 
             rsp.set_response_line(sucess_rsp_line_string);
             rsp.set_headers("Content-Length", local_sdp_len);
             rsp.set_body(local_sdp);
             LOG_INFO << "body: " << rsp.body_;
 
+        } else if (req_line.url.Find("sub") != req_line.url.end()) {
+            // do nothing
         } else {
             rsp.set_response_line(sucess_rsp_line_string);
         }

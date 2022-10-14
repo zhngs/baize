@@ -8,8 +8,10 @@ namespace baize
 namespace net
 {
 
-thread_local SdpMessage gt_remote_sdp;
-SdpMessage& current_remote_sdp() { return gt_remote_sdp; }
+thread_local SdpMessage gt_pub_sdp;
+SdpMessage& current_pub_sdp() { return gt_pub_sdp; }
+thread_local SdpMessage gt_sub_sdp;
+SdpMessage& current_sub_sdp() { return gt_sub_sdp; }
 
 int SdpMessage::set_remote_sdp(StringPiece message)
 {
@@ -98,8 +100,8 @@ string SdpMessage::local_sdp()
              "a=ice-options:%s\r\n"
              "a=msid-semantic: WMS baize\r\n"
              "a=group:BUNDLE 0\r\n"
-             "m=video 9 RTP/SAVPF 96\r\n"
-             "a=rtpmap:96 H264/90000\r\n"
+             "m=video 9 RTP/SAVPF 127\r\n"
+             "a=rtpmap:127 H264/90000\r\n"
              "a=setup:passive\r\n"
              "a=mid:0\r\n"
              "a=sendrecv\r\n"

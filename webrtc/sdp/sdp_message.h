@@ -50,7 +50,8 @@ public:
 };
 
 // dummy func
-SdpMessage& current_remote_sdp();
+SdpMessage& current_pub_sdp();
+SdpMessage& current_sub_sdp();
 
 }  // namespace net
 
