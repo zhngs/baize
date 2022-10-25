@@ -74,6 +74,7 @@ void AsyncPark::CheckTicks()
 
 void AsyncPark::Schedule(uint32_t events)
 {
+    assert(is_main_routine());
     events_ = events;
 
     LOG_TRACE << "fd " << fd_ << " epoll event is ["
@@ -90,30 +91,14 @@ void AsyncPark::Schedule(uint32_t events)
 void AsyncPark::ScheduleRead()
 {
     if (read_routine_ != nullptr) {
-        auto routine = read_routine_;
-        read_routine_ = nullptr;
-        current_loop()->RunInLoop([routine] {
-            if (routine == nullptr) {
-                LOG_FATAL << "routine is null";
-            }
-            LOG_TRACE << "call by ScheduleRead";
-            routine->Call();
-        });
+        current_loop()->RunRoutineInLoop(read_routine_);
     }
 }
 
 void AsyncPark::ScheduleWrite()
 {
     if (write_routine_ != nullptr) {
-        auto routine = write_routine_;
-        write_routine_ = nullptr;
-        current_loop()->RunInLoop([routine] {
-            if (routine == nullptr) {
-                LOG_FATAL << "routine is null";
-            }
-            LOG_TRACE << "call by ScheduleWrite";
-            routine->Call();
-        });
+        current_loop()->RunRoutineInLoop(write_routine_);
     }
 }
 

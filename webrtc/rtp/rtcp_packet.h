@@ -44,7 +44,7 @@ public:  // types
         uint8_t type;
         uint16_t length;
 
-        CommonHeader() { MemZero(this, sizeof(*this)); }
+        CommonHeader() { MemoryZero(this, sizeof(*this)); }
     };
 #pragma pack()
 
@@ -90,7 +90,7 @@ public:  // types
         uint32_t sender_ssrc;
         uint32_t media_ssrc;
 
-        Header() { MemZero(this, sizeof(*this)); }
+        Header() { MemoryZero(this, sizeof(*this)); }
     };
 #pragma pack()
 
@@ -125,7 +125,7 @@ public:
         uint32_t lsr;
         uint32_t dlsr;
 
-        Report() { MemZero(this, sizeof(*this)); }
+        Report() { MemoryZero(this, sizeof(*this)); }
     };
 #pragma pack()
 public:
@@ -159,7 +159,7 @@ public:
         uint32_t packet_count;
         uint32_t octet_count;
 
-        SendInfo() { MemZero(this, sizeof(*this)); }
+        SendInfo() { MemoryZero(this, sizeof(*this)); }
     };
 #pragma pack(1)
 

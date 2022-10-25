@@ -91,13 +91,15 @@ void HandlePeerConnection(PeerConnectionSptr pc)
 {
     LOG_INFO << "peerconnection start";
     while (1) {
-        auto packet = pc->AsyncRead();
-        LOG_DEBUG << "peerconnection read " << packet->length() << " bytes";
-        int err =
-            pc->ProcessPacket(StringPiece(packet->data(), packet->length()));
-        if (err < 0) {
-            LOG_ERROR << "peerconnection error";
-            break;
+        auto packets = pc->AsyncRead();
+        for (auto& packet : packets) {
+            LOG_DEBUG << "peerconnection read " << packet->length() << " bytes";
+            int err = pc->ProcessPacket(
+                StringPiece(packet->data(), packet->length()));
+            if (err < 0) {
+                LOG_ERROR << "peerconnection error";
+                return;
+            }
         }
     }
 }

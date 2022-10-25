@@ -21,6 +21,8 @@ namespace runtime
 class EventLoop  // noncopyable
 {
 public:  // types and constant
+    friend class AsyncPark;
+
     using FunctionCallBack = std::function<void()>;
 
     static const int kRoutinePoolSize = 10000;
@@ -34,8 +36,9 @@ public:  // special function
 
 public:  // normal function
     void Start();
-    // 添加并启动一个协程
-    void Do(RoutineCallBack func);
+
+    // 添加并启动一个新的协程
+    void Do(RoutineCallBack func, string routine_name = "baize-routine");
 
     void EnablePoll(AsyncPark* park);
     void DisablePoll(AsyncPark* park);
@@ -44,6 +47,8 @@ public:  // normal function
     void AddTimer(time::Timer* timer) { time_wheel_->AddTimer(timer); }
     void DelTimer(time::Timer* timer) { time_wheel_->DelTimer(timer); }
 
+private:
+    void RunRoutineInLoop(Routine* routine);
     void RunInLoop(FunctionCallBack func);
 
 private:

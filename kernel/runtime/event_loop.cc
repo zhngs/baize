@@ -92,9 +92,17 @@ void EventLoop::Start()
     }
 }
 
-void EventLoop::Do(RoutineCallBack func)
+void EventLoop::Do(RoutineCallBack func, string routine_name)
 {
-    RunInLoop([this, func] { routine_pool_->Start(func); });
+    RunInLoop([this, func, routine_name] {
+        routine_pool_->Start(func, routine_name);
+    });
+}
+
+void EventLoop::RunRoutineInLoop(Routine* routine)
+{
+    if (routine == nullptr) return;
+    RunInLoop([routine] { routine->Call(); });
 }
 
 void EventLoop::EnablePoll(AsyncPark* park)
@@ -108,7 +116,7 @@ void EventLoop::EnablePoll(AsyncPark* park)
 void EventLoop::DisablePoll(AsyncPark* park)
 {
     epoll_event ev;
-    MemZero(&ev, sizeof(ev));
+    MemoryZero(&ev, sizeof(ev));
     EpollControl(epollfd_, EPOLL_CTL_DEL, park->fd(), &ev);
 }
 

@@ -34,14 +34,14 @@ namespace net
 InetAddress::InetAddress(const char* ip, uint16_t port, bool ipv6)
 {
     if (ipv6 || strchr(ip, ':')) {
-        MemZero(&addr6_, sizeof(addr6_));
+        MemoryZero(&addr6_, sizeof(addr6_));
         addr6_.sin6_family = AF_INET6;
         addr6_.sin6_port = HostToNetwork16(port);
         if (::inet_pton(AF_INET6, ip, &addr6_.sin6_addr) <= 0) {
             LOG_SYSERR << "inet_pton failed";
         }
     } else {
-        MemZero(&addr_, sizeof(addr_));
+        MemoryZero(&addr_, sizeof(addr_));
         addr_.sin_family = AF_INET;
         addr_.sin_port = HostToNetwork16(port);
         if (::inet_pton(AF_INET, ip, &addr_.sin_addr) <= 0) {
@@ -53,13 +53,13 @@ InetAddress::InetAddress(const char* ip, uint16_t port, bool ipv6)
 InetAddress::InetAddress(uint16_t port, bool loopback, bool ipv6)
 {
     if (ipv6) {
-        MemZero(&addr6_, sizeof(addr6_));
+        MemoryZero(&addr6_, sizeof(addr6_));
         addr6_.sin6_family = AF_INET6;
         in6_addr ip = loopback ? in6addr_loopback : in6addr_any;
         addr6_.sin6_addr = ip;
         addr6_.sin6_port = HostToNetwork16(port);
     } else {
-        MemZero(&addr_, sizeof(addr_));
+        MemoryZero(&addr_, sizeof(addr_));
         addr_.sin_family = AF_INET;
         in_addr_t ip = loopback ? INADDR_LOOPBACK : INADDR_ANY;
         addr_.sin_addr.s_addr = HostToNetwork32(ip);

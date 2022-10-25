@@ -22,11 +22,13 @@ RoutinePool::RoutinePool(int poolsize)
 
 RoutinePool::~RoutinePool() {}
 
-void RoutinePool::Start(RoutineCallBack func)
+void RoutinePool::Start(RoutineCallBack func, string routine_name)
 {
     tasks_.push_back(std::move(func));
     while (!tasks_.empty() && !free_list_.empty()) {
-        free_list_.begin()->second->Call();
+        auto& routine = free_list_.begin()->second;
+        routine->set_name(routine_name);
+        routine->Call();
     }
 }
 

@@ -25,15 +25,15 @@ void HandleSignal(int signum)
 void TakeOverSignal()
 {
     struct sigaction sa_user;
-    MemZero(&sa_user, sizeof(sa_user));
+    MemoryZero(&sa_user, sizeof(sa_user));
     sa_user.sa_handler = HandleSignal;
 
     struct sigaction sa_ignore;
-    MemZero(&sa_ignore, sizeof(sa_ignore));
+    MemoryZero(&sa_ignore, sizeof(sa_ignore));
     sa_ignore.sa_handler = SIG_IGN;
 
     struct sigaction sa_default;
-    MemZero(&sa_default, sizeof(sa_default));
+    MemoryZero(&sa_default, sizeof(sa_default));
     sa_default.sa_handler = SIG_DFL;
 
     sigaction(SIGUSR1, &sa_user, nullptr);

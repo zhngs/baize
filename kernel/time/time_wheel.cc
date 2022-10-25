@@ -12,7 +12,7 @@ TimeWheel::Uptr TimeWheel::New() { return std::make_unique<TimeWheel>(); }
 
 TimeWheel::TimeWheel()
 {
-    MemZero(time_wheel_, sizeof(time_wheel_));
+    MemoryZero(time_wheel_, sizeof(time_wheel_));
     last_ms_ = Timestamp::Now().ms();
 }
 

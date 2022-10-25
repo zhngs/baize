@@ -52,7 +52,7 @@ baize 的核心源代码在 kernel 下，分为如下目录：
 - runtime，协程调度核心
 - process，进程方面的封装，如接管信号，将程序变为守护进程
 - thread，线程能力以及同步原语
-- time，时间戳和 timerfd 功能
+- time，时间轮功能
 - util，实用功能代码
 
 其他目录不是核心代码：

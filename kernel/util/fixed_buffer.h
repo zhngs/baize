@@ -31,7 +31,7 @@ public:
     void add(size_t len) { cur_ += len; }
 
     void reset() { cur_ = data_; }
-    void bzero() { MemZero(data_, sizeof(data_)); }
+    void bzero() { MemoryZero(data_, sizeof(data_)); }
 
     string AsString() const { return string(data_, length()); }
 

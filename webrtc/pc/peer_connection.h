@@ -25,7 +25,8 @@ class PeerConnection  // noncopyable
 {
 public:  // types and constant
     friend class WebRTCServer;
-    using Packet = MTUBufferPool::PacketUptr;
+    using PacketUptr = MTUBufferPool::PacketUptr;
+    using PacketUptrVector = std::vector<PacketUptr>;
 
 public:  // special function
     PeerConnection(UdpStreamSptr stream, InetAddress addr, void* arg = nullptr);
@@ -34,7 +35,7 @@ public:  // special function
     PeerConnection& operator=(const PeerConnection&) = delete;
 
 public:  // normal function
-    Packet AsyncRead();
+    PacketUptrVector AsyncRead();
     int AsyncWrite(StringPiece packet);
     int ProcessPacket(StringPiece packet);
 
@@ -45,7 +46,7 @@ private:
     UdpStreamSptr stream_;
     InetAddress addr_;
     void* ext_arg_;
-    std::vector<Packet> packets_;
+    std::vector<PacketUptr> packets_;
 
     IceServerUptr ice_;
     DtlsTransportUptr dtls_;

@@ -39,7 +39,7 @@ public:  // type
         uint32_t timestamp;
         uint32_t ssrc;
 
-        Header() { MemZero(this, sizeof(*this)); }
+        Header() { MemoryZero(this, sizeof(*this)); }
     };
 
     struct HeaderExtension {
@@ -47,7 +47,7 @@ public:  // type
         uint16_t length;
         uint8_t value[0];
 
-        HeaderExtension() { MemZero(this, sizeof(*this)); }
+        HeaderExtension() { MemoryZero(this, sizeof(*this)); }
     };
 
     struct OneByteExtension {
@@ -60,7 +60,7 @@ public:  // type
 #endif
         uint8_t value[0];
 
-        OneByteExtension() { MemZero(this, sizeof(*this)); }
+        OneByteExtension() { MemoryZero(this, sizeof(*this)); }
     };
 
     struct TwoBytesExtension {
@@ -68,7 +68,7 @@ public:  // type
         uint8_t len;
         uint8_t value[0];
 
-        TwoBytesExtension() { MemZero(this, sizeof(*this)); }
+        TwoBytesExtension() { MemoryZero(this, sizeof(*this)); }
     };
 #pragma pack()
 

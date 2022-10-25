@@ -39,7 +39,7 @@ int UdpStream::SendTo(const void* buf, int len, const InetAddress& addr)
 
 int UdpStream::RecvFrom(void* buf, int len, InetAddress* addr)
 {
-    MemZero(addr, sizeof(InetAddress));
+    MemoryZero(addr, sizeof(InetAddress));
     ssize_t rn = conn_->RecvFrom(buf, len, addr);
     return static_cast<int>(rn);
 }
@@ -66,7 +66,7 @@ int UdpStream::AsyncSendto(const void* buf, int len, const InetAddress& addr)
 
 int UdpStream::AsyncRecvFrom(void* buf, int len, InetAddress* addr)
 {
-    MemZero(addr, sizeof(InetAddress));
+    MemoryZero(addr, sizeof(InetAddress));
     while (1) {
         async_park_.CheckTicks();
         ssize_t rn = conn_->RecvFrom(buf, len, addr);
@@ -88,7 +88,7 @@ int UdpStream::AsyncRecvFrom(void* buf, int len, InetAddress* addr)
 int UdpStream::AsyncRecvFrom(
     void* buf, int len, InetAddress* addr, int ms, bool& timeout)
 {
-    MemZero(addr, sizeof(InetAddress));
+    MemoryZero(addr, sizeof(InetAddress));
     while (1) {
         async_park_.CheckTicks();
         ssize_t rn = conn_->RecvFrom(buf, len, addr);

@@ -23,11 +23,12 @@ class Routine  // noncopyable
 public:  // types and constant
     static const uint64_t kMainRoutineId = 0;
     static const int kRoutineTicks = 10;
-    static const int kStackSize = 128 * 1024;
+    static const int kStackSize = 1024 * 1024;
 
 public:  // special function
-    // routine cannot be nested
-    explicit Routine(RoutineCallBack func, int stacksize = kStackSize);
+    explicit Routine(RoutineCallBack func,
+                     string name = "routine",
+                     int stacksize = kStackSize);
     ~Routine();
     Routine(const Routine&) = delete;
     Routine& operator=(const Routine&) = delete;
@@ -36,13 +37,16 @@ public:  // normal fucntion
     void Call();
     void Return();
     void Return(int ms, bool& timeout);
+
     bool Tick();
 
     // getter
     uint64_t routineid() { return routineid_; };
+    string name() { return routine_name_; }
 
     // setter
-    void set_ticks(int ticks) { ticks_max_ = ticks; }
+    void set_name(string name) { routine_name_ = name; }
+    void set_max_ticks(int ticks) { ticks_max_ = ticks; }
 
 private:  // private normal function
     int OnTimer();
@@ -52,6 +56,7 @@ private:
     std::unique_ptr<RoutineImpl> routine_impl_;
 
     uint64_t routineid_;
+    string routine_name_;
 
     int ticks_max_ = kRoutineTicks;
     int ticks_now_ = 0;
@@ -64,7 +69,8 @@ private:
  * global function
  */
 Routine* current_routine();
-uint64_t current_routineid();
+RoutineId current_routineid();
+string current_routine_name();
 bool is_main_routine();
 
 }  // namespace runtime

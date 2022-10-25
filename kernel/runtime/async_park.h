@@ -23,7 +23,9 @@ public:  // normal function
     void WatiWrite();
     void WaitRead(int ms, bool& timeout);
     void WatiWrite(int ms, bool& timeout);
+
     void CheckTicks();
+
     void Schedule(uint32_t events);
     void ScheduleRead();
     void ScheduleWrite();

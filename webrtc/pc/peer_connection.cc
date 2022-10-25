@@ -19,16 +19,15 @@ PeerConnection::PeerConnection(UdpStreamSptr stream,
 
 PeerConnection::~PeerConnection() {}
 
-PeerConnection::Packet PeerConnection::AsyncRead()
+PeerConnection::PacketUptrVector PeerConnection::AsyncRead()
 {
     while (1) {
+        // do not to check ticks
         if (packets_.empty()) {
             async_park_.WaitRead();
             continue;
         }
-        Packet packet = std::move(packets_.back());
-        packets_.pop_back();
-        return std::move(packet);
+        return std::move(packets_);
     }
 }
 

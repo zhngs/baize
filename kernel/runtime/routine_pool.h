@@ -22,7 +22,7 @@ public:  // special fucntion
     RoutinePool& operator=(const RoutinePool&) = delete;
 
 public:  // normal function
-    void Start(RoutineCallBack func);
+    void Start(RoutineCallBack func, string routine_name);
 
 private:  // private normal function
     void RoutineProcess();

@@ -15,10 +15,9 @@ namespace runtime
 /**
  * global variable
  */
-thread_local boost::context::continuation tg_main_routine;
-thread_local uint64_t tg_current_routineid = Routine::kMainRoutineId;
 thread_local Routine* tg_current_routine = nullptr;
-thread_local uint64_t tg_routineid = Routine::kMainRoutineId + 1;
+
+thread_local uint64_t tg_routineid_counter = Routine::kMainRoutineId + 1;
 
 class Routine::RoutineImpl
 {
@@ -35,15 +34,15 @@ public:
             std::allocator_arg,
             salloc,
             [this](boost::context::continuation&& routine) {
-                tg_main_routine = routine.resume();  // return to main routine
+                main_routine_ = routine.resume();  // return to main routine
 
                 cb_();
                 // 提前释放function内存储的资源
                 cb_ = RoutineCallBack();
 
                 finished_ = true;
-                tg_current_routineid = kMainRoutineId;
-                return std::move(tg_main_routine);
+                tg_current_routine = nullptr;
+                return std::move(main_routine_);
             });
     }
 
@@ -56,15 +55,26 @@ public:
         routine_ = routine_.resume();
     }
 
+    void Return()
+    {
+        if (finished_) {
+            LOG_ERROR << "Routine has finished";
+            return;
+        }
+        main_routine_ = main_routine_.resume();
+    }
+
 public:
     bool finished_;
     RoutineCallBack cb_;
     boost::context::continuation routine_;
+    boost::context::continuation main_routine_;
 };
 
-Routine::Routine(RoutineCallBack func, int stacksize)
+Routine::Routine(RoutineCallBack func, string name, int stacksize)
   : routine_impl_(std::make_unique<RoutineImpl>(func, stacksize)),
-    routineid_(tg_routineid++),
+    routineid_(tg_routineid_counter++),
+    routine_name_(name),
     timer_([this] { return OnTimer(); })
 {
     LOG_TRACE << "create routine" << routineid_;
@@ -90,9 +100,11 @@ void Routine::Call()
     }
     LOG_TRACE << "<<<<<<<<<< call routine" << routineid_;
 
-    tg_current_routineid = routineid_;
-    tg_current_routine = this;
+    /* last routine */
+    /**************************************************************/
+    /* next routine */
 
+    tg_current_routine = this;
     routine_impl_->Call();
 }
 
@@ -101,12 +113,14 @@ void Routine::Return()
     if (is_main_routine()) {
         LOG_FATAL << "Return can't be called by main routine";
     }
-    LOG_TRACE << ">>>>>>>>>> exit routine" << tg_current_routineid;
+    LOG_TRACE << ">>>>>>>>>> exit routine" << routineid_;
+
+    /* last routine */
+    /**************************************************************/
+    /* next routine */
 
     tg_current_routine = nullptr;
-    tg_current_routineid = Routine::kMainRoutineId;
-
-    tg_main_routine = tg_main_routine.resume();
+    routine_impl_->Return();
 }
 
 void Routine::Return(int ms, bool& timeout)
@@ -128,14 +142,17 @@ int Routine::OnTimer()
 /**
  * free function
  */
-uint64_t current_routineid() { return tg_current_routineid; }
+uint64_t current_routineid()
+{
+    return current_routine() ? current_routine()->routineid()
+                             : Routine::kMainRoutineId;
+}
+
+string current_routine_name() { return current_routine()->name(); }
 
 Routine* current_routine() { return tg_current_routine; }
 
-bool is_main_routine()
-{
-    return tg_current_routineid == Routine::kMainRoutineId;
-}
+bool is_main_routine() { return current_routine() == nullptr; }
 
 }  // namespace runtime
 

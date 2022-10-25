@@ -18,9 +18,9 @@ namespace baize
 #define BAIZE_BIG_ENDIAN
 #endif
 
-using std::string;
+using string = std::string;
 
-inline void MemZero(void* p, size_t n) { memset(p, 0, n); }
+inline void MemoryZero(void* p, size_t n) { memset(p, 0, n); }
 
 /**
  * Host Byte Order to Net Byte order

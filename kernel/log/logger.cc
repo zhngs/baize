@@ -56,8 +56,9 @@ Logger::Logger(const char* filename,
 Logger::~Logger()
 {
     stream_ << " - " << filename_ << ":" << line_ << ":" << func_ << " - "
-            << "routine" << runtime::current_routineid() << " - "
-            << thread::threadname() << ":" << thread::tidstring() << "\n";
+            << runtime::current_routine_name() << ":"
+            << runtime::current_routineid() << " - " << thread::threadname()
+            << ":" << thread::tidstring() << "\n";
     g_output(stream_.buffer(), stream_.length());
     if (level_ == FATAL) {
         g_flush();
