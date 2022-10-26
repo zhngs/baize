@@ -31,19 +31,6 @@ UdpStreamSptr UdpStream::AsServer(uint16_t port)
 
 UdpStreamSptr UdpStream::AsClient() { return std::make_shared<UdpStream>(); }
 
-int UdpStream::SendTo(const void* buf, int len, const InetAddress& addr)
-{
-    ssize_t wn = conn_->SendTo(buf, len, addr);
-    return static_cast<int>(wn);
-}
-
-int UdpStream::RecvFrom(void* buf, int len, InetAddress* addr)
-{
-    MemoryZero(addr, sizeof(InetAddress));
-    ssize_t rn = conn_->RecvFrom(buf, len, addr);
-    return static_cast<int>(rn);
-}
-
 int UdpStream::AsyncSendto(const void* buf, int len, const InetAddress& addr)
 {
     while (1) {

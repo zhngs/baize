@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "net/mtu_buffer_pool.h"
+#include "net/net_buffer_pool.h"
 #include "webrtc/pc/peer_connection.h"
 #include "webrtc/pc/webrtc_settings.h"
 
@@ -36,7 +36,7 @@ private:  // private normal function
 private:
     UdpStreamSptr stream_;
     RoomMap connections_;
-    MTUBufferPool buffers_;
+    BufferPool buffers_;
 };
 
 }  // namespace net

@@ -37,10 +37,10 @@ public:  // normal function
     int Accept(InetAddress* peeraddr);
     void ShutdownWrite();
 
-    ssize_t Read(void* buf, size_t count);
-    ssize_t Write(const void* buf, size_t count);
-    ssize_t SendTo(const void* buf, size_t count, const InetAddress& addr);
-    ssize_t RecvFrom(void* buf, size_t count, InetAddress* addr);
+    int Read(void* buf, size_t count);
+    int Write(const void* buf, size_t count);
+    int SendTo(const void* buf, size_t count, const InetAddress& addr);
+    int RecvFrom(void* buf, size_t count, InetAddress* addr);
 
     // getter
     int sockfd() const { return sockfd_; }

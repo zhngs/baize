@@ -1,7 +1,7 @@
 #ifndef BAIZE_PEER_CONNECTION_H_
 #define BAIZE_PEER_CONNECTION_H_
 
-#include "net/mtu_buffer_pool.h"
+#include "net/net_buffer_pool.h"
 #include "net/udp_stream.h"
 #include "runtime/event_loop.h"
 #include "webrtc/dtls/dtls_transport.h"
@@ -25,7 +25,8 @@ class PeerConnection  // noncopyable
 {
 public:  // types and constant
     friend class WebRTCServer;
-    using PacketUptr = MTUBufferPool::PacketUptr;
+
+    using PacketUptr = BufferPool::BufferUptr;
     using PacketUptrVector = std::vector<PacketUptr>;
 
 public:  // special function

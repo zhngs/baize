@@ -20,11 +20,11 @@ PeerConnectionSptr WebRTCServer::Accept()
     InetAddress peeraddr;
 
     while (1) {
-        LOG_DEBUG << "MTUBufferPool size:" << buffers_.size();
+        LOG_DEBUG << "BufferPool size:" << buffers_.size();
 
-        auto buf = buffers_.AllocMTUBuffer();
-        int rn =
-            stream_->AsyncRecvFrom(buf->data(), buf->capacity(), &peeraddr);
+        auto buf = buffers_.AllocBuffer();
+        int rn = stream_->AsyncRecvFrom(
+            buf->write_index(), buf->writable_bytes(), &peeraddr);
 
         if (rn < 0) {
             LOG_ERROR << "webrtc server accept failed";
@@ -32,7 +32,7 @@ PeerConnectionSptr WebRTCServer::Accept()
         }
         LOG_DEBUG << "recvfrom " << peeraddr.ip_port() << " " << rn << " bytes";
 
-        buf->add(rn);
+        buf->AddReadableLength(rn);
 
         string remote = peeraddr.ip_port();
         if (connections_.find(remote) != connections_.end()) {

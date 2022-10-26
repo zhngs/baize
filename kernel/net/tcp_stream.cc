@@ -18,25 +18,15 @@ TcpStream::TcpStream(int fd, InetAddress peeraddr)
 
 TcpStream::~TcpStream() {}
 
-ssize_t TcpStream::Read(void* buf, size_t count)
-{
-    return conn_->Read(buf, count);
-}
-
-ssize_t TcpStream::Write(const void* buf, size_t count)
-{
-    return conn_->Write(buf, count);
-}
-
 void TcpStream::ShutdownWrite() { return conn_->ShutdownWrite(); }
 
 void TcpStream::set_tcp_nodelay() { conn_->set_tcp_nodelay(true); }
 
-int TcpStream::AsyncRead(void* buf, size_t count)
+int TcpStream::AsyncRead(void* buf, int count)
 {
     while (1) {
         async_park_.CheckTicks();
-        ssize_t rn = conn_->Read(buf, count);
+        int rn = conn_->Read(buf, count);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -48,15 +38,15 @@ int TcpStream::AsyncRead(void* buf, size_t count)
             }
             errno = saveErrno;
         }
-        return static_cast<int>(rn);
+        return rn;
     }
 }
 
-int TcpStream::AsyncRead(void* buf, size_t count, int ms, bool& timeout)
+int TcpStream::AsyncRead(void* buf, int count, int ms, bool& timeout)
 {
     while (1) {
         async_park_.CheckTicks();
-        ssize_t rn = conn_->Read(buf, count);
+        int rn = conn_->Read(buf, count);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -68,10 +58,9 @@ int TcpStream::AsyncRead(void* buf, size_t count, int ms, bool& timeout)
             } else {
                 LOG_SYSERR << "async read failed";
             }
-
             errno = saveErrno;
         }
-        return static_cast<int>(rn);
+        return rn;
     }
 }
 
@@ -118,13 +107,13 @@ int TcpStream::AsyncRead(Buffer& buf, int ms, bool& timeout)
     }
 }
 
-int TcpStream::AsyncWrite(const void* buf, size_t count)
+int TcpStream::AsyncWrite(const void* buf, int count)
 {
-    ssize_t ret = 0;
+    int ret = 0;
     while (1) {
         async_park_.CheckTicks();
         errno = 0;
-        ssize_t wn = conn_->Write(buf, count);
+        int wn = conn_->Write(buf, count);
         if (wn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -137,7 +126,7 @@ int TcpStream::AsyncWrite(const void* buf, size_t count)
             errno = saveErrno;
         } else if (wn == 0 && errno != 0) {
             LOG_SYSERR << "async write failed";
-        } else if (static_cast<size_t>(wn) < count) {
+        } else if (wn < count) {
             buf = static_cast<const char*>(buf) + wn;
             count -= wn;
 
@@ -146,7 +135,7 @@ int TcpStream::AsyncWrite(const void* buf, size_t count)
         } else {
             ret += wn;
         }
-        return static_cast<int>(ret);
+        return ret;
     }
 }
 

@@ -93,9 +93,10 @@ void HandlePeerConnection(PeerConnectionSptr pc)
     while (1) {
         auto packets = pc->AsyncRead();
         for (auto& packet : packets) {
-            LOG_DEBUG << "peerconnection read " << packet->length() << " bytes";
-            int err = pc->ProcessPacket(
-                StringPiece(packet->data(), packet->length()));
+            LOG_DEBUG << "peerconnection read " << packet->readable_bytes()
+                      << " bytes";
+            int err = pc->ProcessPacket(packet->slice());
+
             if (err < 0) {
                 LOG_ERROR << "peerconnection error";
                 return;

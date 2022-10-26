@@ -31,9 +31,6 @@ public:
     UdpStream(const UdpStream&) = delete;
     UdpStream& operator=(const UdpStream&) = delete;
 
-    int SendTo(const void* buf, int len, const InetAddress& addr);
-    int RecvFrom(void* buf, int len, InetAddress* addr);
-
     int AsyncSendto(const void* buf, int len, const InetAddress& addr);
     int AsyncRecvFrom(void* buf, int len, InetAddress* addr);
     int AsyncRecvFrom(

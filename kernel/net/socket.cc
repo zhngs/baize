@@ -67,10 +67,9 @@ int Socket::Accept(InetAddress* peeraddr)
             case EAGAIN:
             case ECONNABORTED:
             case EINTR:
-            case EPROTO:  // ???
+            case EPROTO:
             case EPERM:
-            case EMFILE:  // per-process lmit of open file desctiptor ???
-                // expected errors
+            case EMFILE:
                 errno = savedErrno;
                 break;
             case EBADF:
@@ -81,7 +80,6 @@ int Socket::Accept(InetAddress* peeraddr)
             case ENOMEM:
             case ENOTSOCK:
             case EOPNOTSUPP:
-                // unexpected errors
                 LOG_FATAL << "unexpected error of ::accept " << savedErrno;
                 break;
             default:
@@ -103,22 +101,23 @@ void Socket::ShutdownWrite()
     }
 }
 
-ssize_t Socket::Read(void* buf, size_t count)
+int Socket::Read(void* buf, size_t count)
 {
-    return ::read(sockfd_, buf, count);
+    return static_cast<int>(::read(sockfd_, buf, count));
 }
 
-ssize_t Socket::Write(const void* buf, size_t count)
+int Socket::Write(const void* buf, size_t count)
 {
-    return ::write(sockfd_, buf, count);
+    return static_cast<int>(::write(sockfd_, buf, count));
 }
 
-ssize_t Socket::SendTo(const void* buf, size_t count, const InetAddress& addr)
+int Socket::SendTo(const void* buf, size_t count, const InetAddress& addr)
 {
-    return ::sendto(sockfd_, buf, count, 0, addr.sockaddr(), addr.socklen());
+    return static_cast<int>(
+        ::sendto(sockfd_, buf, count, 0, addr.sockaddr(), addr.socklen()));
 }
 
-ssize_t Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
+int Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
 {
     sockaddr_in6 addr6;
     MemoryZero(&addr6, sizeof(addr6));
@@ -128,7 +127,7 @@ ssize_t Socket::RecvFrom(void* buf, size_t count, InetAddress* addr)
     if (rn > 0) {
         *addr = InetAddress(addr6);
     }
-    return rn;
+    return static_cast<int>(rn);
 }
 
 void Socket::set_tcp_nodelay(bool on)

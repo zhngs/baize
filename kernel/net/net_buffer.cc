@@ -62,6 +62,16 @@ void Buffer::Append(const void* data, int len)
     }
 }
 
+void Buffer::AddReadableLength(int len)
+{
+    if (len > 0) {
+        EnsureWritableBytes(len);
+        writer_index_ += len;
+    } else if (len < 0) {
+        LOG_ERROR << "len less than zero";
+    }
+}
+
 void Buffer::Take(int len)
 {
     if (len > 0) {

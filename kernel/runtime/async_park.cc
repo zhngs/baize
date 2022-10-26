@@ -60,14 +60,7 @@ void AsyncPark::CheckTicks()
 {
     assert(!is_main_routine());
     if (current_routine()->Tick()) {
-        Routine* routine = current_routine();
-        current_loop()->RunInLoop([routine] {
-            if (routine == nullptr) {
-                LOG_FATAL << "routine is null";
-            }
-            LOG_TRACE << "call by CheckTicks";
-            routine->Call();
-        });
+        current_loop()->RunRoutineInLoop(current_routine());
         current_routine()->Return();
     }
 }

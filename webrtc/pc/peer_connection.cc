@@ -22,7 +22,6 @@ PeerConnection::~PeerConnection() {}
 PeerConnection::PacketUptrVector PeerConnection::AsyncRead()
 {
     while (1) {
-        // do not to check ticks
         if (packets_.empty()) {
             async_park_.WaitRead();
             continue;

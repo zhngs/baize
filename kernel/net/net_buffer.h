@@ -23,7 +23,7 @@ class Buffer  // copyable
 {
 public:  // types and constant
     static const int kCheapPrepend = 8;
-    static const int kInitialSize = 1024;
+    static const int kInitialSize = 1500 + 8;
 
 public:  // special function
     explicit Buffer(int initialSize = kInitialSize);
@@ -39,11 +39,12 @@ public:  // normal function
     void Append(uint32_t v) { Append(&v, sizeof(v)); }
     void Append(uint64_t v) { Append(&v, sizeof(v)); }
 
+    void AddReadableLength(int len);
+
     // take
     void Take(int len);
     void TakeAll();
     void TakeUntil(const char* pos);
-    void TakeCrossSpace();
     char TakeChar();
 
     // getter
