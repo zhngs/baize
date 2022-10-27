@@ -35,7 +35,7 @@ int UdpStream::AsyncSendto(const void* buf, int len, const InetAddress& addr)
 {
     while (1) {
         async_park_.CheckTicks();
-        ssize_t wn = conn_->SendTo(buf, len, addr);
+        int wn = conn_->SendTo(buf, len, addr);
         if (wn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -47,7 +47,7 @@ int UdpStream::AsyncSendto(const void* buf, int len, const InetAddress& addr)
             }
             errno = saveErrno;
         }
-        return static_cast<int>(wn);
+        return wn;
     }
 }
 
@@ -56,7 +56,7 @@ int UdpStream::AsyncRecvFrom(void* buf, int len, InetAddress* addr)
     MemoryZero(addr, sizeof(InetAddress));
     while (1) {
         async_park_.CheckTicks();
-        ssize_t rn = conn_->RecvFrom(buf, len, addr);
+        int rn = conn_->RecvFrom(buf, len, addr);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -68,7 +68,7 @@ int UdpStream::AsyncRecvFrom(void* buf, int len, InetAddress* addr)
             }
             errno = saveErrno;
         }
-        return static_cast<int>(rn);
+        return rn;
     }
 }
 
@@ -78,7 +78,7 @@ int UdpStream::AsyncRecvFrom(
     MemoryZero(addr, sizeof(InetAddress));
     while (1) {
         async_park_.CheckTicks();
-        ssize_t rn = conn_->RecvFrom(buf, len, addr);
+        int rn = conn_->RecvFrom(buf, len, addr);
         if (rn < 0) {
             int saveErrno = errno;
             if (errno == EINTR) continue;
@@ -92,7 +92,7 @@ int UdpStream::AsyncRecvFrom(
             }
             errno = saveErrno;
         }
-        return static_cast<int>(rn);
+        return rn;
     }
 }
 

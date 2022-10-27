@@ -1,6 +1,7 @@
 #include "webrtc/ice/ice_server.h"
 
 #include "log/logger.h"
+#include "webrtc/pc/peer_connection.h"
 
 namespace baize
 {
@@ -8,11 +9,9 @@ namespace baize
 namespace net
 {
 
-IceServer::Uptr IceServer::New(string password,
-                               UdpStreamSptr stream,
-                               InetAddress addr)
+IceServer::Uptr IceServer::New(PeerConnection* pc, string password)
 {
-    return std::make_unique<IceServer>(password, stream, addr);
+    return std::make_unique<IceServer>(pc, password);
 }
 
 IceServer::~IceServer() {}
@@ -56,14 +55,13 @@ void IceServer::ProcessStunPacket(StringPiece stun_packet)
             rsp.set_class(StunPacket::Class::SUCCESS_RESPONSE);
             rsp.set_method(StunPacket::Method::BINDING);
             rsp.set_transaction_id(packet.transaction_id());
-            rsp.set_xor_mapped_address(dest_addr_);
+            rsp.set_xor_mapped_address(pc_->addr());
             rsp.set_password(ice_password_);
 
             send_buf_.TakeAll();
             rsp.Pack(send_buf_);
 
-            stream_->AsyncSendto(
-                send_buf_.read_index(), send_buf_.readable_bytes(), dest_addr_);
+            pc_->AsyncSend(send_buf_.slice());
 
             if (packet.has_use_candidate()) state_ = IceState::CONNECTED;
 

@@ -17,6 +17,12 @@ class WebRTCServer  // noncopyable
 {
 public:  // type
     using RoomMap = std::map<string, PeerConnectionWptr>;
+    using PacketUptr = BufferPool::BufferUptr;
+
+    struct Message {
+        InetAddress addr;
+        Buffer packet;
+    };
 
 public:  // special function
     WebRTCServer(uint16_t port);
@@ -26,6 +32,7 @@ public:  // special function
 
 public:  // normal function
     PeerConnectionSptr Accept();
+    void AsyncSend(InetAddress addr, StringPiece packet);
 
     // getter
     RoomMap& room() { return connections_; }
@@ -37,6 +44,7 @@ private:
     UdpStreamSptr stream_;
     RoomMap connections_;
     BufferPool buffers_;
+    std::vector<Message> send_messages_;
 };
 
 }  // namespace net

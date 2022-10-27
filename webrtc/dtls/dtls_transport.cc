@@ -1,6 +1,7 @@
 #include "webrtc/dtls/dtls_transport.h"
 
 #include "log/logger.h"
+#include "webrtc/pc/peer_connection.h"
 
 namespace baize
 {
@@ -28,12 +29,9 @@ bool DtlsTransport::IsDtls(StringPiece packet)
     return ((len >= 13) && (data[0] > 19 && data[0] < 64));
 }
 
-DtlsTransport::Uptr DtlsTransport::New(SSL_CTX* ctx,
-                                       UdpStreamSptr stream,
-                                       InetAddress& addr)
+DtlsTransport::Uptr DtlsTransport::New(PeerConnection* pc, SSL_CTX* ctx)
 {
-    Uptr dtls_trans = std::make_unique<DtlsTransport>(ctx, stream);
-    dtls_trans->addr_ = &addr;
+    Uptr dtls_trans = std::make_unique<DtlsTransport>(pc, ctx);
 
     dtls_trans->ssl_ = SSL_new(ctx);
     if (dtls_trans->ssl_ == nullptr) {
@@ -126,8 +124,8 @@ void DtlsTransport::OnSslInfo(int where, int ret)
     }
 }
 
-DtlsTransport::DtlsTransport(SSL_CTX* ctx, UdpStreamSptr stream)
-  : ctx_(ctx), stream_(stream), timer_([this] { return HandleTimeout(); })
+DtlsTransport::DtlsTransport(PeerConnection* pc, SSL_CTX* ctx)
+  : pc_(pc), ctx_(ctx), timer_([this] { return HandleTimeout(); })
 {
 }
 
@@ -304,7 +302,7 @@ void DtlsTransport::SendBioData()
     read = BIO_get_mem_data(bio_write_, &data);
     if (read <= 0) return;
 
-    stream_->AsyncSendto(data, static_cast<int>(read), *addr_);
+    pc_->AsyncSend(StringPiece(data, static_cast<int>(read)));
     LOG_INFO << read << " bytes of DTLS data ready to sent to the peer";
 
     (void)BIO_reset(bio_write_);

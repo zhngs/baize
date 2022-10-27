@@ -47,7 +47,7 @@ void RoutinePool::RoutineProcess()
         free_list_.erase(id);
 
         func();
-        LOG_TRACE << "routine " << id << " func done";
+        LOG_INFO << "routine " << id << " func done";
         func = RoutineCallBack();
 
         free_list_.insert({id, std::move(active_list_[id])});

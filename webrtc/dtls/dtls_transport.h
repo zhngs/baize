@@ -18,6 +18,8 @@ namespace net
 class DtlsTransport;
 using DtlsTransportUptr = std::unique_ptr<DtlsTransport>;
 
+class PeerConnection;
+
 class DtlsTransport  // noncopyable
 {
 public:
@@ -26,10 +28,10 @@ public:
     enum class Role { CLIENT = 1, SERVER };
 
     // factory
-    static Uptr New(SSL_CTX* ctx, UdpStreamSptr stream, InetAddress& addr);
+    static Uptr New(PeerConnection* pc, SSL_CTX* ctx);
     static bool IsDtls(StringPiece packet);
 
-    DtlsTransport(SSL_CTX* ctx, UdpStreamSptr stream);
+    DtlsTransport(PeerConnection* pc, SSL_CTX* ctx);
     ~DtlsTransport();
     DtlsTransport(const DtlsTransport&) = delete;
     DtlsTransport& operator=(const DtlsTransport&) = delete;
@@ -52,13 +54,12 @@ private:
     bool CheckStatus(int ret);
     bool ExtractSrtpKey();
 
+    PeerConnection* pc_;
+
     SSL_CTX* ctx_ = nullptr;
     SSL* ssl_ = nullptr;
     BIO* bio_read_ = nullptr;   // The BIO from which ssl reads.
     BIO* bio_write_ = nullptr;  // The BIO in which ssl writes.
-
-    UdpStreamSptr stream_;
-    InetAddress* addr_;
 
     DtlsState state_ = DtlsState::NEW;
     Role role_;

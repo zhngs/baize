@@ -42,6 +42,7 @@ public:
     // getter
     int sockfd();
     string peer_ip_port();
+    SocketUptr& socket() { return conn_; }
     runtime::AsyncPark& async_park() { return async_park_; }
 
     // setter

@@ -92,7 +92,8 @@ void discard_client()
     g_last_time = Timestamp::Now();
 
     while (1) {
-        int wn = stream->AsyncWrite(message.c_str(), message.size());
+        int wn = stream->AsyncWrite(message.c_str(),
+                                    static_cast<int>(message.size()));
         if (wn != static_cast<int>(message.size())) break;
         g_sendbytes += wn;
     }

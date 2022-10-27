@@ -39,6 +39,7 @@ public:
     // getter
     InetAddress localaddr();
     int sockfd() { return conn_->sockfd(); }
+    SocketUptr& socket() { return conn_; }
 
 private:
     InetAddress bindaddr_;

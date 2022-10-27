@@ -83,7 +83,8 @@ void SignalServer()
     while (1) {
         auto stream = listener.AsyncAccept();
         runtime::current_loop()->Do(
-            [stream, &config] { HttpConnection(stream, config); });
+            [stream, &config] { HttpConnection(stream, config); },
+            std::string("http") + stream->peer_ip_port());
     }
 }
 
@@ -91,7 +92,14 @@ void HandlePeerConnection(PeerConnectionSptr pc)
 {
     LOG_INFO << "peerconnection start";
     while (1) {
-        auto packets = pc->AsyncRead();
+        bool timeout = false;
+        auto packets = pc->AsyncRead(5000, timeout);
+
+        if (timeout) {
+            LOG_INFO << "pc timeout";
+            break;
+        }
+
         for (auto& packet : packets) {
             LOG_DEBUG << "peerconnection read " << packet->readable_bytes()
                       << " bytes";
@@ -110,7 +118,11 @@ void MediaServer()
     WebRTCServer server(6061);
     while (1) {
         PeerConnectionSptr pc = server.Accept();
-        runtime::current_loop()->Do([pc] { HandlePeerConnection(pc); });
+        if (pc) {
+            runtime::current_loop()->Do(
+                [pc] { HandlePeerConnection(pc); },
+                std::string("pc") + pc->addr().ip_port());
+        }
     }
 }
 

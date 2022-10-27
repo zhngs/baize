@@ -21,6 +21,8 @@ class PeerConnection;
 using PeerConnectionSptr = std::shared_ptr<PeerConnection>;
 using PeerConnectionWptr = std::weak_ptr<PeerConnection>;
 
+class WebRTCServer;
+
 class PeerConnection  // noncopyable
 {
 public:  // types and constant
@@ -30,23 +32,25 @@ public:  // types and constant
     using PacketUptrVector = std::vector<PacketUptr>;
 
 public:  // special function
-    PeerConnection(UdpStreamSptr stream, InetAddress addr, void* arg = nullptr);
+    PeerConnection(WebRTCServer* webrtc_server, InetAddress addr);
     ~PeerConnection();
     PeerConnection(const PeerConnection&) = delete;
     PeerConnection& operator=(const PeerConnection&) = delete;
 
 public:  // normal function
-    PacketUptrVector AsyncRead();
-    int AsyncWrite(StringPiece packet);
+    PacketUptrVector AsyncRead(int ms, bool& timeout);
+    void AsyncSend(StringPiece packet);
+
     int ProcessPacket(StringPiece packet);
+
+    const InetAddress& addr() { return addr_; }
 
 private:  // private normal function
     int ProcessRtcp(StringPiece packet);
 
 private:
-    UdpStreamSptr stream_;
+    WebRTCServer* webrtc_server_ = nullptr;
     InetAddress addr_;
-    void* ext_arg_;
     std::vector<PacketUptr> packets_;
 
     IceServerUptr ice_;

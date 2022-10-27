@@ -10,29 +10,27 @@ namespace baize
 namespace net
 {
 
-PeerConnection::PeerConnection(UdpStreamSptr stream,
-                               InetAddress addr,
-                               void* arg)
-  : stream_(stream), addr_(addr), ext_arg_(arg)
+PeerConnection::PeerConnection(WebRTCServer* webrtc_server, InetAddress addr)
+  : webrtc_server_(webrtc_server), addr_(addr)
 {
 }
 
 PeerConnection::~PeerConnection() {}
 
-PeerConnection::PacketUptrVector PeerConnection::AsyncRead()
+PeerConnection::PacketUptrVector PeerConnection::AsyncRead(int ms,
+                                                           bool& timeout)
 {
     while (1) {
         if (packets_.empty()) {
-            async_park_.WaitRead();
-            continue;
+            async_park_.WaitRead(ms, timeout);
         }
         return std::move(packets_);
     }
 }
 
-int PeerConnection::AsyncWrite(StringPiece packet)
+void PeerConnection::AsyncSend(StringPiece packet)
 {
-    return stream_->AsyncSendto(packet.data(), packet.size(), addr_);
+    webrtc_server_->AsyncSend(addr_, packet);
 }
 
 int PeerConnection::ProcessPacket(StringPiece packet)
@@ -42,7 +40,7 @@ int PeerConnection::ProcessPacket(StringPiece packet)
      */
 
     if (!ice_) {
-        ice_ = IceServer::New(WebRTCSettings::ice_password(), stream_, addr_);
+        ice_ = IceServer::New(this, WebRTCSettings::ice_password());
     }
 
     if (StunPacket::IsStun(packet)) {
@@ -60,7 +58,7 @@ int PeerConnection::ProcessPacket(StringPiece packet)
      */
 
     if (!dtls_) {
-        dtls_ = DtlsTransport::New(WebRTCSettings::dtls_ctx(), stream_, addr_);
+        dtls_ = DtlsTransport::New(this, WebRTCSettings::dtls_ctx());
         dtls_->Initialize(DtlsTransport::Role::SERVER);
     }
 
@@ -120,7 +118,7 @@ int PeerConnection::ProcessPacket(StringPiece packet)
         pli.Encode(pli_packet);
 
         srtp_send_session_->EncryptRtcp(pli_packet);
-        AsyncWrite(pli_packet);
+        AsyncSend(pli_packet);
 
         // only_once = false;
     }
@@ -158,7 +156,7 @@ int PeerConnection::ProcessPacket(StringPiece packet)
             LOG_ERROR << "decrypt rtcp err";
             return -1;
         }
-        AsyncWrite(packet);
+        AsyncSend(packet);
 
         // WebRTCServer* server = reinterpret_cast<WebRTCServer*>(ext_arg_);
         // auto room = server->room();
