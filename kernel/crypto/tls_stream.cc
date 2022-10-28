@@ -109,6 +109,28 @@ int TlsStream::AsyncRead(void* buf, int count)
     }
 }
 
+int TlsStream::AsyncRead(void* buf, int len, int ms, bool& timeout)
+{
+    while (1) {
+        stream_->async_park().CheckTicks();
+        int rn = SSL_read(ssl_, buf, len);
+        if (rn < 0) {
+            int saveErrno = errno;
+            if (errno == EINTR) continue;
+            if (errno == EAGAIN) {
+                stream_->async_park().WaitRead(ms, timeout);
+                if (!timeout) {
+                    continue;
+                }
+            } else {
+                LOG_SYSERR << "async read failed";
+            }
+            errno = saveErrno;
+        }
+        return rn;
+    }
+}
+
 int TlsStream::AsyncWrite(const void* buf, int count)
 {
     ssize_t ret = 0;

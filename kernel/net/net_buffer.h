@@ -30,6 +30,7 @@ public:  // special function
 
 public:  // normal function
     int ReadFd(int fd);
+    void AddReadableLength(int len);
 
     // append
     void Append(const StringPiece& str);
@@ -38,8 +39,6 @@ public:  // normal function
     void Append(uint16_t v) { Append(&v, sizeof(v)); }
     void Append(uint32_t v) { Append(&v, sizeof(v)); }
     void Append(uint64_t v) { Append(&v, sizeof(v)); }
-
-    void AddReadableLength(int len);
 
     // take
     void Take(int len);

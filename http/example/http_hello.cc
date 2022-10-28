@@ -8,8 +8,13 @@ using namespace baize::net;
 void HttpConnection(HttpStreamSptr stream)
 {
     while (1) {
+        bool timeout = false;
         HttpMessage req;
-        int rn = stream->AsyncRead(req);
+        int rn = stream->AsyncRead(req, 5000, timeout);
+        if (timeout) {
+            LOG_ERROR << "http read timeout";
+            break;
+        }
         if (rn <= 0) {
             LOG_ERROR << "http read failed";
             break;

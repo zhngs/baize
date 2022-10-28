@@ -27,7 +27,7 @@ public:
 
     int UpgradeHttps(SslConfig& config);
 
-    int AsyncRead(HttpMessage& message);
+    int AsyncRead(HttpMessage& message, int ms, bool& timeout);
     int AsyncWrite(HttpMessage& message);
 
 private:

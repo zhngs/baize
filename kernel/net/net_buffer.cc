@@ -64,11 +64,20 @@ void Buffer::Append(const void* data, int len)
 
 void Buffer::AddReadableLength(int len)
 {
-    if (len > 0) {
-        EnsureWritableBytes(len);
-        writer_index_ += len;
-    } else if (len < 0) {
-        LOG_ERROR << "len less than zero";
+    if (len <= 0) {
+        LOG_ERROR << "len less than or equal zero";
+        return;
+    }
+
+    EnsureWritableBytes(len);
+    writer_index_ += len;
+
+    if (writable_bytes() < 1024) {
+        if (buffer_.size() < 65536) {
+            EnsureWritableBytes(static_cast<int>(buffer_.size()));
+        } else {
+            EnsureWritableBytes(65536);
+        }
     }
 }
 

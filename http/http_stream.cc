@@ -28,7 +28,7 @@ int HttpStream::UpgradeHttps(SslConfig& config)
     }
 }
 
-int HttpStream::AsyncRead(HttpMessage& message)
+int HttpStream::AsyncRead(HttpMessage& message, int ms, bool& timeout)
 {
     while (1) {
         int parsed_len = message.Decode(read_buf_);
@@ -37,18 +37,25 @@ int HttpStream::AsyncRead(HttpMessage& message)
             return parsed_len;
         } else if (parsed_len == 0) {
             if (tls_stream_) {  // https
-                // fix me: 这里多了一次拷贝，并且不支持超时
-                char buf[1024];
-                int rn = tls_stream_->AsyncRead(buf, sizeof(buf));
+                int rn = tls_stream_->AsyncRead(read_buf_.write_index(),
+                                                read_buf_.writable_bytes(),
+                                                ms,
+                                                timeout);
+                if (timeout) {
+                    LOG_INFO << "connection " << tcp_stream_->peer_ip_port()
+                             << " timeout";
+                    return -1;
+                }
+
                 if (rn <= 0) {
                     LOG_INFO << "connection " << tcp_stream_->peer_ip_port()
                              << " read " << rn;
                     return rn;
+                } else {
+                    read_buf_.AddReadableLength(rn);
                 }
-                read_buf_.Append(buf, rn);
             } else {  // http
-                bool timeout = false;
-                int rn = tcp_stream_->AsyncRead(read_buf_, 1000 * 10, timeout);
+                int rn = tcp_stream_->AsyncRead(read_buf_, ms, timeout);
                 if (timeout) {
                     LOG_INFO << "connection " << tcp_stream_->peer_ip_port()
                              << " timeout";

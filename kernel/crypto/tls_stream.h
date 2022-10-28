@@ -28,6 +28,7 @@ public:
     TlsStream& operator=(const TlsStream&) = delete;
 
     int AsyncRead(void* buf, int len);
+    int AsyncRead(void* buf, int len, int ms, bool& timeout);
     int AsyncWrite(const void* buf, int count);
 
     // getter

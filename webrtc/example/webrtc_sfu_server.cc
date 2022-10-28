@@ -33,9 +33,17 @@ void HttpConnection(TcpStreamSptr stream, SslConfig& config)
         HttpMessage req;
         HttpMessage rsp;
 
-        int rn = http.AsyncRead(req);
-        if (rn <= 0) {
-            LOG_ERROR << "http read failed";
+        bool timeout = false;
+        int rn = http.AsyncRead(req, 5000, timeout);
+        if (timeout) {
+            LOG_ERROR << "http read timeout";
+            break;
+        }
+        if (rn == 0) {
+            LOG_ERROR << "http connection close";
+            break;
+        } else if (rn < 0) {
+            LOG_ERROR << "http connection error";
             break;
         }
 
