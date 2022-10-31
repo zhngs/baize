@@ -55,7 +55,7 @@ void HttpConnection(TcpStreamSptr stream, SslConfig& config)
             rsp.set_headers("Content-Type", "text/html; charset=utf-8");
             rsp.set_headers("Content-Length", demo_file_len);
             rsp.set_body(demo_file);
-        } else if (req_line.url.Find("pub") != req_line.url.end()) {
+        } else if (req_line.url.find("pub") != req_line.url.npos) {
             LOG_INFO << "pub body : " << req.body_;
             current_pub_sdp().set_remote_sdp(req.body_);
 
@@ -64,7 +64,7 @@ void HttpConnection(TcpStreamSptr stream, SslConfig& config)
             rsp.set_body(local_sdp);
             LOG_INFO << "body: " << rsp.body_;
 
-        } else if (req_line.url.Find("sub") != req_line.url.end()) {
+        } else if (req_line.url.find("sub") != req_line.url.npos) {
             // do nothing
         } else {
             rsp.set_response_line(sucess_rsp_line_string);

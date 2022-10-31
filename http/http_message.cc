@@ -80,7 +80,8 @@ int HttpMessage::Decode(Buffer& message)
     // 获得first_line
     const char* first_line_end = slice.Find("\r\n");
     if (first_line_end == slice.end()) return -1;
-    first_line_ = StringPiece(slice.begin(), first_line_end);
+    StringPiece first_line(slice.begin(), first_line_end);
+    first_line_ = first_line.AsString();
     slice.RemovePrefixUntil(first_line_end + 2);
 
     // 获得headers
@@ -99,7 +100,7 @@ int HttpMessage::Decode(Buffer& message)
         StringPiece value(seg + 1, header.end());
         value.TrimSpace();
 
-        headers_[key] = value;
+        headers_[key.AsString()] = value.AsString();
 
         slice.RemovePrefixUntil(header_crlf + 2);
         header_crlf = slice.Find("\r\n");
@@ -108,9 +109,9 @@ int HttpMessage::Decode(Buffer& message)
 
     // 获得body
     int before_body_len =
-        static_cast<int>(headers_end - first_line_.begin() + 4);
+        static_cast<int>(headers_end - first_line.begin() + 4);
     int body_len = parsed_len - before_body_len;
-    body_ = StringPiece(slice.begin(), body_len);
+    body_ = string(slice.begin(), body_len);
 
     message.Take(parsed_len);
 
@@ -136,7 +137,8 @@ int HttpMessage::Encode(Buffer& message)
 HttpMessage::RequestLine HttpMessage::request_line()
 {
     RequestLine req;
-    auto slice_vector = first_line_.Split(' ');
+    StringPiece first_line(first_line_);
+    auto slice_vector = first_line.Split(' ');
     if (slice_vector.size() != 3) return req;
     StringPiece method = slice_vector[0];
     if (method == "GET") {
@@ -150,14 +152,14 @@ HttpMessage::RequestLine HttpMessage::request_line()
 
     StringPiece path = slice_vector[1];
     if (path.Find('?') == path.end()) {
-        req.url = path;
+        req.url = path.AsString();
     } else {
         const char* pos = path.Find('?');
         if (pos == path.end()) {
             return req;
         }
 
-        req.url = StringPiece(path.begin(), pos);
+        req.url = string(path.begin(), pos);
         StringPiece query = StringPiece(pos + 1, path.end());
         auto query_vector = query.Split('&');
 
@@ -166,8 +168,8 @@ HttpMessage::RequestLine HttpMessage::request_line()
             if (seg == item.end()) {
                 return req;
             }
-            StringPiece key(item.begin(), seg);
-            StringPiece value(seg + 1, item.end());
+            string key(item.begin(), seg);
+            string value(seg + 1, item.end());
             req.query[key] = value;
         }
     }
@@ -182,14 +184,17 @@ HttpMessage::RequestLine HttpMessage::request_line()
     return req;
 }
 
-void HttpMessage::set_response_line(StringPiece line) { first_line_ = line; }
+void HttpMessage::set_response_line(StringPiece line)
+{
+    first_line_ = line.AsString();
+}
 
 void HttpMessage::set_headers(StringPiece key, StringPiece value)
 {
-    headers_[key] = value;
+    headers_[key.AsString()] = value.AsString();
 }
 
-void HttpMessage::set_body(StringPiece body) { body_ = body; }
+void HttpMessage::set_body(StringPiece body) { body_ = body.AsString(); }
 
 }  // namespace net
 

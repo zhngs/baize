@@ -24,8 +24,8 @@ public:  // types
 
     struct RequestLine {
         Method method = Method::kNone;
-        StringPiece url;
-        std::map<StringPiece, StringPiece> query;
+        string url;
+        std::map<string, string> query;
         Version version = Version::kNone;
     };
 
@@ -54,9 +54,9 @@ public:  // normal function
     void set_body(StringPiece body);
 
 public:
-    StringPiece first_line_;
-    std::map<StringPiece, StringPiece> headers_;
-    StringPiece body_;
+    string first_line_;
+    std::map<string, string> headers_;
+    string body_;
 };
 
 }  // namespace net
