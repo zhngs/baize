@@ -32,7 +32,7 @@ public:  // types and constant
     using PacketUptrVector = std::vector<PacketUptr>;
 
 public:  // special function
-    PeerConnection(WebRTCServer* webrtc_server, InetAddress addr);
+    PeerConnection(WebRTCServer* webrtc_server);
     ~PeerConnection();
     PeerConnection(const PeerConnection&) = delete;
     PeerConnection& operator=(const PeerConnection&) = delete;

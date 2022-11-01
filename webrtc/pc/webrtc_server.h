@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include "http/http_stream.h"
 #include "net/net_buffer_pool.h"
 #include "webrtc/pc/peer_connection.h"
 #include "webrtc/pc/webrtc_settings.h"
@@ -25,12 +26,15 @@ public:  // type
     };
 
 public:  // special function
-    WebRTCServer(uint16_t port);
+    WebRTCServer();
     ~WebRTCServer();
     WebRTCServer(const WebRTCServer&) = delete;
     WebRTCServer& operator=(const WebRTCServer&) = delete;
 
 public:  // normal function
+    void StartMediaServer(uint16_t port);
+    void StartSignalServer(uint16_t port);
+
     PeerConnectionSptr Accept();
     void AsyncSend(InetAddress addr, StringPiece packet);
 
@@ -38,6 +42,8 @@ public:  // normal function
     RoomMap& room() { return connections_; }
 
 private:  // private normal function
+    void HandleMedia(PeerConnectionSptr pc);
+    void HandleSignal(TcpStreamSptr stream, SslConfig& config);
     void PeerConnectionDelete(PeerConnection* pc);
 
 private:

@@ -38,20 +38,13 @@ class SdpMessage  // copyable
 {
 public:
     // setter
-    int set_remote_sdp(StringPiece message);
-
-    // getter
-    string local_sdp();
+    int Decode(StringPiece message);
 
 public:
     string cname_;
     std::vector<TrackSdp> tracks_;
     NetSdp net_;
 };
-
-// dummy func
-SdpMessage& current_pub_sdp();
-SdpMessage& current_sub_sdp();
 
 }  // namespace net
 

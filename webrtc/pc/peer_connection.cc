@@ -10,8 +10,8 @@ namespace baize
 namespace net
 {
 
-PeerConnection::PeerConnection(WebRTCServer* webrtc_server, InetAddress addr)
-  : webrtc_server_(webrtc_server), addr_(addr)
+PeerConnection::PeerConnection(WebRTCServer* webrtc_server)
+  : webrtc_server_(webrtc_server)
 {
 }
 
@@ -40,7 +40,7 @@ int PeerConnection::ProcessPacket(StringPiece packet)
      */
 
     if (!ice_) {
-        ice_ = IceServer::New(this, WebRTCSettings::ice_password());
+        ice_ = IceServer::New(this, WebRTCSettings::local_sdp().net_.ice_pwd_);
     }
 
     if (StunPacket::IsStun(packet)) {
@@ -98,30 +98,30 @@ int PeerConnection::ProcessPacket(StringPiece packet)
         }
     }
 
-    static int only_once = 0;
-    only_once++;
-    if (only_once % 30 == 0) {
-        PliPsFb pli;
-        pli.comm_header.version = 2;
-        pli.comm_header.padding = 0;
-        pli.comm_header.count = 1;
-        pli.comm_header.type = 206;
-        pli.comm_header.length = 2;
-        pli.fb_header.sender_ssrc = 1234;
-        string media_ssrc = current_pub_sdp().tracks_[0].ssrc_group_[0];
-        pli.fb_header.media_ssrc = atoi(media_ssrc.c_str());
+    // static int only_once = 0;
+    // only_once++;
+    // if (only_once % 30 == 0) {
+    //     PliPsFb pli;
+    //     pli.comm_header.version = 2;
+    //     pli.comm_header.padding = 0;
+    //     pli.comm_header.count = 1;
+    //     pli.comm_header.type = 206;
+    //     pli.comm_header.length = 2;
+    //     pli.fb_header.sender_ssrc = 1234;
+    //     string media_ssrc = current_pub_sdp().tracks_[0].ssrc_group_[0];
+    //     pli.fb_header.media_ssrc = atoi(media_ssrc.c_str());
 
-        LOG_INFO << "send to peer" << pli.Dump();
+    //     LOG_INFO << "send to peer" << pli.Dump();
 
-        char buf[1500] = "";
-        StringPiece pli_packet(buf, 1500);
-        pli.Encode(pli_packet);
+    //     char buf[1500] = "";
+    //     StringPiece pli_packet(buf, 1500);
+    //     pli.Encode(pli_packet);
 
-        srtp_send_session_->EncryptRtcp(pli_packet);
-        AsyncSend(pli_packet);
+    //     srtp_send_session_->EncryptRtcp(pli_packet);
+    //     AsyncSend(pli_packet);
 
-        // only_once = false;
-    }
+    //     // only_once = false;
+    // }
 
     if (RtcpPacket::IsRtcp(packet)) {
         bool err = srtp_recv_session_->DecryptRtcp(packet);

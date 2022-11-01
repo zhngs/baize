@@ -8,12 +8,7 @@ namespace baize
 namespace net
 {
 
-thread_local SdpMessage gt_pub_sdp;
-SdpMessage& current_pub_sdp() { return gt_pub_sdp; }
-thread_local SdpMessage gt_sub_sdp;
-SdpMessage& current_sub_sdp() { return gt_sub_sdp; }
-
-int SdpMessage::set_remote_sdp(StringPiece message)
+int SdpMessage::Decode(StringPiece message)
 {
     StringPiece ice_ufrag = message.SliceFragment("ice-ufrag:", "\r\n");
     if (!ice_ufrag.empty()) {
@@ -84,45 +79,6 @@ int SdpMessage::set_remote_sdp(StringPiece message)
     }
 
     return 0;
-}
-
-thread_local char t_local_sdp[8192];
-string SdpMessage::local_sdp()
-{
-    int ssrc = 1234;
-    snprintf(t_local_sdp,
-             sizeof(t_local_sdp),
-             "v=0\r\n"
-             "o=- 1495799811084970 1495799811084970 IN IP4 0.0.0.0\r\n"
-             "s=baize webrtc sfu server\r\n"
-             "c=IN IP4 0.0.0.0\r\n"
-             "t=0 0\r\n"
-             "a=ice-options:%s\r\n"
-             "a=msid-semantic: WMS baize\r\n"
-             "a=group:BUNDLE 0\r\n"
-             "m=video 9 RTP/SAVPF 127\r\n"
-             "a=rtpmap:127 H264/90000\r\n"
-             "a=setup:passive\r\n"
-             "a=mid:0\r\n"
-             "a=sendrecv\r\n"
-             "a=ice-ufrag:%s\r\n"
-             "a=ice-pwd:%s\r\n"
-             "a=fingerprint:sha-256 %s\r\n"
-             "a=msid:baize baizev0\r\n"
-             "a=ssrc:%d cname:baizevideo\r\n"
-             "a=ssrc:%d msid:baize baizev0\r\n"
-             "a=candidate:1 1 udp 1 %s %d typ host\r\n"
-             "a=rtcp-mux\r\n"
-             "a=rtcp-rsize\r\n",
-             net_.ice_option_.c_str(),
-             net_.ice_ufrag_.c_str(),
-             net_.ice_pwd_.c_str(),
-             net_.finger_print_.c_str(),
-             ssrc,
-             ssrc,
-             net_.ip_.c_str(),
-             net_.port_);
-    return t_local_sdp;
 }
 
 }  // namespace net

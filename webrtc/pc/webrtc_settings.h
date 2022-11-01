@@ -3,6 +3,7 @@
 
 #include "openssl/ssl.h"
 #include "util/types.h"
+#include "webrtc/sdp/sdp_message.h"
 
 namespace baize
 {
@@ -16,8 +17,8 @@ public:
     static void Initialize();
 
     // getter
-    static string ice_password();
-    static string local_sdp();
+    static string local_sdp_string();
+    static const SdpMessage& local_sdp();
     static SSL_CTX* dtls_ctx();
 };
 
