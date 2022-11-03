@@ -2,6 +2,7 @@
 
 #include "http/file_reader.h"
 #include "log/logger.h"
+#include "webrtc/ice/stun_packet.h"
 
 namespace baize
 {
@@ -21,14 +22,9 @@ void WebRTCServer::StartMediaServer(uint16_t port)
         return;
     }
 
-    while (1) {
-        PeerConnectionSptr pc = Accept();
-        if (pc) {
-            runtime::current_loop()->Do(
-                [this, pc] { HandleMedia(pc); },
-                std::string("pc") + pc->addr().ip_port());
-        }
-    }
+    LOG_INFO << "media server start";
+    DispatchDataLoop();
+    LOG_INFO << "media server exit";
 }
 
 void WebRTCServer::HandleMedia(PeerConnectionSptr pc)
@@ -36,7 +32,8 @@ void WebRTCServer::HandleMedia(PeerConnectionSptr pc)
     LOG_INFO << "peerconnection start";
     while (1) {
         bool timeout = false;
-        auto packets = pc->AsyncRead(5000, timeout);
+        auto packets = pc->AsyncRead(10 * 1000, timeout);
+        LOG_INFO << "pc recv " << packets.size() << " packets";
 
         if (timeout) {
             LOG_INFO << "pc timeout";
@@ -128,8 +125,16 @@ void WebRTCServer::HandleSignal(TcpStreamSptr stream, SslConfig& config)
 
             string username = remote_sdp.net_.ice_ufrag_;
             assert(!username.empty());
-            assert(connections_.find(username) == connections_.end());
-            connections_[username] = std::make_shared<PeerConnection>(this);
+            string key =
+                WebRTCSettings::local_sdp().net_.ice_ufrag_ + ":" + username;
+            assert(connections_.find(key) == connections_.end());
+            PeerConnectionSptr pc(
+                new PeerConnection(this),
+                [this](PeerConnection* p) { PeerConnectionDelete(p); });
+            connections_[key] = pc;
+            pc->set_sdp(remote_sdp);
+
+            runtime::current_loop()->Do([this, pc] { HandleMedia(pc); });
 
             rsp.set_response_line(sucess_rsp_line_string);
             rsp.set_headers("Content-Length", local_sdp_len);
@@ -150,7 +155,7 @@ void WebRTCServer::HandleSignal(TcpStreamSptr stream, SslConfig& config)
     }
 }
 
-PeerConnectionSptr WebRTCServer::Accept()
+void WebRTCServer::DispatchDataLoop()
 {
     InetAddress peeraddr;
 
@@ -159,38 +164,53 @@ PeerConnectionSptr WebRTCServer::Accept()
 
         auto buf = buffers_.AllocBuffer();
         bool timeout = false;
-        int rn = stream_->AsyncRecvFrom(
-            buf->write_index(), buf->writable_bytes(), &peeraddr, 1, timeout);
+        int rn = stream_->AsyncRecvFrom(buf->write_index(),
+                                        buf->writable_bytes(),
+                                        &peeraddr,
+                                        10000,
+                                        timeout);
 
-        if (!timeout) {
+        do {
+            if (timeout) break;
+
             if (rn < 0) {
                 LOG_ERROR << "webrtc server accept failed";
-                return PeerConnectionSptr();
+                break;
             }
-            LOG_DEBUG << "recvfrom " << peeraddr.ip_port() << " " << rn
-                      << " bytes";
+            LOG_INFO << "recvfrom " << peeraddr.ip_port() << " " << rn
+                     << " bytes";
 
             buf->AddReadableLength(rn);
 
             string remote = peeraddr.ip_port();
             if (connections_.find(remote) != connections_.end()) {
-                LOG_DEBUG << remote << " is an old peerconnection";
                 auto pc_wptr = connections_[remote];
                 auto pc_sptr = pc_wptr.lock();
                 if (pc_sptr) {
                     pc_sptr->packets_.emplace_back(std::move(buf));
                     pc_sptr->async_park_.ScheduleRead();
                 }
-                continue;
-            } else {
-                LOG_INFO << remote << " start new peerconnection";
-                PeerConnectionSptr pc(
-                    new PeerConnection(this, peeraddr),
-                    [this](PeerConnection* p) { PeerConnectionDelete(p); });
-                connections_[remote] = pc;
-                return pc;
+            } else if (StunPacket::IsStun(buf->slice())) {
+                StunPacket stun_packet;
+                int err = stun_packet.Parse(buf->slice());
+                if (err < 0) break;
+
+                string ice_ufrag = stun_packet.username().AsString();
+                if (connections_.count(ice_ufrag) == 0) break;
+
+                connections_[remote] = connections_[ice_ufrag];
+                connections_.erase(ice_ufrag);
+
+                auto pc_wptr = connections_[remote];
+                auto pc_sptr = pc_wptr.lock();
+                if (pc_sptr) {
+                    pc_sptr->set_addr(peeraddr);
+                    pc_sptr->packets_.emplace_back(std::move(buf));
+                    pc_sptr->async_park_.ScheduleRead();
+                }
             }
-        }
+
+        } while (0);
 
         if (!send_messages_.empty()) {
             for (auto& message : send_messages_) {

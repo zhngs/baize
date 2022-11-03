@@ -11,7 +11,7 @@ namespace net
 {
 
 PeerConnection::PeerConnection(WebRTCServer* webrtc_server)
-  : webrtc_server_(webrtc_server)
+  : webrtc_server_(webrtc_server), pli_timer_([this] { return OnPliTimer(); })
 {
 }
 
@@ -98,30 +98,11 @@ int PeerConnection::ProcessPacket(StringPiece packet)
         }
     }
 
-    // static int only_once = 0;
-    // only_once++;
-    // if (only_once % 30 == 0) {
-    //     PliPsFb pli;
-    //     pli.comm_header.version = 2;
-    //     pli.comm_header.padding = 0;
-    //     pli.comm_header.count = 1;
-    //     pli.comm_header.type = 206;
-    //     pli.comm_header.length = 2;
-    //     pli.fb_header.sender_ssrc = 1234;
-    //     string media_ssrc = current_pub_sdp().tracks_[0].ssrc_group_[0];
-    //     pli.fb_header.media_ssrc = atoi(media_ssrc.c_str());
-
-    //     LOG_INFO << "send to peer" << pli.Dump();
-
-    //     char buf[1500] = "";
-    //     StringPiece pli_packet(buf, 1500);
-    //     pli.Encode(pli_packet);
-
-    //     srtp_send_session_->EncryptRtcp(pli_packet);
-    //     AsyncSend(pli_packet);
-
-    //     // only_once = false;
-    // }
+    if (!established_) {
+        SendPli();
+        pli_timer_.Start(2000);
+        established_ = true;
+    }
 
     if (RtcpPacket::IsRtcp(packet)) {
         bool err = srtp_recv_session_->DecryptRtcp(packet);
@@ -269,6 +250,35 @@ int PeerConnection::ProcessRtcp(StringPiece packet)
     }
 
     return 0;
+}
+
+void PeerConnection::SendPli()
+{
+    PliPsFb pli;
+    pli.comm_header.version = 2;
+    pli.comm_header.padding = 0;
+    pli.comm_header.count = 1;
+    pli.comm_header.type = 206;
+    pli.comm_header.length = 2;
+    pli.fb_header.sender_ssrc = 1234;  // local ssrc
+
+    string media_ssrc = sdp_.tracks_[0].ssrc_group_[0];
+    pli.fb_header.media_ssrc = atoi(media_ssrc.c_str());
+
+    LOG_INFO << "send to peer" << pli.Dump();
+
+    char buf[1500] = "";
+    StringPiece pli_packet(buf, 1500);
+    pli.Encode(pli_packet);
+
+    srtp_send_session_->EncryptRtcp(pli_packet);
+    AsyncSend(pli_packet);
+}
+
+int PeerConnection::OnPliTimer()
+{
+    SendPli();
+    return time::kTimer1S * 2;
 }
 
 }  // namespace net

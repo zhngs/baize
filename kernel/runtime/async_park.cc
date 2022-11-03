@@ -20,7 +20,10 @@ string epoll_event_string(int events);
  */
 AsyncPark::AsyncPark(int fd) : fd_(fd)
 {
-    if (fd_ >= 0) current_loop()->EnablePoll(this);
+    if (fd_ >= 0) {
+        LOG_TRACE << "async park poll " << fd;
+        current_loop()->EnablePoll(this);
+    }
 }
 
 AsyncPark::~AsyncPark()

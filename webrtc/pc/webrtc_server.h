@@ -35,13 +35,13 @@ public:  // normal function
     void StartMediaServer(uint16_t port);
     void StartSignalServer(uint16_t port);
 
-    PeerConnectionSptr Accept();
     void AsyncSend(InetAddress addr, StringPiece packet);
 
     // getter
     RoomMap& room() { return connections_; }
 
 private:  // private normal function
+    void DispatchDataLoop();
     void HandleMedia(PeerConnectionSptr pc);
     void HandleSignal(TcpStreamSptr stream, SslConfig& config);
     void PeerConnectionDelete(PeerConnection* pc);

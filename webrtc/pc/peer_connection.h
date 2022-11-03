@@ -43,16 +43,26 @@ public:  // normal function
 
     int ProcessPacket(StringPiece packet);
 
+    void set_sdp(const SdpMessage& sdp) { sdp_ = sdp; }
+
+    void set_addr(const InetAddress& addr) { addr_ = addr; }
     const InetAddress& addr() { return addr_; }
 
 private:  // private normal function
     int ProcessRtcp(StringPiece packet);
+
+    void SendPli();
+    int OnPliTimer();
 
 private:
     WebRTCServer* webrtc_server_ = nullptr;
     InetAddress addr_;
     std::vector<PacketUptr> packets_;
 
+    time::Timer pli_timer_;
+
+    bool established_ = false;
+    SdpMessage sdp_;
     IceServerUptr ice_;
     DtlsTransportUptr dtls_;
     SrtpSessionUptr srtp_send_session_;

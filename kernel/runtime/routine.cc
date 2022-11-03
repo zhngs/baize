@@ -148,7 +148,13 @@ uint64_t current_routineid()
                              : Routine::kMainRoutineId;
 }
 
-string current_routine_name() { return current_routine()->name(); }
+string current_routine_name()
+{
+    if (current_routine())
+        return current_routine()->name();
+    else
+        return "main_routine";
+}
 
 Routine* current_routine() { return tg_current_routine; }
 
