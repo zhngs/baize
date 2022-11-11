@@ -34,6 +34,7 @@
 compile_commands.json
 
 .vscode/
+.clangd/
 build/
 
 third_party/boost_1_66_0.tar.gz
