@@ -22,13 +22,7 @@ SocketUptr Socket::NewUdp(sa_family_t family)
     return std::make_unique<Socket>(CreateUdpSocket(family));
 }
 
-Socket::~Socket()
-{
-    if (::close(sockfd_) < 0) {
-        LOG_SYSERR << "Socket::close";
-    }
-    LOG_TRACE << "Socket::close";
-}
+Socket::~Socket() { Close(); }
 
 int Socket::Connect(const InetAddress& peeraddr)
 {
@@ -99,6 +93,16 @@ void Socket::ShutdownWrite()
     if (::shutdown(sockfd_, SHUT_WR) < 0) {
         LOG_SYSERR << "sockets::ShutdownWrite";
     }
+}
+
+void Socket::Close()
+{
+    if (sockfd_ < 0) return;
+    if (::close(sockfd_) < 0) {
+        LOG_SYSERR << "sockets::close";
+        return;
+    }
+    sockfd_ = -1;
 }
 
 int Socket::Read(void* buf, size_t count)
