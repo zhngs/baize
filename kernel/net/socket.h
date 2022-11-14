@@ -36,6 +36,7 @@ public:  // normal function
     void Listen();
     int Accept(InetAddress* peeraddr);
     void ShutdownWrite();
+    void Close();
 
     int Read(void* buf, size_t count);
     int Write(const void* buf, size_t count);
@@ -56,7 +57,7 @@ public:  // normal function
     void set_keep_alive(bool on);
 
 private:
-    const int sockfd_;
+    int sockfd_;
 };
 
 int CreateTcpSocket(sa_family_t family);
