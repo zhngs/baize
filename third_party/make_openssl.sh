@@ -46,6 +46,7 @@ get_cur_dir() {
       C=`echo $C | sed -e 's;:; ;g'`
       REALPATH="$REALPATH/$C"
       # if REALPATH is a sym link, resolve it.  Loop for nested links.
+      # Reference: https://github.com/apache/tomcat/blob/main/bin/catalina.sh#L129
       while [ -h "$REALPATH" ]
       do
         LS="`ls -ld "$REALPATH"`"
