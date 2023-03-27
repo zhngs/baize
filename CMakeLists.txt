@@ -40,9 +40,9 @@ add_compile_options(
 )
 
 add_subdirectory(kernel)
-add_subdirectory(example)
-add_subdirectory(http)
-add_subdirectory(webrtc)
+# add_subdirectory(example)
+# add_subdirectory(http)
+# add_subdirectory(webrtc)
 
 # quic的编译选项
 # add_subdirectory(quic)

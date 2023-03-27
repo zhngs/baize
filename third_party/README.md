@@ -42,8 +42,8 @@ baize 支持加解密，需要使用 openssl，版本为 1.1.1，下载地址在
 下载结束后执行以下命令
 
 ```shell
-$ tar -xvf openssl-1.1.1p.tar.gz
-$ cd openssl-1.1.1p
+$ tar -xvf openssl-1.1.1s.tar.gz
+$ cd openssl-1.1.1s
 $ ./config \
 --prefix={baize的绝对路径}/third_party/openssl \
 --openssldir={baize的绝对路径}/third_party/openssl \
