@@ -1,4 +1,4 @@
-# baize
+# baize(重构中)
 
 ![](https://img.shields.io/github/forks/zhngs/baize)
 ![](https://img.shields.io/github/stars/zhngs/baize)
@@ -16,12 +16,12 @@
 
 ## ✨ 特性
 
-- [X] 有栈非对称协程
-- [X] 协程池
+- [x] 有栈非对称协程
+- [x] 协程池
 - [ ] 协程之间的 channel，正在支持中
 - [ ] 协程跨线程，目前不打算支持
-- [X] TCP/UDP
-- [X] TLS/HTTPS
+- [x] TCP/UDP
+- [x] TLS/HTTPS
 - [ ] 跨平台，目前只支持 linux
 
 ## :magic_wand: 编译
