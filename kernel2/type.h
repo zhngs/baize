@@ -25,6 +25,8 @@ using float32 = float;
 using float64 = double;
 
 using byte = uint8_t;
+using size = size_t;
+using ssize = ssize_t;
 
 using std::map;
 using std::string;
@@ -39,9 +41,14 @@ class slice {
   using iterator = typename vector<T>::iterator;
 
  public:
-  slice() {}
+  slice() {
+    ptr_ = std::make_shared<vector<T>>();
+    begin_ = 0;
+    end_ = 0;
+  }
 
-  slice(int len, int cap) {
+  slice(size len, size cap) {
+    if (len > cap) cap = len;
     ptr_ = std::make_shared<vector<T>>(len);
     ptr_->reserve(cap);
     begin_ = 0;
@@ -67,7 +74,7 @@ class slice {
   }
   ~slice() {}
 
-  T& operator[](int i) { return (*ptr_)[begin_ + i]; }
+  T& operator[](size i) { return (*ptr_)[begin_ + i]; }
 
   void swap(slice& s) noexcept {
     s.ptr_.swap(ptr_);
@@ -80,17 +87,16 @@ class slice {
     this->swap(tmp);
   }
 
-  int len() const { return end_ - begin_; }
-  int cap() const { return ptr_->capacity(); }
+  size len() const { return end_ - begin_; }
+  size cap() const { return ptr_->capacity(); }
   iterator begin() { return ptr_->begin() + begin_; }
   iterator end() { return ptr_->begin() + end_; }
 
   vector<T>& vec() { return *ptr_; }
   T* data() { return ptr_->data() + begin_; }
 
-  slice as_slice(int l, int r = -1) {
-    if (r < 0 || r > this->len()) r = this->len();
-    if (l < 0) l = 0;
+  slice as_slice(size l, size r) {
+    if (r > this->len()) r = this->len();
     if (l > this->len()) l = this->len();
     if (r < l) r = l;
 
@@ -108,7 +114,7 @@ class slice {
   }
 
  private:
-  void ensure(int expect) {
+  void ensure(size expect) {
     if (expect > this->cap()) {
       slice tmp(this->len(), expect * 2);
       *tmp.ptr_ = *ptr_;
@@ -120,8 +126,8 @@ class slice {
 
  private:
   shared_ptr<vector<T>> ptr_;
-  int begin_;
-  int end_;
+  size begin_;
+  size end_;
 };
 
 template <>
@@ -130,24 +136,30 @@ class slice<byte> {
   using iterator = typename vector<byte>::iterator;
 
  public:
-  slice() {}
+  slice() {
+    ptr_ = std::make_shared<vector<byte>>();
+    begin_ = 0;
+    end_ = 0;
+  }
 
-  slice(int len, int cap) {
+  slice(size len, size cap) {
+    if (len > cap) cap = len;
     ptr_ = std::make_shared<vector<byte>>(len, 0);
     ptr_->reserve(cap);
     begin_ = 0;
     end_ = len;
   }
+  slice(void* b, size l, size cap) {
+    byte* tmp = static_cast<byte*>(b);
+    ptr_ = std::make_shared<vector<byte>>(tmp, tmp + l);
+    ptr_->reserve(cap);
+    begin_ = 0;
+    end_ = l;
+  }
   slice(string s) {
     ptr_ = std::make_shared<vector<byte>>(s.begin(), s.end());
     begin_ = 0;
     end_ = s.length();
-  }
-  slice(void* b, int l) {
-    byte* tmp = (byte*)b;
-    ptr_ = std::make_shared<vector<byte>>(tmp, tmp + l);
-    begin_ = 0;
-    end_ = l;
   }
 
   slice(const slice& s) : ptr_(s.ptr_), begin_(s.begin_), end_(s.end_) {}
@@ -169,7 +181,7 @@ class slice<byte> {
   }
   ~slice() {}
 
-  byte& operator[](int i) { return (*ptr_)[begin_ + i]; }
+  byte& operator[](size i) { return (*ptr_)[begin_ + i]; }
 
   void swap(slice& s) noexcept {
     s.ptr_.swap(ptr_);
@@ -182,34 +194,32 @@ class slice<byte> {
     this->swap(tmp);
   }
 
-  int len() const { return end_ - begin_; }
-  int cap() const { return ptr_->capacity(); }
+  size len() const { return end_ - begin_; }
+  size cap() const { return ptr_->capacity(); }
   iterator begin() { return ptr_->begin() + begin_; }
   iterator end() { return ptr_->begin() + end_; }
 
   vector<byte>& vec() { return *ptr_; }
   template <typename Y>
   Y* data() {
-    return ptr_->data() + begin_;
+    return reinterpret_cast<Y*>(ptr_->data() + begin_);
   }
 
   void append(byte b) {
     ensure(end_ + 1);
-
     ptr_->push_back(b);
     end_++;
   }
 
-  int copy(const slice& s) {
-    int n = std::min(this->len(), s.len());
+  size copy(const slice& s) {
+    size n = std::min(this->len(), s.len());
     auto pos = s.ptr_->cbegin() + begin_;
     std::copy(pos, pos + n, this->begin());
     return n;
   }
 
-  slice as_slice(int l, int r = -1) {
-    if (r < 0 || r > this->len()) r = this->len();
-    if (l < 0) l = 0;
+  slice as_slice(size l, size r) {
+    if (r > this->len()) r = this->len();
     if (l > this->len()) l = this->len();
     if (r < l) r = l;
 
@@ -221,12 +231,12 @@ class slice<byte> {
 
   string as_string() { return string(this->begin(), this->end()); }
 
-  string dump(string prefix, int linebytes = 8) {
+  string dump(string prefix, size linebytes = 8) {
     string s;
     char buf[128] = "";
     snprintf(buf, sizeof(buf),
-             "[%s] slice stat: ptr=%d len=%d cap=%d begin=%d end=%d\n",
-             prefix.c_str(), ptr_->data(), this->len(), this->cap(), begin_,
+             "[%s] slice stat: ptr=%#lx len=%lu cap=%lu begin=%lu end=%lu\n",
+             prefix.c_str(), reinterpret_cast<size>(ptr_->data()), this->len(), this->cap(), begin_,
              end_);
     s += buf;
 
@@ -237,13 +247,15 @@ class slice<byte> {
         return byte('.');
     };
 
-    int end_pos = this->len() - 1;
+    if (this->len() == 0) return s;
+
+    size end_pos = this->len() - 1;
     slice& self = *this;
-    for (int i = 0; i <= end_pos;) {
+    for (size i = 0; i <= end_pos;) {
       memset(buf, 0, sizeof(buf));
 
       int cur_pos_in_line = 0;
-      for (int j = 0; j < linebytes; j++) {
+      for (size j = 0; j < linebytes; j++) {
         if (i + j <= end_pos) {
           if ((j + 1) % 8 == 0) {
             snprintf(buf + cur_pos_in_line, sizeof(buf) - cur_pos_in_line,
@@ -270,7 +282,7 @@ class slice<byte> {
       snprintf(buf + cur_pos_in_line, sizeof(buf) - cur_pos_in_line, "  ");
       cur_pos_in_line += 2;
 
-      for (int j = 0; j < linebytes; j++) {
+      for (size j = 0; j < linebytes; j++) {
         if (i + j <= end_pos) {
           snprintf(buf + cur_pos_in_line, sizeof(buf) - cur_pos_in_line, "%c",
                    printchar(self[i + j]));
@@ -289,7 +301,7 @@ class slice<byte> {
   }
 
  private:
-  void ensure(int expect) {
+  void ensure(size expect) {
     if (expect > this->cap()) {
       slice tmp(this->len(), expect * 2);
       *tmp.ptr_ = *ptr_;
@@ -301,8 +313,8 @@ class slice<byte> {
 
  private:
   shared_ptr<vector<byte>> ptr_;
-  int begin_;
-  int end_;
+  size begin_;
+  size end_;
 };
 
 }  // namespace baize
