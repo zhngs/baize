@@ -45,6 +45,7 @@ class slice {
     ptr_ = std::make_shared<vector<T>>();
     begin_ = 0;
     end_ = 0;
+    cap_ = ptr_->capacity();
   }
 
   slice(size len, size cap) {
@@ -53,9 +54,11 @@ class slice {
     ptr_->reserve(cap);
     begin_ = 0;
     end_ = len;
+    cap_ = ptr_->capacity();
   }
 
-  slice(const slice& s) : ptr_(s.ptr_), begin_(s.begin_), end_(s.end_) {}
+  slice(const slice& s)
+      : ptr_(s.ptr_), begin_(s.begin_), end_(s.end_), cap_(s.cap_) {}
   slice& operator=(const slice& s) {
     slice tmp(s);
     this->swap(tmp);
@@ -80,6 +83,7 @@ class slice {
     s.ptr_.swap(ptr_);
     std::swap(begin_, s.begin_);
     std::swap(end_, s.end_);
+    std::swap(cap_, s.cap_);
   }
 
   void reset() {
@@ -88,7 +92,7 @@ class slice {
   }
 
   size len() const { return end_ - begin_; }
-  size cap() const { return ptr_->capacity() - begin_; }
+  size cap() const { return cap_ - begin_; }
   iterator begin() { return ptr_->begin() + begin_; }
   iterator end() { return ptr_->begin() + end_; }
 
@@ -110,14 +114,11 @@ class slice {
     if (r > this->len()) r = this->len();
     if (l > this->len()) l = this->len();
     if (r < l) r = l;
-    if (c < r - l) c = r - l;
+    if (c < r) c = r;
 
-    slice tmp(r - l, c);
-    std::copy(this->begin() + l, this->begin() + r, tmp.begin());
-    tmp.begin_ = 0;
-    tmp.end_ = r - l;
-
-    return tmp;
+    auto s = this->as_slice(l, r);
+    s.cap_ = c + s.begin_;
+    return s;
   }
 
   void append(T b) {
@@ -132,8 +133,6 @@ class slice {
     if (expect > this->cap()) {
       slice tmp(this->len(), expect * 2);
       std::copy(this->begin(), this->end(), tmp.begin());
-      tmp.begin_ = 0;
-      tmp.end_ = this->len();
       tmp.swap(*this);
     }
   }
@@ -142,6 +141,7 @@ class slice {
   shared_ptr<vector<T>> ptr_;
   size begin_;
   size end_;
+  size cap_;
 };
 
 template <>
@@ -154,6 +154,7 @@ class slice<byte> {
     ptr_ = std::make_shared<vector<byte>>();
     begin_ = 0;
     end_ = 0;
+    cap_ = ptr_->capacity();
   }
 
   slice(size len, size cap) {
@@ -162,6 +163,7 @@ class slice<byte> {
     ptr_->reserve(cap);
     begin_ = 0;
     end_ = len;
+    cap_ = ptr_->capacity();
   }
   slice(void* b, size l, size cap) {
     byte* tmp = static_cast<byte*>(b);
@@ -169,14 +171,24 @@ class slice<byte> {
     ptr_->reserve(cap);
     begin_ = 0;
     end_ = l;
+    cap_ = ptr_->capacity();
   }
   slice(string s) {
     ptr_ = std::make_shared<vector<byte>>(s.begin(), s.end());
     begin_ = 0;
     end_ = s.length();
+    cap_ = ptr_->capacity();
+  }
+  slice(const char* s) {
+    size len = strlen(s);
+    ptr_ = std::make_shared<vector<byte>>(s, s + len);
+    begin_ = 0;
+    end_ = len;
+    cap_ = ptr_->capacity();
   }
 
-  slice(const slice& s) : ptr_(s.ptr_), begin_(s.begin_), end_(s.end_) {}
+  slice(const slice& s)
+      : ptr_(s.ptr_), begin_(s.begin_), end_(s.end_), cap_(s.cap_) {}
   slice& operator=(const slice& s) {
     slice tmp(s);
     this->swap(tmp);
@@ -201,6 +213,7 @@ class slice<byte> {
     s.ptr_.swap(ptr_);
     std::swap(begin_, s.begin_);
     std::swap(end_, s.end_);
+    std::swap(cap_, s.cap_);
   }
 
   void reset() {
@@ -209,7 +222,7 @@ class slice<byte> {
   }
 
   size len() const { return end_ - begin_; }
-  size cap() const { return ptr_->capacity() - begin_; }
+  size cap() const { return cap_ - begin_; }
   iterator begin() { return ptr_->begin() + begin_; }
   iterator end() { return ptr_->begin() + end_; }
 
@@ -232,9 +245,15 @@ class slice<byte> {
 
   size copy(const slice& s) {
     size n = std::min(this->len(), s.len());
-    auto pos = s.ptr_->cbegin() + begin_;
+    auto pos = s.ptr_->cbegin() + s.begin_;
     std::copy(pos, pos + n, this->begin());
     return n;
+  }
+
+  slice clone() {
+    slice<byte> tmp(this->len(), this->cap());
+    std::copy(this->begin(), this->end(), tmp.begin());
+    return tmp;
   }
 
   slice as_slice(size l, size r) {
@@ -252,14 +271,11 @@ class slice<byte> {
     if (r > this->len()) r = this->len();
     if (l > this->len()) l = this->len();
     if (r < l) r = l;
-    if (c < r - l) c = r - l;
+    if (c < r) c = r;
 
-    slice tmp(r - l, c);
-    std::copy(this->begin() + l, this->begin() + r, tmp.begin());
-    tmp.begin_ = 0;
-    tmp.end_ = r - l;
-
-    return tmp;
+    auto s = this->as_slice(l, r);
+    s.cap_ = c + s.begin_;
+    return s;
   }
 
   string as_string() { return string(this->begin(), this->end()); }
@@ -268,9 +284,10 @@ class slice<byte> {
     string s;
     char buf[128] = "";
     snprintf(buf, sizeof(buf),
-             "[%s] slice stat: ptr=%#lx len=%lu cap=%lu begin=%lu end=%lu\n",
-             prefix.c_str(), reinterpret_cast<size>(ptr_->data()), this->len(), this->cap(), begin_,
-             end_);
+             "[%s] slice stat: ptr=%#lx len()=%lu cap()=%lu begin=%lu end=%lu "
+             "cap=%lu vector->capacity()=%lu\n",
+             prefix.c_str(), reinterpret_cast<size>(ptr_->data()), this->len(),
+             this->cap(), begin_, end_, cap_, ptr_->capacity());
     s += buf;
 
     auto printchar = [](byte c) {
@@ -337,27 +354,28 @@ class slice<byte> {
     return ((this->len() == s.len()) &&
             (memcmp(this->data<byte>(), s.data<byte>(), this->len()) == 0));
   }
-  bool operator!=(const slice& x) const {
-    return !(*this == x);
-  }
+  bool operator!=(const slice& x) const { return !(*this == x); }
 
-#define SLICE_BINARY_PREDICATE(cmp,auxcmp)                                   \
-  bool operator cmp (const slice& s) const {                                 \
-    int r = memcmp(this->data<byte>(), s.data<byte>(),                       \
-        this->len() < s.len() ? this->len() : s.len());                      \
-    return ((r auxcmp 0) || ((r == 0) && (this->len() cmp s.len())));        \
+#define SLICE_BINARY_PREDICATE(cmp, auxcmp)                           \
+  bool operator cmp(const slice& s) const {                           \
+    int r = memcmp(this->data<byte>(), s.data<byte>(),                \
+                   this->len() < s.len() ? this->len() : s.len());    \
+    return ((r auxcmp 0) || ((r == 0) && (this->len() cmp s.len()))); \
   }
-  SLICE_BINARY_PREDICATE(<,  <);
+  SLICE_BINARY_PREDICATE(<, <);
   SLICE_BINARY_PREDICATE(<=, <);
   SLICE_BINARY_PREDICATE(>=, >);
-  SLICE_BINARY_PREDICATE(>,  >);
+  SLICE_BINARY_PREDICATE(>, >);
 #undef SLICE_BINARY_PREDICATE
 
   int compare(const slice& s) const {
-    int r = memcmp(this->data<byte>(), s.data<byte>(), this->len() < s.len() ? this->len() : s.len()); 
+    int r = memcmp(this->data<byte>(), s.data<byte>(),
+                   this->len() < s.len() ? this->len() : s.len());
     if (r == 0) {
-      if (this->len() < s.len()) r = -1;
-      else if (this->len() > s.len()) r = +1;
+      if (this->len() < s.len())
+        r = -1;
+      else if (this->len() > s.len())
+        r = +1;
     }
     return r;
   }
@@ -367,8 +385,6 @@ class slice<byte> {
     if (expect > this->cap()) {
       slice tmp(this->len(), expect * 2);
       std::copy(this->begin(), this->end(), tmp.begin());
-      tmp.begin_ = 0;
-      tmp.end_ = this->len();
       tmp.swap(*this);
     }
   }
@@ -377,6 +393,7 @@ class slice<byte> {
   shared_ptr<vector<byte>> ptr_;
   size begin_;
   size end_;
+  size cap_;
 };
 
 }  // namespace baize
