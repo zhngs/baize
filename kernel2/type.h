@@ -88,7 +88,7 @@ class slice {
   }
 
   size len() const { return end_ - begin_; }
-  size cap() const { return ptr_->capacity(); }
+  size cap() const { return ptr_->capacity() - begin_; }
   iterator begin() { return ptr_->begin() + begin_; }
   iterator end() { return ptr_->begin() + end_; }
 
@@ -106,8 +106,22 @@ class slice {
     return tmp;
   }
 
+  slice as_slice(size l, size r, size c) {
+    if (r > this->len()) r = this->len();
+    if (l > this->len()) l = this->len();
+    if (r < l) r = l;
+    if (c < r - l) c = r - l;
+
+    slice tmp(r - l, c);
+    std::copy(this->begin() + l, this->begin() + r, tmp.begin());
+    tmp.begin_ = 0;
+    tmp.end_ = r - l;
+
+    return tmp;
+  }
+
   void append(T b) {
-    ensure(end_ + 1);
+    ensure(this->len() + 1);
 
     ptr_->push_back(b);
     end_++;
@@ -117,9 +131,9 @@ class slice {
   void ensure(size expect) {
     if (expect > this->cap()) {
       slice tmp(this->len(), expect * 2);
-      *tmp.ptr_ = *ptr_;
-      tmp.begin_ = begin_;
-      tmp.end_ = end_;
+      std::copy(this->begin(), this->end(), tmp.begin());
+      tmp.begin_ = 0;
+      tmp.end_ = this->len();
       tmp.swap(*this);
     }
   }
@@ -195,18 +209,23 @@ class slice<byte> {
   }
 
   size len() const { return end_ - begin_; }
-  size cap() const { return ptr_->capacity(); }
+  size cap() const { return ptr_->capacity() - begin_; }
   iterator begin() { return ptr_->begin() + begin_; }
   iterator end() { return ptr_->begin() + end_; }
 
   vector<byte>& vec() { return *ptr_; }
+
   template <typename Y>
   Y* data() {
     return reinterpret_cast<Y*>(ptr_->data() + begin_);
   }
+  template <typename Y>
+  Y* data() const {
+    return reinterpret_cast<Y*>(ptr_->data() + begin_);
+  }
 
   void append(byte b) {
-    ensure(end_ + 1);
+    ensure(this->len() + 1);
     ptr_->push_back(b);
     end_++;
   }
@@ -226,6 +245,20 @@ class slice<byte> {
     slice tmp(*this);
     tmp.end_ = tmp.begin_ + r;
     tmp.begin_ = tmp.begin_ + l;
+    return tmp;
+  }
+
+  slice as_slice(size l, size r, size c) {
+    if (r > this->len()) r = this->len();
+    if (l > this->len()) l = this->len();
+    if (r < l) r = l;
+    if (c < r - l) c = r - l;
+
+    slice tmp(r - l, c);
+    std::copy(this->begin() + l, this->begin() + r, tmp.begin());
+    tmp.begin_ = 0;
+    tmp.end_ = r - l;
+
     return tmp;
   }
 
@@ -300,13 +333,42 @@ class slice<byte> {
     return s;
   }
 
+  bool operator==(const slice& s) const {
+    return ((this->len() == s.len()) &&
+            (memcmp(this->data<byte>(), s.data<byte>(), this->len()) == 0));
+  }
+  bool operator!=(const slice& x) const {
+    return !(*this == x);
+  }
+
+#define SLICE_BINARY_PREDICATE(cmp,auxcmp)                                   \
+  bool operator cmp (const slice& s) const {                                 \
+    int r = memcmp(this->data<byte>(), s.data<byte>(),                       \
+        this->len() < s.len() ? this->len() : s.len());                      \
+    return ((r auxcmp 0) || ((r == 0) && (this->len() cmp s.len())));        \
+  }
+  SLICE_BINARY_PREDICATE(<,  <);
+  SLICE_BINARY_PREDICATE(<=, <);
+  SLICE_BINARY_PREDICATE(>=, >);
+  SLICE_BINARY_PREDICATE(>,  >);
+#undef SLICE_BINARY_PREDICATE
+
+  int compare(const slice& s) const {
+    int r = memcmp(this->data<byte>(), s.data<byte>(), this->len() < s.len() ? this->len() : s.len()); 
+    if (r == 0) {
+      if (this->len() < s.len()) r = -1;
+      else if (this->len() > s.len()) r = +1;
+    }
+    return r;
+  }
+
  private:
   void ensure(size expect) {
     if (expect > this->cap()) {
       slice tmp(this->len(), expect * 2);
-      *tmp.ptr_ = *ptr_;
-      tmp.begin_ = begin_;
-      tmp.end_ = end_;
+      std::copy(this->begin(), this->end(), tmp.begin());
+      tmp.begin_ = 0;
+      tmp.end_ = this->len();
       tmp.swap(*this);
     }
   }

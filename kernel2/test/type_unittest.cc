@@ -6,7 +6,7 @@
 
 namespace baize {
 
-void test() {
+void print() {
   slice<byte> s(5, 5);
   s[0] = 1;
   std::cout << s.dump("s") << std::endl;
@@ -27,20 +27,10 @@ void test() {
   s4.copy(s3.as_slice(1, 5));
   std::cout << s4.dump("s4") << std::endl;
 
- 
-  slice<string> s6(0, 0);
-  s6.append("hello");
-  s6.append("world");
-  s6.append("zhngs");
-  s6.append("www.example.com");
-  for (auto it = s6.begin(); it != s6.end(); it++) {
-    std::cout << *it << std::endl;
-  }
-
-  auto s7 = s6.as_slice(1, 3);
-  for (auto it = s7.begin(); it != s7.end(); it++) {
-    std::cout << *it << std::endl;
-  }
+  slice<byte> s5 = s3.as_slice(6, s3.len());
+  std::cout << s5.dump("s5") << std::endl;
+  s5.append('z');
+  std::cout << s5.dump("s5") << std::endl;
 }
 
 TEST(TypeTest, SliceByteInit) {
@@ -133,6 +123,35 @@ TEST(TypeTest, AsSlice) {
 
   s2[0] = 'b';
   EXPECT_EQ('b', s[1]);
+}
+
+TEST(TypeTest, String) {
+  slice<string> s;
+  s.append("hello");
+  s.append("world");
+  s.append("zhngs");
+  s.append("www.example.com");
+  EXPECT_EQ(4, s.len());
+  EXPECT_EQ(std::string("world"), s[1]);
+
+  auto s2 = s.as_slice(1, 3);
+  EXPECT_EQ(2, s2.len());
+  EXPECT_EQ(std::string("zhngs"), s2[1]);
+}
+
+TEST(TypeTest, Compare) {
+  slice<byte> s("1234");
+  slice<byte> s2("12345");
+  slice<byte> s3("1294578");
+  slice<byte> s4("1234");
+  
+  EXPECT_EQ(true, s < s2);
+  EXPECT_EQ(true, s3 > s);
+  EXPECT_EQ(true, s == s4);
+}
+
+TEST(TypeTest, Print) {
+  print();
 }
 
 }  // namespace baize
