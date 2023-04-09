@@ -41,7 +41,7 @@ add_compile_options(
 -Wshadow
 -Wwrite-strings
 
--std=c++14
+-std=c++17
 )
 
 add_subdirectory(kernel)

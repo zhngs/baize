@@ -126,6 +126,6 @@ slice<byte> Replace(slice<byte> s, slice<byte> from, slice<byte> to, int n) {
 }
 
 slice<byte> ReplaceAll(slice<byte> s, slice<byte> from, slice<byte> to) {
-  Replace(s, from, to, -1);
+  return Replace(s, from, to, -1);
 }
 }  // namespace baize

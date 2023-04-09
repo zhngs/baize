@@ -35,6 +35,46 @@ using std::vector;
 using std::shared_ptr;
 using std::unique_ptr;
 
+class noncopyable
+{
+ public:
+  noncopyable(const noncopyable&) = delete;
+  void operator=(const noncopyable&) = delete;
+
+ protected:
+  noncopyable() = default;
+  ~noncopyable() = default;
+};
+
+class copyable
+{
+ protected:
+  copyable() = default;
+  ~copyable() = default;
+};
+
+#define ErrEOF "EOF"
+
+template <typename T>
+class result {
+public:
+  result(T r): v(r), err(0), errstring() {} 
+  result(int e, string s): v(), err(e), errstring(s) {}
+  result(T r, int e, string s): v(r), err(e), errstring(s) {}
+  void clear_err() { err = 0; errstring.clear();}
+public:
+  T v;
+  int err;
+  string errstring;
+};
+
+#define  __RESULT(line, val, e, s, f)  auto r##line = f; auto& val = r##line.v;\
+                                       int& e =  r##line.err;                  \
+                                       string& s = r##line.errstring;          \
+                                       (void)val; (void)e; (void)s
+#define  _RESULT(line, val, e, s, f)  __RESULT(line, val, e, s, f)
+#define  RESULT(val, e, s, f)  _RESULT(__LINE__, val, e, s, f)
+
 template <typename T>
 class slice {
  public:
@@ -100,8 +140,8 @@ class slice {
   T* data() { return ptr_->data() + begin_; }
 
   slice as_slice(size l, size r) {
-    if (r > this->len()) r = this->len();
-    if (l > this->len()) l = this->len();
+    if (r > this->cap()) r = this->cap();
+    if (l > this->cap()) l = this->cap();
     if (r < l) r = l;
 
     slice tmp(*this);
@@ -111,8 +151,8 @@ class slice {
   }
 
   slice as_slice(size l, size r, size c) {
-    if (r > this->len()) r = this->len();
-    if (l > this->len()) l = this->len();
+    if (r > this->cap()) r = this->cap();
+    if (l > this->cap()) l = this->cap();
     if (r < l) r = l;
     if (c < r) c = r;
 
@@ -121,11 +161,12 @@ class slice {
     return s;
   }
 
-  void append(T b) {
+  slice& append(T b) {
     ensure(this->len() + 1);
 
     ptr_->push_back(b);
     end_++;
+    return *this;
   }
 
  private:
@@ -237,10 +278,11 @@ class slice<byte> {
     return reinterpret_cast<Y*>(ptr_->data() + begin_);
   }
 
-  void append(byte b) {
+  slice& append(byte b) {
     ensure(this->len() + 1);
     ptr_->push_back(b);
     end_++;
+    return *this;
   }
 
   size copy(const slice& s) {
@@ -257,8 +299,8 @@ class slice<byte> {
   }
 
   slice as_slice(size l, size r) {
-    if (r > this->len()) r = this->len();
-    if (l > this->len()) l = this->len();
+    if (r > this->cap()) r = this->cap();
+    if (l > this->cap()) l = this->cap();
     if (r < l) r = l;
 
     slice tmp(*this);
@@ -268,8 +310,8 @@ class slice<byte> {
   }
 
   slice as_slice(size l, size r, size c) {
-    if (r > this->len()) r = this->len();
-    if (l > this->len()) l = this->len();
+    if (r > this->cap()) r = this->cap();
+    if (l > this->cap()) l = this->cap();
     if (r < l) r = l;
     if (c < r) c = r;
 
