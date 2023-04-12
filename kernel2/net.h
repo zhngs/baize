@@ -3,44 +3,48 @@
 
 #include "io.h"
 
-namespace baize
-{
+namespace baize {
 
-class Addr {
-public:
-    virtual ~Addr() {}
-    virtual string Network() = 0;
-    virtual string String() = 0;
+class IAddr {
+ public:
+  virtual ~IAddr() {}
+  virtual string Network() = 0;
+  virtual string String() = 0;
 };
+using Addr = shared_ptr<IAddr>;
 
-class Listener {
-public:
-    virtual ~Listener() {}
-    virtual shared_ptr<Conn> Accept() = 0;
-    virtual shared_ptr<Addr> Addr() = 0;
+class IConn : public IReader, public IWriter {
+ public:
+  virtual ~IConn() {}
+  virtual Addr LocalAddr() = 0;
+  virtual Addr RemoteAddr() = 0;
+  virtual void SetReadDeadline(int ms) = 0;
+  virtual void SetWriteDeadline(int ms) = 0;
 };
+using Conn = shared_ptr<IConn>;
 
-class Conn: public IReader, public IWriter {
-public:
-    virtual ~Conn() {}
-    virtual shared_ptr<Addr> LocalAddr() = 0;
-    virtual shared_ptr<Addr> RemoteAddr() = 0;
-    virtual void SetReadDeadline(int ms) = 0;
-    virtual void SetWriteDeadline(int ms) = 0;
+class IListener {
+ public:
+  virtual ~IListener() {}
+  virtual Conn Accept() = 0;
+  virtual Addr Addr() = 0;
 };
+using Listener = shared_ptr<IListener>;
 
-class PacketConn {
-public:
-    virtual ~PacketConn() {}
-    virtual result<int> ReadFrom(slice<byte> p, shared_ptr<Addr>& addr) = 0;
-    virtual result<int> WriteTo(slice<byte> p, shared_ptr<Addr> addr) = 0;
-    virtual shared_ptr<Addr> LocalAddr() = 0;
-    virtual shared_ptr<Addr> RemoteAddr() = 0;
-    virtual void SetReadDeadline(int ms) = 0;
-    virtual void SetWriteDeadline(int ms) = 0;
+class IPacketConn {
+ public:
+  virtual ~IPacketConn() {}
+  virtual result<int> ReadFrom(slice<byte> p, Addr& addr) = 0;
+  virtual result<int> WriteTo(slice<byte> p, Addr addr) = 0;
+  virtual Addr LocalAddr() = 0;
+  virtual Addr RemoteAddr() = 0;
+  virtual void SetReadDeadline(int ms) = 0;
+  virtual void SetWriteDeadline(int ms) = 0;
 };
+using PacketConn = shared_ptr<IPacketConn>;
 
-} // namespace baize
+result<Conn> DialTcp(string network, string address);
 
+}  // namespace baize
 
-#endif // BAIZE_NET_H
+#endif  // BAIZE_NET_H

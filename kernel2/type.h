@@ -35,8 +35,7 @@ using std::vector;
 using std::shared_ptr;
 using std::unique_ptr;
 
-class noncopyable
-{
+class noncopyable {
  public:
   noncopyable(const noncopyable&) = delete;
   void operator=(const noncopyable&) = delete;
@@ -46,8 +45,7 @@ class noncopyable
   ~noncopyable() = default;
 };
 
-class copyable
-{
+class copyable {
  protected:
   copyable() = default;
   ~copyable() = default;
@@ -57,23 +55,31 @@ class copyable
 
 template <typename T>
 class result {
-public:
-  result(T r): v(r), err(0), errstring() {} 
-  result(int e, string s): v(), err(e), errstring(s) {}
-  result(T r, int e, string s): v(r), err(e), errstring(s) {}
-  void clear_err() { err = 0; errstring.clear();}
-public:
+ public:
+  result(T r) : v(r), err(0), errstring() {}
+  result(int e, string s) : v(), err(e), errstring(s) {}
+  result(T r, int e, string s) : v(r), err(e), errstring(s) {}
+  void clear_err() {
+    err = 0;
+    errstring.clear();
+  }
+
+ public:
   T v;
   int err;
   string errstring;
 };
 
-#define  __RESULT(line, val, e, s, f)  auto r##line = f; auto& val = r##line.v;\
-                                       int& e =  r##line.err;                  \
-                                       string& s = r##line.errstring;          \
-                                       (void)val; (void)e; (void)s
-#define  _RESULT(line, val, e, s, f)  __RESULT(line, val, e, s, f)
-#define  RESULT(val, e, s, f)  _RESULT(__LINE__, val, e, s, f)
+#define __RESULT(line, val, e, s, f) \
+  auto r##line = f;                  \
+  auto& val = r##line.v;             \
+  int& e = r##line.err;              \
+  string& s = r##line.errstring;     \
+  (void)val;                         \
+  (void)e;                           \
+  (void)s
+#define _RESULT(line, val, e, s, f) __RESULT(line, val, e, s, f)
+#define RESULT(val, e, s, f) _RESULT(__LINE__, val, e, s, f)
 
 template <typename T>
 class slice {
@@ -437,6 +443,11 @@ class slice<byte> {
   size end_;
   size cap_;
 };
+
+inline uint16 LittleEndianUint16(slice<byte> b) {
+  if (b.len() < 2) return 0;
+  return static_cast<uint16>(b[0]) | static_cast<uint16>(b[1]) << 8;
+}
 
 }  // namespace baize
 
