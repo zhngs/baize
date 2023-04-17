@@ -3,6 +3,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#include "bytes.h"
+
 namespace baize {
 
 inline uint64_t HostToNetwork64(uint64_t host64) { return htobe64(host64); }
@@ -124,17 +126,21 @@ class TcpAddr : public IAddr, public copyable {
   InetAddress addr_;
 };
 
-result<Conn> DialTcp(string network, string address) {
-  bool ipv6 = false;
-  if (network == "tcp4") {
-    ipv6 = false;
-  } else if (network == "tcp6") {
-    ipv6 = true;
-  } else {
-    return {-1, "network err"};
-  }
+// result<Conn> DialTcp(string network, string address) {
+//   bool ipv6 = false;
+//   if (network == "tcp4") {
+//     ipv6 = false;
+//   } else if (network == "tcp6") {
+//     ipv6 = true;
+//   } else {
+//     return {-1, "network err"};
+//   }
 
-  InetAddress addr;
-}
+//   //   auto v = Split(address, ":");
+//   //   string ip = v[0].as_string();
+//   //   auto r = NumberCast<uint16>(v[1].as_string());
+//   //   if (r.err) {
+//   //   }
+// }
 
 }  // namespace baize

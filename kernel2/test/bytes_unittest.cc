@@ -56,4 +56,20 @@ TEST(BytesTest, ReplaceTest) {
   std::cout << s2.dump("Replace") << std::endl;
 }
 
+TEST(BytesTest, NumberCastTest) {
+  string s = "1258:ab";
+  auto r = NumberCast<int>(s);
+  EXPECT_EQ(1258, r.v);
+
+  string s2 = "12342353464574457468757878678kaldfnghkt";
+  r = NumberCast<int>(s2);
+  std::cout << r.v << std::endl;
+  std::cout << r.errstring << std::endl;
+
+  string s3 = "sakrg12342354854865846848684684868486";
+  r = NumberCast<int>(s3);
+  std::cout << r.v << std::endl;
+  std::cout << r.errstring << std::endl;
+}
+
 }  // namespace baize

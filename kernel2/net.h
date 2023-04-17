@@ -27,7 +27,7 @@ class IListener {
  public:
   virtual ~IListener() {}
   virtual Conn Accept() = 0;
-  virtual Addr Addr() = 0;
+  virtual Addr Address() = 0;
 };
 using Listener = shared_ptr<IListener>;
 
@@ -43,7 +43,7 @@ class IPacketConn {
 };
 using PacketConn = shared_ptr<IPacketConn>;
 
-result<Conn> DialTcp(string network, string address);
+// result<Conn> DialTcp(string network, string address);
 
 }  // namespace baize
 

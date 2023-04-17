@@ -64,6 +64,8 @@ class result {
     errstring.clear();
   }
 
+  T value_or(T d) { err == 0 ? v : d; }
+
  public:
   T v;
   int err;
@@ -443,11 +445,6 @@ class slice<byte> {
   size end_;
   size cap_;
 };
-
-inline uint16 LittleEndianUint16(slice<byte> b) {
-  if (b.len() < 2) return 0;
-  return static_cast<uint16>(b[0]) | static_cast<uint16>(b[1]) << 8;
-}
 
 }  // namespace baize
 
