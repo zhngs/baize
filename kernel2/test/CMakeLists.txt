@@ -1,0 +1,2 @@
+add_executable(baize_unittest type_unittest.cc bytes_unittest.cc io_unittest.cc)
+target_link_libraries(baize_unittest baize_kernel gtest_main gtest pthread)

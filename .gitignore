@@ -37,17 +37,5 @@ compile_commands.json
 .clangd/
 build/
 
-third_party/boost_1_66_0.tar.gz
-third_party/boost_1_66_0/
-
-third_party/openssl/
-third_party/openssl-1.1.1p/
-third_party/openssl-1.1.1p.tar.gz
-
-third_party/libsrtp-2.4.2.tar.gz
-third_party/libsrtp-2.4.2
-
-third_party/quiche/
-
-third_party/FlameGraph/
-
+third_party/
+!third_party/README.md

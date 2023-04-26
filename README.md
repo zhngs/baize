@@ -1,4 +1,4 @@
-# baize
+# baize(重构中)
 
 ![](https://img.shields.io/github/forks/zhngs/baize)
 ![](https://img.shields.io/github/stars/zhngs/baize)
@@ -23,9 +23,6 @@
 - [x] TCP/UDP
 - [x] TLS/HTTPS
 - [ ] 跨平台，目前只支持 linux
-- [x] HTTP demo，目前 http 目录有一个简单的 http server，完全协程化的写法，无任何回调
-- [x] QUIC demo，quic 目录下有一个 discard 示例
-- [ ] WebRTC，目前 webrtc 目录下有简单的 sfu server，可以简单解析 sdp，rtp 和 rtcp 正在支持中
 
 ## :magic_wand: 编译
 
